@@ -1,6 +1,7 @@
 #pragma once
 #include <span>
 #include <ranges>
+#include <optional>
 #include <ucsl/colors.h>
 #include <ucsl/math.h>
 #include <ucsl/object-id.h>
@@ -8,17 +9,17 @@
 #include <ucsl/containers/arrays/tarray.h>
 #include <ucsl/strings/variable-string.h>
 
-namespace ucsl::reflection {
+namespace ucsl::rfl {
+	template<typename T>
+	class RflArray {
+		const T* const items{};
+		const unsigned int count{};
+	public:
+		std::span<const T> GetItems() const { return { items, count }; }
+	};
+
 	template<typename TypeSet, typename RflClass>
 	struct common {
-		template<typename T>
-		class RflArray {
-			const T* const items{};
-			const unsigned int count{};
-		public:
-			std::span<const T> GetItems() const { return { items, count }; }
-		};
-
 		class RflCustomAttribute {
 			const char* const name{};
 			const void* const data{};
@@ -87,10 +88,16 @@ namespace ucsl::reflection {
 			unsigned int GetFlags() const { return flags; }
 			unsigned int GetOffset() const { return offset; }
 			const RflCustomAttributes* GetAttributes() const { return attributes; }
-			const RflCustomAttribute* GetAttrbute(const char* name) const {
+			const RflCustomAttribute* GetAttribute(const char* name) const {
 				auto* attributes = GetAttributes();
 
 				return attributes == nullptr ? nullptr : attributes->GetAttribute(name);
+			}
+			std::optional<std::span<const RflClassEnumMember>> GetFlagValues() const {
+				auto* attr = GetAttribute("DisplayIndex");
+				auto* flags = attr == nullptr ? nullptr : static_cast<const RflArray<const RflClassEnumMember>*>(attr->GetData());
+
+				return flags == nullptr ? std::nullopt : flags->GetItems();
 			}
 			size_t GetSubTypeSize() const {
 				switch (GetSubType()) {
@@ -144,8 +151,17 @@ namespace ucsl::reflection {
 		};
 	};
 
-	template<typename TypeSet>
-	struct v1 : common<TypeSet, typename v1<TypeSet>::RflClass> {
+	template<typename TS>
+	struct v1 {
+		class RflClass;
+
+		using TypeSet = TS;
+		using RflCustomAttribute = typename common<TypeSet, RflClass>::RflCustomAttribute;
+		using RflCustomAttributes = typename common<TypeSet, RflClass>::RflCustomAttributes;
+		using RflClassEnumMember = typename common<TypeSet, RflClass>::RflClassEnumMember;
+		using RflClassEnum = typename common<TypeSet, RflClass>::RflClassEnum;
+		using RflClassMember = typename common<TypeSet, RflClass>::RflClassMember;
+
 		class RflClass {
 			const char* name{};
 			const RflClass* const parent{};
@@ -156,26 +172,82 @@ namespace ucsl::reflection {
 
 		public:
 			const char* GetName() const { return name; }
-			const RflClassV1* GetParent() const { return parent; }
+			const RflClass* GetParent() const { return parent; }
 			unsigned int GetSize() const { return size; }
 			std::span<const RflClassEnum> GetEnums() const { return enums.GetItems(); }
 			std::span<const RflClassMember> GetMembers() const { return members.GetItems(); }
 			const RflCustomAttributes* GetAttributes() const { return attributes; }
-			const RflCustomAttribute* GetAttrbute(const char* name) const {
+			const RflCustomAttribute* GetAttribute(const char* name) const {
 				auto* attributes = GetAttributes();
 
 				return attributes == nullptr ? nullptr : attributes->GetAttribute(name);
 			}
+			size_t GetAlignment() const {
+				size_t maxAlignment = 0;
+
+				if (GetParent())
+					maxAlignment = GetParent()->GetAlignment();
+
+				for (auto& member : GetMembers()) {
+					size_t memberAlignment = member.GetAlignment();
+
+					if (memberAlignment > maxAlignment)
+						maxAlignment = memberAlignment;
+				}
+
+				return maxAlignment;
+			}
 		};
 	};
 
-	template<typename TypeSet>
-	struct v2 : common<TypeSet, typename v2<TypeSet>::RflClass> {
-		class RflClass : public v1<TypeSet>::RflClass {
+	template<typename TS>
+	struct v2 {
+		class RflClass;
+
+		using TypeSet = TS;
+		using RflCustomAttribute = typename common<TypeSet, RflClass>::RflCustomAttribute;
+		using RflCustomAttributes = typename common<TypeSet, RflClass>::RflCustomAttributes;
+		using RflClassEnumMember = typename common<TypeSet, RflClass>::RflClassEnumMember;
+		using RflClassEnum = typename common<TypeSet, RflClass>::RflClassEnum;
+		using RflClassMember = typename common<TypeSet, RflClass>::RflClassMember;
+
+		class RflClass {
+			const char* name{};
+			const RflClass* const parent{};
+			const unsigned int size{};
+			const RflArray<const RflClassEnum> enums{};
+			const RflArray<const RflClassMember> members{};
+			const RflCustomAttributes* const attributes{};
 			const unsigned int nameHash{};
 
 		public:
+			const char* GetName() const { return name; }
+			const RflClass* GetParent() const { return parent; }
+			unsigned int GetSize() const { return size; }
+			std::span<const RflClassEnum> GetEnums() const { return enums.GetItems(); }
+			std::span<const RflClassMember> GetMembers() const { return members.GetItems(); }
+			const RflCustomAttributes* GetAttributes() const { return attributes; }
+			const RflCustomAttribute* GetAttribute(const char* name) const {
+				auto* attributes = GetAttributes();
+
+				return attributes == nullptr ? nullptr : attributes->GetAttribute(name);
+			}
 			unsigned int GetNameHash() const { return nameHash; }
+			size_t GetAlignment() const {
+				size_t maxAlignment = 0;
+
+				if (GetParent())
+					maxAlignment = GetParent()->GetAlignment();
+
+				for (auto& member : GetMembers()) {
+					size_t memberAlignment = member.GetAlignment();
+
+					if (memberAlignment > maxAlignment)
+						maxAlignment = memberAlignment;
+				}
+
+				return maxAlignment;
+			}
 		};
 	};
 
@@ -222,8 +294,10 @@ namespace ucsl::reflection {
 				COLOR_FLOAT,
 			};
 
-			static const Metadata<MemberType> metadata[] = {
-				{ MemberType::VOID, "void", -1, -1 },
+			using ObjectId = objectids::ObjectIdV1;
+
+			inline static const Metadata<MemberType> metadata[] = {
+				{ MemberType::VOID, "void", (size_t)-1, (size_t)-1 },
 				{ MemberType::BOOL, "bool", sizeof(bool), alignof(bool) },
 				{ MemberType::SINT8, "sint8", sizeof(char), alignof(char) },
 				{ MemberType::UINT8, "uint8", sizeof(unsigned char), alignof(unsigned char) },
@@ -242,18 +316,20 @@ namespace ucsl::reflection {
 				{ MemberType::MATRIX44, "matrix44", sizeof(math::Matrix44), alignof(math::Matrix44) },
 				{ MemberType::POINTER, "pointer", sizeof(void*), alignof(void*) },
 				{ MemberType::ARRAY, "array", sizeof(containers::arrays::Array<void*>), alignof(containers::arrays::Array<void*>) },
-				{ MemberType::OLD_ARRAY, "oldarray", sizeof(containers::arrays::TArray<void*>), alignof(containers::arrays::TArray<void*>) },
+				{ MemberType::OLD_ARRAY, "oldarray", 0x18, 0x8 },
 				{ MemberType::SIMPLE_ARRAY, "simplearray", 0x10, 0x8 },
-				{ MemberType::ENUM, "enum", -1, -1 },
-				{ MemberType::STRUCT, "struct", -1, -1 },
-				{ MemberType::FLAGS, "flags", -1, -1 },
+				{ MemberType::ENUM, "enum", (size_t)-1, (size_t)-1 },
+				{ MemberType::STRUCT, "struct", (size_t)-1, (size_t)-1 },
+				{ MemberType::FLAGS, "flags", (size_t)-1, (size_t)-1 },
 				{ MemberType::CSTRING, "cstring", sizeof(const char*), alignof(const char*) },
 				{ MemberType::STRING, "string", sizeof(strings::VariableString), alignof(strings::VariableString) },
-				{ MemberType::OBJECT_ID, "csetobjectid", sizeof(objectids::ObjectIdV1), alignof(objectids::ObjectIdV1) },
+				{ MemberType::OBJECT_ID, "csetobjectid", sizeof(ObjectId), alignof(ObjectId) },
 				{ MemberType::POSITION, "position", sizeof(math::Position), alignof(math::Position) },
 				{ MemberType::COLOR_BYTE, "color8", sizeof(colors::Color8), alignof(colors::Color8) },
 				{ MemberType::COLOR_FLOAT, "colorf", sizeof(colors::Colorf), alignof(colors::Colorf) },
 			};
+
+			static constexpr bool supports_old_array = true;
 		};
 
 		struct rangers {
@@ -289,8 +365,10 @@ namespace ucsl::reflection {
 				COLOR_FLOAT,
 			};
 
-			static const Metadata<MemberType> metadata[] = {
-				{ MemberType::VOID, "void", -1, -1 },
+			using ObjectId = objectids::ObjectIdV2;
+
+			inline static const Metadata<MemberType> metadata[] = {
+				{ MemberType::VOID, "void", (size_t)-1, (size_t)-1 },
 				{ MemberType::BOOL, "bool", sizeof(bool), alignof(bool) },
 				{ MemberType::SINT8, "sint8", sizeof(char), alignof(char) },
 				{ MemberType::UINT8, "uint8", sizeof(unsigned char), alignof(unsigned char) },
@@ -309,17 +387,19 @@ namespace ucsl::reflection {
 				{ MemberType::MATRIX44, "matrix44", sizeof(math::Matrix44), alignof(math::Matrix44) },
 				{ MemberType::POINTER, "pointer", sizeof(void*), alignof(void*) },
 				{ MemberType::ARRAY, "array", sizeof(containers::arrays::Array<void*>), alignof(containers::arrays::Array<void*>) },
-				{ MemberType::SIMPLE_ARRAY, "simplearray", 0x10, -1 },
-				{ MemberType::ENUM, "enum", -1, -1 },
-				{ MemberType::STRUCT, "struct", -1, -1 },
-				{ MemberType::FLAGS, "flags", -1, -1 },
+				{ MemberType::SIMPLE_ARRAY, "simplearray", 0x10, 0x8 },
+				{ MemberType::ENUM, "enum", (size_t)-1, (size_t)-1 },
+				{ MemberType::STRUCT, "struct", (size_t)-1, (size_t)-1 },
+				{ MemberType::FLAGS, "flags", (size_t)-1, (size_t)-1 },
 				{ MemberType::CSTRING, "cstring", sizeof(const char*), alignof(const char*) },
 				{ MemberType::STRING, "string", sizeof(strings::VariableString), alignof(strings::VariableString) },
-				{ MemberType::OBJECT_ID, "csetobjectid", sizeof(objectids::ObjectIdV1), alignof(objectids::ObjectIdV2) },
+				{ MemberType::OBJECT_ID, "csetobjectid", sizeof(ObjectId), alignof(ObjectId) },
 				{ MemberType::POSITION, "position", sizeof(math::Position), alignof(math::Position) },
 				{ MemberType::COLOR_BYTE, "color8", sizeof(colors::Color8), alignof(colors::Color8) },
 				{ MemberType::COLOR_FLOAT, "colorf", sizeof(colors::Colorf), alignof(colors::Colorf) },
 			};
+
+			static constexpr bool supports_old_array = false;
 		};
 	}
 

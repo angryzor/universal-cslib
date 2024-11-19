@@ -1,0 +1,21 @@
+target_sources(universal-cslib-reflection
+    INTERFACE FILE_SET HEADERS FILES
+        "ucsl-reflection/opaque.h"
+        "ucsl-reflection/operators.h"
+        "ucsl-reflection/traversals/rflclass.h"
+        "ucsl-reflection/traversals/simplerfl.h"
+        "ucsl-reflection/traversals/types.h"
+        "ucsl-reflection/game-interfaces/ingame/wars.h"
+        "ucsl-reflection/game-interfaces/ingame/rangers.h"
+        "ucsl-reflection/game-interfaces/ingame/miller.h"
+        "ucsl-reflection/game-interfaces/standalone/game-interface.h"
+        "ucsl-reflection/game-interfaces/standalone/reflection-db.h"
+        "ucsl-reflection/game-interfaces/standalone/rflsystem.h"
+        "ucsl-reflection/reflections/resources/asm/v103.h"
+        "ucsl-reflection/reflections/resources/object-world/v3.h"
+        "ucsl-reflection/reflections/resources/object-world/v2.h"
+        "ucsl-reflection/reflections/resources/swif/v6.h"
+        "ucsl-reflection/reflections/resources/vertex-animation-texture/v1-miller.h"
+        "ucsl-reflection/reflections/resources/vertex-animation-texture/v1-rangers.h"
+        "ucsl-reflection/reflections/basic-types.h"
+)

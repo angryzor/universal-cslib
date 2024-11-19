@@ -81,15 +81,19 @@ namespace ucsl::containers::arrays {
 
 		// Iterators
 		iterator begin() { return buffer; }
+		const_iterator begin() const { return buffer; }
 		const_iterator cbegin() const { return buffer; }
 
 		iterator end() { return &buffer[length]; }
+		const_iterator end() const { return &buffer[length]; }
 		const_iterator cend() const { return &buffer[length]; }
 
 		reverse_iterator rbegin() { return &buffer[length]; }
+		const_reverse_iterator rbegin() const { return &buffer[length]; }
 		const_reverse_iterator crbegin() const { return &buffer[length]; }
 
 		reverse_iterator rend() { return buffer; }
+		const_reverse_iterator rend() const { return buffer; }
 		const_reverse_iterator crend() const { return buffer; }
 
 		// Capacity
@@ -227,7 +231,7 @@ namespace ucsl::containers::arrays {
 		}
 
 		template<typename... Args>
-		reference emplace_back(Args... args) {
+		reference emplace_back(Args&&... args) {
 			reserve(length + 1);
 			new (end()) T{ std::forward<Args>(args...) };
 			length++;

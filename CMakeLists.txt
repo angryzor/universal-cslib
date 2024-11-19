@@ -3,6 +3,6 @@ project(universal-cslib VERSION 0.0.1
                  DESCRIPTION "Universal CSLib"
                  LANGUAGES CXX)
 
-add_library(universal-cslib INTERFACE)
-target_compile_features(universal-cslib INTERFACE cxx_std_20)
-add_subdirectory(src)
+add_subdirectory(vendor EXCLUDE_FROM_ALL)
+add_subdirectory(universal-cslib)
+add_subdirectory(universal-cslib-reflection)
