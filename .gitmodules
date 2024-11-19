@@ -1,3 +1,3 @@
 [submodule "vendor/simple-reflection"]
-	path = vendor/simple-reflection-tmp
+	path = vendor/simple-reflection/simple-reflection
 	url = https://github.com/angryzor/simple-reflection.git
