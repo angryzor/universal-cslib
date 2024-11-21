@@ -61,7 +61,8 @@ namespace ucsl::reflections {
 	using Rotation = structure<math::Rotation, "Rotation", void,
 		field<float, "x">,
 		field<float, "y">,
-		field<float, "z">
+		field<float, "z">,
+		field<float, "w">
 	>;
 
 	template<typename T> size_t get_array_size(const containers::arrays::Array<T>& arr) { return arr.size(); }
