@@ -13,26 +13,6 @@ namespace ucsl::reflection {
         static constexpr Repr value = value;
     };
 
-    template<typename Type> struct is_erased {
-        static constexpr bool value = is_erased<Type::type>::value;
-    };
-    template<typename T> struct is_erased<simplerfl::primitive<T>> {
-        static constexpr bool value = false;
-    };
-    template<typename Repr, Repr value> struct is_erased<constant<Repr, value>> {
-        static constexpr bool value = false;
-    };
-    template<typename T> struct is_erased<simplerfl::pointer<T>> {
-        static constexpr bool value = false;
-    };
-    template<typename Repr, simplerfl::strlit name, typename Base, typename... Fields> struct is_erased<simplerfl::structure<Repr, name, Base, Fields...>> {
-        static constexpr bool value = false;
-    };
-    template<typename Type> struct is_erased<erased<Type>> {
-        static constexpr bool value = true;
-    };
-    template<typename Type> static constexpr bool is_erased_v = is_erased<Type>::value;
-
     static constexpr size_t DESCTYPE_RFLCLASS = 0x52464c434c415353;
     template<typename Parent> using rflclass_resolver = const char* (*)(const Parent& parent);
     template<typename Parent, rflclass_resolver<Parent> resolver> struct rflclass : simplerfl::decl<DESCTYPE_RFLCLASS> {
@@ -64,6 +44,35 @@ namespace ucsl::reflection {
         using type = simplerfl::resolve_decl_t<Type>;
         static constexpr ucsl::containers::arrays::AllocatorGetterFn* get_allocator = get_allocator;
     };
+
+    template<typename Type> struct is_erased {
+        static constexpr bool value = is_erased<Type::type>::value;
+    };
+    template<typename T> struct is_erased<simplerfl::primitive<T>> {
+        static constexpr bool value = false;
+    };
+    template<typename Repr, Repr value> struct is_erased<constant<Repr, value>> {
+        static constexpr bool value = false;
+    };
+    template<typename Repr, simplerfl::strlit name, typename Underlying, typename... Options> struct is_erased<simplerfl::enumeration<Repr, name, Underlying, Options...>> {
+        static constexpr bool value = false;
+    };
+    template<typename T> struct is_erased<simplerfl::pointer<T>> {
+        static constexpr bool value = false;
+    };
+    template<typename Repr, simplerfl::strlit name, typename Base, typename... Fields> struct is_erased<simplerfl::structure<Repr, name, Base, Fields...>> {
+        static constexpr bool value = false;
+    };
+    template<typename Repr, simplerfl::strlit name, typename Parent, simplerfl::union_resolver<Parent> resolver, typename... Fields> struct is_erased<simplerfl::unionof<Repr, name, Parent, resolver, Fields...>> {
+        static constexpr bool value = false;
+    };
+    template<typename Parent, rflclass_resolver<Parent> resolver> struct is_erased<rflclass<Parent, resolver>> {
+        static constexpr bool value = false;
+    };
+    template<typename Type> struct is_erased<erased<Type>> {
+        static constexpr bool value = true;
+    };
+    template<typename Type> static constexpr bool is_erased_v = is_erased<Type>::value;
 }
 
 namespace simplerfl {

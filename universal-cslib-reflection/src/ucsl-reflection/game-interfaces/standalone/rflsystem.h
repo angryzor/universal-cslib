@@ -12,9 +12,9 @@ namespace ucsl::reflection::game_interfaces::standalone {
 		using TypeSet = TS;
 		class RflClassEnumMember {
 		public:
-			const unsigned int index{};
-			const std::string englishName{};
-			const std::string japaneseName{};
+			unsigned int index{};
+			std::string englishName{};
+			std::string japaneseName{};
 
 			unsigned int GetIndex() const { return index; }
 			const char* GetEnglishName() const { return englishName.c_str(); }
@@ -23,8 +23,8 @@ namespace ucsl::reflection::game_interfaces::standalone {
 
 		class RflClassEnum {
 		public:
-			const std::string name{};
-			const std::vector<RflClassEnumMember> values{};
+			std::string name{};
+			std::vector<RflClassEnumMember> values{};
 
 			const char* GetName() const { return name.c_str(); }
 			const std::vector<RflClassEnumMember>& GetValues() const { return values; }
@@ -34,13 +34,14 @@ namespace ucsl::reflection::game_interfaces::standalone {
 		public:
 			using Type = typename TypeSet::MemberType;
 
-			const std::string name{};
-			const std::optional<std::shared_ptr<const RflClass>> classDef{};
-			const std::optional<std::shared_ptr<const RflClassEnum>> enumDef{};
-			const Type type{};
-			const Type subType{};
-			const unsigned int arrayLength{};
-			const unsigned int offset{};
+			std::string name{};
+			std::optional<std::shared_ptr<RflClass>> classDef{};
+			std::optional<std::shared_ptr<RflClassEnum>> enumDef{};
+			std::optional<std::vector<RflClassEnumMember>> flagValues{};
+			Type type{};
+			Type subType{};
+			unsigned int arrayLength{};
+			unsigned int offset{};
 
 			const char* GetName() const { return name.c_str(); }
 			const RflClass* GetClass() const { return classDef.has_value() ? &*classDef.value() : nullptr; }
@@ -49,7 +50,7 @@ namespace ucsl::reflection::game_interfaces::standalone {
 			Type GetSubType() const { return subType; }
 			unsigned int GetArrayLength() const { return arrayLength; }
 			unsigned int GetOffset() const { return offset; }
-			std::vector<RflClassEnumMember>* GetFlagValues() const { return nullptr; }
+			const std::vector<RflClassEnumMember>* GetFlagValues() const { return flagValues.has_value() ? &flagValues.value() : nullptr; }
 			size_t GetSubTypeSize() const {
 				switch (GetSubType()) {
 				case Type::VOID:
@@ -103,12 +104,12 @@ namespace ucsl::reflection::game_interfaces::standalone {
 
 		class RflClass {
 		public:
-			const std::string name{};
-			const std::optional<std::shared_ptr<const RflClass>> parent{};
-			const unsigned int size{};
-			const std::vector<std::shared_ptr<const RflClassEnum>> enums{};
-			const std::vector<std::shared_ptr<const RflClassMember>> members{};
-			const unsigned int nameHash{};
+			std::string name{};
+			std::optional<std::shared_ptr<RflClass>> parent{};
+			unsigned int size{};
+			std::vector<std::shared_ptr<RflClassEnum>> enums{};
+			std::vector<std::shared_ptr<RflClassMember>> members{};
+			unsigned int nameHash{};
 
 			const char* GetName() const { return name.c_str(); }
 			const RflClass* GetParent() const { return parent.has_value() ? &*parent.value() : nullptr; }

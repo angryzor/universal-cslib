@@ -13,6 +13,41 @@ namespace ucsl::reflection::traversals {
 		template<typename GameInterface>
 		struct simplerfl_traversal_for {
 			template<typename T>
+			struct dynamic_align_of_struct;
+			template<typename Repr, strlit name, typename Base, typename... Fields>
+			struct dynamic_align_of_struct<structure<Repr, name, Base, Fields...>> {
+			    static size_t get(void* parent) {
+			        size_t maxAlign{};
+
+			        if constexpr (!std::is_same_v<Base, void>)
+			            maxAlign = std::max(maxAlign, dynamic_align_of<Base>(parent));
+
+			        ((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type>(parent))), ...);
+
+			        return maxAlign;
+			    }
+			};
+
+			template<typename T>
+			struct dynamic_size_of_struct;
+			template<typename Repr, strlit name, typename Base, typename... Fields>
+			struct dynamic_size_of_struct<structure<Repr, name, Base, Fields...>> {
+			    static size_t get(void* parent, void* self) {
+			        size_t offset{};
+
+			        if constexpr (!std::is_same_v<Base, void>)
+			            offset = dynamic_size_of<Base>(parent, self);
+
+			        ((
+			            offset = util::align(offset, dynamic_align_of<typename Fields::type>(parent)),
+			            offset += dynamic_size_of<typename Fields::type>(parent, util::addptr(self, offset))
+			        ), ...);
+
+			        return util::align(offset, dynamic_align_of<structure<Repr, name, Base, Fields...>>(parent));
+			    }
+			};
+
+			template<typename T>
 			static size_t dynamic_size_of(void* parent, void* self) {
 				if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
 					return GameInterface::RflClassNameRegistry::GetInstance()->GetClass(desugar_t<T>::resolver(*(typename desugar_t<T>::parent*)parent))->GetSize();
@@ -20,21 +55,62 @@ namespace ucsl::reflection::traversals {
 					return GameInterface::RflClassNameRegistry::GetInstance()->GetClass("GOCActivatorSpawner")->GetSize();
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
 					return GameInterface::RflClassNameRegistry::GetInstance()->GetClass(GameInterface::get_spawner_data_class(desugar_t<T>::resolver(*(typename desugar_t<T>::parent*)parent)))->GetSize();
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY)
+					return desugar_t<T>::resolver(*(typename desugar_t<T>::parent*)parent) * dynamic_size_of<typename desugar_t<T>::type>(parent, self);
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY)
+					return desugar_t<T>::size * dynamic_size_of<typename desugar_t<T>::type>(parent, self);
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
+					return dynamic_size_of_struct<T>::get(parent, self);
 				else
-					return simplerfl::dynamic_size_of<T>(parent, self);
+					return simplerfl::size_of_v<T>;
 			}
 
 			template<typename T>
-			static size_t dynamic_align_of(void* parent, void* self) {
+			static size_t dynamic_align_of(void* parent) {
 				if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
 					return GameInterface::RflClassNameRegistry::GetInstance()->GetClass(desugar_t<T>::resolver(*(typename desugar_t<T>::parent*)parent))->GetAlignment();
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
 					return GameInterface::RflClassNameRegistry::GetInstance()->GetClass("GOCActivatorSpawner")->GetAlignment();
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
 					return GameInterface::RflClassNameRegistry::GetInstance()->GetClass(GameInterface::get_spawner_data_class(desugar_t<T>::resolver(*(typename desugar_t<T>::parent*)parent)))->GetAlignment();
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY)
+					return dynamic_align_of<typename desugar_t<T>::type>(parent);
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY)
+					return dynamic_align_of<typename desugar_t<T>::type>(parent);
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
+					return dynamic_align_of_struct<T>::get(parent);
 				else
-					return align_of_v<T>;
+					return simplerfl::align_of_v<T>;
 			}
+
+			struct EnumMember {
+				const long long index{};
+				const char* name{};
+
+				long long GetIndex() const { return index; }
+				const char* const GetEnglishName() const { return name; }
+			};
+
+			template<typename T> struct getEnumMember;
+			template<strlit name> struct getEnumMember<option<name>> {
+				static constexpr EnumMember call(long long& counter) { return { counter++, name }; }
+			};
+			template<strlit name, long long value> struct getEnumMember<fixed_option<name, value>> {
+				static constexpr EnumMember call(long long& counter) { counter = value + 1; return { value, name }; }
+			};
+
+			template<typename Options, typename I = std::make_index_sequence<std::tuple_size_v<Options>>>
+			struct getEnumMembers;
+			template<typename Options, size_t... Is>
+			struct getEnumMembers<Options, std::index_sequence<Is...>> {
+				template<std::size_t, typename T> using Spread = T;
+
+				constexpr std::vector<EnumMember> operator()() {
+					long long counter{};
+
+					return { getEnumMember<std::tuple_element_t<Is, Options>>::call(counter)... };
+				}
+			};
 
 			template<typename Algorithm, typename = std::make_index_sequence<Algorithm::arity>>
 			class traversal;
@@ -55,19 +131,36 @@ namespace ucsl::reflection::traversals {
 						typename Algorithm::result_type result{};
 
 						((
-							offset = util::align(offset, align_of_v<typename std::tuple_element_t<Is, Fields>::type>), // TODO: this should probably use the dynamic version.
+							offset = util::align(offset, dynamic_align_of<typename std::tuple_element_t<Is, Fields>::type>(&parents...)), // TODO: this should probably use the dynamic version.
 							result |= t.process_field<std::tuple_element_t<Is, Fields>>(*util::addptr(&objs, offset)..., parents...),
-							offset += size_of_v<typename std::tuple_element_t<Is, Fields>::type>
+							offset += dynamic_size_of<typename std::tuple_element_t<Is, Fields>::type>(&parents..., util::addptr(&objs, offset)...)
 						), ...);
 
 						return result;
 					}
 				};
 
-				template<typename T>
-				typename Algorithm::result_type process_primitive_base(Obj<S>... objs, const std::optional<typename desugar_t<T>::repr>& constant_value) {
-					using Repr = typename desugar_t<T>::repr;
+				//template<typename Fields, typename I = std::make_index_sequence<std::tuple_size_v<Fields>>>
+				//struct UnionFieldSwitcher;
+				//template<typename Fields, size_t... Is>
+				//struct UnionFieldSwitcher<Fields, std::index_sequence<Is...>> {
+				//	traversal<Algorithm, std::index_sequence<S...>>& t;
 
+				//	typename Algorithm::result_type operator()(Obj<S>... objs, Obj<S>... parents, size_t idx) {
+				//		typename Algorithm::result_type result{};
+
+				//		((idx == Is ? (result = t.
+
+				//			result |= t.process_field<>(*util::addptr(&objs, offset)..., parents...),
+				//			offset += size_of_v<typename std::tuple_element_t<Is, Fields>::type>
+				//		), ...);
+
+				//		return result;
+				//	}
+				//};
+
+				template<typename T, typename Repr>
+				typename Algorithm::result_type process_primitive_base(Obj<S>... objs, const std::optional<Repr>& constant_value = std::nullopt) {
 					return algorithm.visit_primitive(reinterpret_cast<Repr&>(objs)..., PrimitiveInfo<Repr>{ align_of_v<T>, size_of_v<T>, ucsl::reflection::is_erased_v<T>, constant_value });
 				}
 
@@ -75,14 +168,23 @@ namespace ucsl::reflection::traversals {
 				typename Algorithm::result_type process_primitive(Obj<S>... objs) {
 					static_assert(desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE);
 
-					return process_primitive_base<T>(objs..., std::nullopt);
+					return process_primitive_base<T, typename desugar_t<T>::repr>(objs...);
 				}
 
 				template<typename T>
 				typename Algorithm::result_type process_constant(Obj<S>... objs) {
 					static_assert(desugar_t<T>::desc_type == DESCTYPE_CONSTANT);
 
-					return process_primitive_base<T>(objs..., desugar_t<T>::value);
+					return process_primitive_base<T, typename desugar_t<T>::repr>(objs..., desugar_t<T>::value);
+				}
+
+				template<typename T>
+				typename Algorithm::result_type process_enumeration(Obj<S>... objs) {
+					static_assert(desugar_t<T>::desc_type == DESCTYPE_ENUMERATION);
+
+					std::vector<EnumMember> enumMembers = getEnumMembers<typename desugar_t<T>::options>{}();
+
+					return algorithm.visit_enum(objs..., EnumInfo{ enumMembers }, [&](Obj<S>... objs) { return process_primitive_base<T, typename desugar_t<T>::underlying>(objs...); });
 				}
 
 				template<typename T>
@@ -95,7 +197,7 @@ namespace ucsl::reflection::traversals {
 
 					return algorithm.visit_array(
 						std::get<S>(arrs)...,
-						ArrayInfo{ dynamic_align_of<InnerType>(&parents, &objs), dynamic_size_of<InnerType>(&parents, &objs) }...,
+						ArrayInfo{ dynamic_align_of<InnerType>(&parents), dynamic_size_of<InnerType>(&parents, &objs) }...,
 						[]() { return new representation_t<InnerType>{}; },
 						[](representation_t<InnerType>* obj) { delete obj; },
 						[&](Obj<S>... objs) { return process_type<InnerType>(objs..., parents...); }
@@ -112,7 +214,7 @@ namespace ucsl::reflection::traversals {
 
 					return algorithm.visit_tarray(
 						std::get<S>(arrs)...,
-						ArrayInfo{ dynamic_align_of<InnerType>(&parents, &objs), dynamic_size_of<InnerType>(&parents, &objs) }...,
+						ArrayInfo{ dynamic_align_of<InnerType>(&parents), dynamic_size_of<InnerType>(&parents, &objs) }...,
 						[]() { return new representation_t<InnerType>{}; },
 						[](representation_t<InnerType>* obj) { delete obj; },
 						[&](Obj<S>... objs) { return process_type<InnerType>(objs..., parents...); }
@@ -125,7 +227,7 @@ namespace ucsl::reflection::traversals {
 
 					using Target = typename desugar_t<T>::target;
 
-					return algorithm.visit_pointer((Obj<S, opaque_obj*>)objs..., PointerInfo{ dynamic_align_of<Target>(&parents, &objs), dynamic_size_of<Target>(&parents, &objs) }..., [&](Obj<S>...objs) { return process_type<Target>(objs..., parents...); });
+					return algorithm.visit_pointer((Obj<S, opaque_obj*>)objs..., PointerInfo{ dynamic_align_of<Target>(&parents), dynamic_size_of<Target>(&parents, &objs) }..., [&](Obj<S>...objs) { return process_type<Target>(objs..., parents...); });
 				}
 
 				template<typename T>
@@ -180,15 +282,39 @@ namespace ucsl::reflection::traversals {
 					return t.process_struct(objs..., GameInterface::RflClassNameRegistry::GetInstance()->GetClass(GameInterface::get_spawner_data_class(desugar_t<T>::resolver((Parent&)parents)))...);
 				}
 
+				template<typename Fields, size_t... Is>
+				typename Algorithm::result_type switch_union_fields(Obj<S>... objs, Obj<S>... parents, size_t idx, std::index_sequence<Is...>) {
+					typename Algorithm::result_type result{};
+
+					((idx == Is ? (result = process_type<typename std::tuple_element_t<Is, Fields>::type>(objs..., parents...), true) : false) || ...);
+
+					return result;
+				}
+
+				template<typename T>
+				typename Algorithm::result_type process_union(Obj<S>... objs, Obj<S>... parents) {
+					using Parent = typename desugar_t<T>::parent;
+
+					std::tuple<Obj<S>...> parents_tuple{ parents... };
+					opaque_obj& first_parent = std::get<0>(parents_tuple);
+
+					// TODO: handle different types
+					return switch_union_fields<typename desugar_t<T>::fields>(objs..., parents..., desugar_t<T>::resolver((Parent&)first_parent), std::make_index_sequence<std::tuple_size_v<typename desugar_t<T>::fields>>{});
+				}
+
 				template<typename T>
 				typename Algorithm::result_type process_type(Obj<S>... objs, Obj<S>... parents) {
-					return algorithm.visit_type(objs..., TypeInfo{ dynamic_align_of<T>(&parents, &objs), dynamic_size_of<T>(&parents, &objs) }..., [&](Obj<S>... objs) {
+					return algorithm.visit_type(objs..., TypeInfo{ dynamic_align_of<T>(&parents), dynamic_size_of<T>(&parents, &objs) }..., [&](Obj<S>... objs) {
 						if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
 							return process_struct<T>(objs...);
+						else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION)
+							return process_union<T>(objs..., parents...);
 						else if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE)
 							return process_primitive<T>(objs...);
 						else if constexpr (desugar_t<T>::desc_type == DESCTYPE_CONSTANT)
 							return process_constant<T>(objs...);
+						else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ENUMERATION)
+							return process_enumeration<T>(objs...);
 						else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER)
 							return process_pointer<T>(objs..., parents...);
 						else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY)
@@ -218,7 +344,7 @@ namespace ucsl::reflection::traversals {
 				}
 
 				template<typename T>
-				typename Algorithm::result_type process_fields(Obj<S>... objs, Obj<S>... parents) {
+				typename Algorithm::result_type process_fields(Obj<S>... objs) {
 					using Base = typename T::base;
 					using Fields = typename T::fields;
 
@@ -226,29 +352,29 @@ namespace ucsl::reflection::traversals {
 					size_t offset{};
 
 					if constexpr (!std::is_same_v<Base, primitive<void>>) {
-						result |= process_base_struct<Base>(objs..., parents...);
+						result |= process_base_struct<Base>(objs...);
 						offset = size_of_v<Base>;
 					}
 
-					result |= FieldIterator<Fields>{ *this }(objs..., parents..., offset);
+					result |= FieldIterator<Fields>{ *this }(objs..., objs..., offset);
 
 					return result;
 				}
 
 				template<typename T>
-				typename Algorithm::result_type process_base_struct(Obj<S>... objs, Obj<S>... parents) {
-					return algorithm.visit_base_struct(objs..., StructureInfo{ T::name, align_of_v<T> }, [&](Obj<S>... objs) { return process_fields<T>(objs..., parents...); });
+				typename Algorithm::result_type process_base_struct(Obj<S>... objs) {
+					return algorithm.visit_base_struct(objs..., StructureInfo{ T::name, align_of_v<T> }, [&](Obj<S>... objs) { return process_fields<T>(objs...); });
 				}
 
 				template<typename T>
 				typename Algorithm::result_type process_struct(Obj<S>... objs) {
 					static_assert(desugar_t<T>::desc_type == DESCTYPE_STRUCTURE);
-					return algorithm.visit_struct(objs..., StructureInfo{ T::name, align_of_v<T> }, [&](Obj<S>... objs) { return process_fields<T>(objs..., objs...); });
+					return algorithm.visit_struct(objs..., StructureInfo{ T::name, align_of_v<T> }, [&](Obj<S>... objs) { return process_fields<T>(objs...); });
 				}
 
 				template<typename T>
 				typename Algorithm::result_type process_root(Obj<S>... objs) {
-					return algorithm.visit_root(objs..., RootInfo{ align_of_v<T>, size_of_v<T> }, [&](Obj<S>...objs) { return process_type<T>(objs..., objs...); });
+					return algorithm.visit_root(objs..., RootInfo{ dynamic_align_of<T>(&objs...), dynamic_size_of<T>(&objs..., &objs...)}, [&](Obj<S>...objs) { return process_type<T>(objs..., objs...); });
 				}
 
 			public:

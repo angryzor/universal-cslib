@@ -132,7 +132,7 @@ namespace ucsl::reflection::traversals {
 				}
 
 				typename Algorithm::result_type process_type(Obj<S>... objs, const GameInterface::RflSystem::RflClassMember* member) {
-					return algorithm.visit_type(objs..., TypeInfo{ member->GetAlignment(), member->GetSize() }, [&](Obj<S>... objs) {
+					return algorithm.visit_type(objs..., TypeInfo{ member->GetAlignment(), member->GetSingleSize() }, [&](Obj<S>... objs) {
 						if constexpr (GameInterface::RflSystem::TypeSet::supports_old_array)
 							if (member->GetType() == MemberType::OLD_ARRAY)
 								return process_old_array(objs..., member);

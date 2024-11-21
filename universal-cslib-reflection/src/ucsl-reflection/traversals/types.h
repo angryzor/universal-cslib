@@ -55,7 +55,7 @@ namespace ucsl::reflection::traversals {
 
 	template<typename T>
 	struct EnumInfo {
-		T options{};
+		T& options{};
 	};
 
 	template<typename T>
