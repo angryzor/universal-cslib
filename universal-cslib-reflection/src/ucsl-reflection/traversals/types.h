@@ -12,6 +12,10 @@ namespace ucsl::reflection::traversals {
 		size_t alignment{};
 	};
 
+	struct UnionInfo {
+		size_t size{};
+	};
+
 	struct FieldInfo {
 		const char* name{};
 		bool erased{};
