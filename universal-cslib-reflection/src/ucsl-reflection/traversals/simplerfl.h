@@ -299,7 +299,9 @@ namespace ucsl::reflection::traversals {
 					opaque_obj& first_parent = std::get<0>(parents_tuple);
 
 					// TODO: handle different types
-					return algorithm.visit_union(objs..., UnionInfo{ size_of_v<T> }, [](Obj<S>... objs) { return switch_union_fields<typename desugar_t<T>::fields>(objs..., parents..., desugar_t<T>::resolver((Parent&)first_parent), std::make_index_sequence<std::tuple_size_v<typename desugar_t<T>::fields>>{}); });
+					return algorithm.visit_union(objs..., UnionInfo{ size_of_v<T> }, [&](Obj<S>... objs) {
+						return switch_union_fields<typename desugar_t<T>::fields>(objs..., parents..., desugar_t<T>::resolver((Parent&)first_parent), std::make_index_sequence<std::tuple_size_v<typename desugar_t<T>::fields>>{});
+					});
 				}
 
 				template<typename T>

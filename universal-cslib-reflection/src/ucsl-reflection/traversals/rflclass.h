@@ -1,5 +1,6 @@
 #pragma once
 #include <tuple>
+#include <cassert>
 #include <ucsl/containers/arrays/array.h>
 #include <ucsl/containers/arrays/tarray.h>
 #include <ucsl/rfl/rflclass.h>
