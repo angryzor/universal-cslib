@@ -51,19 +51,17 @@ namespace ucsl::reflection::traversals {
 
 	template<typename T>
 	struct PrimitiveInfo {
-		size_t alignment{};
-		size_t size{};
 		bool erased{};
 		std::optional<T> constantValue{};
 	};
 
 	template<typename T>
 	struct EnumInfo {
-		T& options{};
+		const T& options{};
 	};
 
 	template<typename T>
 	struct FlagsInfo {
-		T* flags{};
+		const T* flags{};
 	};
 }

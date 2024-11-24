@@ -21,4 +21,5 @@ target_sources(universal-cslib-reflection
         "ucsl-reflection/reflections/resources/vertex-animation-texture/v1-miller.h"
         "ucsl-reflection/reflections/resources/vertex-animation-texture/v1-rangers.h"
         "ucsl-reflection/reflections/basic-types.h"
+        "ucsl-reflection/reflection-systems/simplerfl.h"
 )
