@@ -12,11 +12,11 @@ namespace ucsl::reflection::game_interfaces::standalone {
 		using TypeSet = TS;
 		class RflClassEnumMember {
 		public:
-			unsigned int index{};
+			int index{};
 			std::string englishName{};
 			std::string japaneseName{};
 
-			unsigned int GetIndex() const { return index; }
+			int GetIndex() const { return index; }
 			const char* GetEnglishName() const { return englishName.c_str(); }
 			const char* GetJapaneseName() const { return japaneseName.c_str(); }
 		};

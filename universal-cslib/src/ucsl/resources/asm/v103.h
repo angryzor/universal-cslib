@@ -3,18 +3,24 @@
 #include <ucsl/math.h>
 
 namespace ucsl::resources::animation_state_machine::v103 {
-	struct ClipDataAnimationSettings{
-		const char* resourceName;
-		float start;
-		float end;
-		float speed;
-		unsigned char flags;
-		bool loops;
-	};
-
 	struct ClipData {
+		struct AnimationSettings {
+			enum class Flag : unsigned char {
+				MIRROR, // create a mirror animation.
+				PLAY_UNTIL_ANIMATION_END, // play until the end of the animation. ignore the `end` property.
+				NO_ANIMATION_RESOLUTION, // don't look up the animation resource in resource manager?
+			};
+
+			const char* resourceName;
+			float start;
+			float end;
+			float speed;
+			ucsl::bits::Bitset<Flag> flags;
+			bool loops;
+		};
+
 		const char* name;
-		ClipDataAnimationSettings animationSettings;
+		AnimationSettings animationSettings;
 		unsigned short triggerCount;
 		short triggerOffset;
 		short blendMaskIndex;
@@ -41,15 +47,15 @@ namespace ucsl::resources::animation_state_machine::v103 {
 		CUBIC,
 	};
 
-	struct TransitionDataTransitionInfo {
-		TransitionType type;
-		TransitionEasingType easingType;
-		short targetStateIndex;
-		float transitionTime;
-	};
-
 	struct TransitionData {
-		TransitionDataTransitionInfo transitionInfo;
+		struct TransitionInfo {
+			TransitionType type;
+			TransitionEasingType easingType;
+			short targetStateIndex;
+			float transitionTime;
+		};
+
+		TransitionInfo transitionInfo;
 		short transitionTimeVariableIndex;
 	};
 
@@ -142,14 +148,12 @@ namespace ucsl::resources::animation_state_machine::v103 {
 		const char* name;
 	};
 
-	struct BlendSpaceDataTriangle {
-		short nodeIndex0;
-		short nodeIndex1;
-		short nodeIndex2;
-		short unused;
-	};
-
 	struct BlendSpaceData {
+		struct Triangle {
+			short nodeIndices[3];
+			short unused;
+		};
+
 		short xVariableIndex;
 		short yVariableIndex;
 		float xMin;
@@ -160,7 +164,7 @@ namespace ucsl::resources::animation_state_machine::v103 {
 		unsigned short triangleCount;
 		ucsl::math::Vector2* nodes;
 		short* clipIndices;
-		BlendSpaceDataTriangle* triangles;
+		Triangle* triangles;
 	};
 
 	struct AsmData {

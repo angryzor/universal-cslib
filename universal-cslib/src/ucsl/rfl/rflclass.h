@@ -44,13 +44,13 @@ namespace ucsl::rfl {
 		};
 
 		class RflClassEnumMember {
-			unsigned int index{};
+			int index{};
 			const char* const englishName{};
 			const char* const japaneseName{};
 			const unsigned long long flags{};
 
 		public:
-			unsigned int GetIndex() const { return index; }
+			int GetIndex() const { return index; }
 			const char* GetEnglishName() const { return englishName; }
 			const char* GetJapaneseName() const { return japaneseName; }
 			unsigned long long GetFlags() const { return flags; }

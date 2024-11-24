@@ -93,14 +93,20 @@ namespace ucsl::reflection::providers {
 			const char* const GetEnglishName() const { return name; }
 		};
 
-		template<typename T> struct getEnumMember;
-		template<strlit name> struct getEnumMember<option<name>> {
+		template<typename T> struct get_enum_member;
+		template<strlit name> struct get_enum_member<option<name>> {
 			static constexpr EnumMember call(long long& counter) { return { counter++, name }; }
 		};
-		template<strlit name, long long value> struct getEnumMember<fixed_option<name, value>> {
+		template<strlit name, long long value> struct get_enum_member<fixed_option<name, value>> {
 			static constexpr EnumMember call(long long& counter) { counter = value + 1; return { value, name }; }
 		};
 
+		template<typename... Options>
+		consteval static std::vector<EnumMember> get_enum_members(std::tuple<Options...>) {
+			long long counter{};
+
+			return { get_enum_member<Options>::call(counter)... };
+		}
 
 
 		template<typename T>
@@ -124,15 +130,7 @@ namespace ucsl::reflection::providers {
 		struct Enum {
 			constexpr static TypeKind kind = TypeKind::ENUM;
 			constexpr auto get_underlying_primitive() const { return Primitive<primitive<typename T::underlying>>{}; }
-			constexpr std::vector<EnumMember> get_options() const { return _get_options(typename T::options{}); }
-
-		private:
-			template<typename... Options>
-			constexpr std::vector<EnumMember> _get_options(std::tuple<Options...>) const {
-				long long counter{};
-
-				return { getEnumMember<Options>::call(counter)... };
-			}
+			constexpr std::vector<EnumMember> get_options() const { return get_enum_members(typename T::options{}); }
 		};
 
 		//struct Flags {
@@ -178,7 +176,7 @@ namespace ucsl::reflection::providers {
 			size_t offset{};
 
 			constexpr const char* get_name() const { return T::name; }
-			size_t get_offset() const { return offset; }
+			constexpr size_t get_offset() const { return offset; }
 			constexpr auto get_type() const { return Type<typename T::type>{}; }
 		};
 
@@ -251,7 +249,7 @@ namespace ucsl::reflection::providers {
 			size_t get_size(const opaque_obj& parent, const opaque_obj& obj) const { return dynamic_size_of<T>(parent, obj); }
 			size_t get_alignment(const opaque_obj& parent) const { return dynamic_align_of<T>(parent); }
 
-			bool is_erased() const { return ucsl::reflection::is_erased_v<T>; }
+			constexpr bool is_erased() const { return ucsl::reflection::is_erased_v<T>; }
 
 			template<typename F>
 			constexpr auto visit(const opaque_obj& parent, F f) const {
