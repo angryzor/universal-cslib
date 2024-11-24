@@ -29,9 +29,28 @@ namespace ucsl::resources::animation_state_machine::v103::reflections {
 		field<short, "childClipIndexOffset">
 	>;
 
+	using TransitionType = enumeration<impl::TransitionType, "TransitionType", unsigned char,
+		option<"IMMEDIATE">,
+		option<"FROZEN">,
+		option<"SMOOTH">,
+		option<"SYNCHRONIZE">,
+		option<"HOLD_TO">,
+		option<"HOLD_BOTH">,
+		option<"WAIT_FROM">,
+		option<"WAIT_FROM_HOLD_TO">,
+		option<"USER_0">,
+		option<"USER_1">,
+		option<"USER_2">
+	>;
+
+	using TransitionEasingType = enumeration<impl::TransitionEasingType, "TransitionEasingType", unsigned char,
+		option<"LINEAR">,
+		option<"CUBIC">
+	>;
+
 	using TransitionDataTransitionInfo = structure<impl::TransitionDataTransitionInfo, "TransitionDataTransitionInfo", void,
-		field<unsigned char, "type">,
-		field<unsigned char, "easingType">,
+		field<TransitionType, "type">,
+		field<TransitionEasingType, "easingType">,
 		field<short, "targetStateIndex">,
 		field<float, "transitionTime">
 	>;
@@ -41,9 +60,16 @@ namespace ucsl::resources::animation_state_machine::v103::reflections {
 		field<short, "transitionTimeVariableIndex">
 	>;
 
+	using StateType = enumeration<impl::StateType, "StateType", char,
+		fixed_option<"NULL_STATE", -1>,
+		option<"CLIP">,
+		option<"BLEND_TREE">,
+		option<"NONE">
+	>;
+
 	using StateData = structure<impl::StateData, "StateData", void,
 		field<const char*, "name">,
-		field<char, "type">,
+		field<StateType, "type">,
 		field<bool, "transitImmediately">,
 		field<unsigned char, "flags">,
 		field<char, "defaultLayerIndex">,
@@ -60,8 +86,19 @@ namespace ucsl::resources::animation_state_machine::v103::reflections {
 		field<float, "pbaBlendMaskOpacity">
 	>;
 
+	using BlendNodeType = enumeration< impl::BlendNodeType, "BlendNodeType", unsigned char,
+		option<"LERP">,
+		option<"ADDITIVE">,
+		option<"CLIP">,
+		option<"OVERRIDE">,
+		option<"LAYER">,
+		option<"MULTIPLY">,
+		option<"BLEND_SPACE">,
+		option<"TWO_POINT_LERP">
+	>;
+
 	using BlendNodeData = structure<impl::BlendNodeData, "BlendNodeData", void,
-		field<unsigned char, "type">,
+		field<BlendNodeType, "type">,
 		field<short, "blendSpaceIndex">,
 		field<short, "blendFactorVariableIndex">,
 		field<float, "blendFactorTarget">,
@@ -91,8 +128,13 @@ namespace ucsl::resources::animation_state_machine::v103::reflections {
 		field<short, "maskBoneOffset">
 	>;
 
+	using TriggerType = enumeration<impl::TriggerType, "TriggerType", unsigned char,
+		option<"HIT">,
+		option<"ENTER_LEAVE">
+	>;
+
 	using TriggerData = structure<impl::TriggerData, "TriggerData", void,
-		field<uint8_t, "type">,
+		field<TriggerType, "type">,
 		field<float, "unknown2">,
 		field<float, "unknown3">,
 		field<unsigned short, "triggerTypeIndex">,
@@ -166,14 +208,19 @@ namespace ucsl::resources::animation_state_machine::v103::reflections {
 namespace simplerfl {
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::ClipDataAnimationSettings> { using type = ucsl::resources::animation_state_machine::v103::reflections::ClipDataAnimationSettings; };
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::ClipData> { using type = ucsl::resources::animation_state_machine::v103::reflections::ClipData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TransitionType> { using type = ucsl::resources::animation_state_machine::v103::reflections::TransitionType; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TransitionEasingType> { using type = ucsl::resources::animation_state_machine::v103::reflections::TransitionEasingType; };
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TransitionDataTransitionInfo> { using type = ucsl::resources::animation_state_machine::v103::reflections::TransitionDataTransitionInfo; };
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TransitionData> { using type = ucsl::resources::animation_state_machine::v103::reflections::TransitionData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103::StateType> { using type = ucsl::resources::animation_state_machine::v103::reflections::StateType; };
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::StateData> { using type = ucsl::resources::animation_state_machine::v103::reflections::StateData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103::BlendNodeType> { using type = ucsl::resources::animation_state_machine::v103::reflections::BlendNodeType; };
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::BlendNodeData> { using type = ucsl::resources::animation_state_machine::v103::reflections::BlendNodeData; };
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TransitionArrayData> { using type = ucsl::resources::animation_state_machine::v103::reflections::TransitionArrayData; };
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::EventData> { using type = ucsl::resources::animation_state_machine::v103::reflections::EventData; };
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::LayerData> { using type = ucsl::resources::animation_state_machine::v103::reflections::LayerData; };
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::BlendMaskData> { using type = ucsl::resources::animation_state_machine::v103::reflections::BlendMaskData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TriggerType> { using type = ucsl::resources::animation_state_machine::v103::reflections::TriggerType; };
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TriggerData> { using type = ucsl::resources::animation_state_machine::v103::reflections::TriggerData; };
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::BlendSpaceDataTriangle> { using type = ucsl::resources::animation_state_machine::v103::reflections::BlendSpaceDataTriangle; };
 	template<> struct canonical<ucsl::resources::animation_state_machine::v103::BlendSpaceData> { using type = ucsl::resources::animation_state_machine::v103::reflections::BlendSpaceData; };

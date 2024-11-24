@@ -1,4 +1,5 @@
 #pragma once
+#include <ucsl/bitset.h>
 #include <ucsl/math.h>
 
 namespace ucsl::resources::animation_state_machine::v103 {
@@ -21,9 +22,28 @@ namespace ucsl::resources::animation_state_machine::v103 {
 		short childClipIndexOffset;
 	};
 
+	enum class TransitionType : unsigned char {
+		IMMEDIATE,
+		FROZEN,
+		SMOOTH,
+		SYNCHRONIZE,
+		HOLD_TO,
+		HOLD_BOTH,
+		WAIT_FROM,
+		WAIT_FROM_HOLD_TO,
+		USER_0,
+		USER_1,
+		USER_2,
+	};
+
+	enum class TransitionEasingType : unsigned char {
+		LINEAR,
+		CUBIC,
+	};
+
 	struct TransitionDataTransitionInfo {
-		unsigned char type;
-		unsigned char easingType;
+		TransitionType type;
+		TransitionEasingType easingType;
 		short targetStateIndex;
 		float transitionTime;
 	};
@@ -33,11 +53,25 @@ namespace ucsl::resources::animation_state_machine::v103 {
 		short transitionTimeVariableIndex;
 	};
 
+	enum class StateType : char {
+		NULL_STATE = -1,
+		CLIP,
+		BLEND_TREE,
+		NONE,
+	};
+
 	struct StateData {
+		enum class Flag : unsigned char {
+			LOOPS,
+			UNK1,
+			DISABLE_PBA,
+			USE_PBA_BLEND_FACTOR,
+		};
+
 		const char* name;
 		char type;
 		bool transitImmediately;
-		unsigned char flags;
+		ucsl::bits::Bitset<Flag> flags;
 		char defaultLayerIndex;
 		short rootBlendNodeOrClipIndex;
 		short maxCycles;
@@ -52,8 +86,19 @@ namespace ucsl::resources::animation_state_machine::v103 {
 		float pbaBlendMaskOpacity;
 	};
 
+	enum class BlendNodeType : unsigned char {
+		LERP,
+		ADDITIVE,
+		CLIP,
+		OVERRIDE,
+		LAYER,
+		MULTIPLY,
+		BLEND_SPACE,
+		TWO_POINT_LERP,
+	};
+
 	struct BlendNodeData {
-		unsigned char type;
+		BlendNodeType type;
 		short blendSpaceIndex;
 		short blendFactorVariableIndex;
 		float blendFactorTarget;
@@ -83,8 +128,13 @@ namespace ucsl::resources::animation_state_machine::v103 {
 		short maskBoneOffset;
 	};
 
+	enum class TriggerType : uint8_t {
+		HIT,
+		ENTER_LEAVE,
+	};
+
 	struct TriggerData {
-		unsigned char type;
+		TriggerType type;
 		float unknown2;
 		float unknown3;
 		unsigned short triggerTypeIndex;

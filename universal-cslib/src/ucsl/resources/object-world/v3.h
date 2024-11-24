@@ -1,5 +1,6 @@
 #pragma once
 #include <ucsl/containers/arrays/array.h>
+#include <ucsl/bitset.h>
 #include <ucsl/math.h>
 
 namespace ucsl::resources::object_world::v3 {
@@ -16,7 +17,12 @@ namespace ucsl::resources::object_world::v3 {
     };
 
     struct ObjectData {
-        unsigned int flags;
+        enum class Flag : unsigned int {
+            DEALLOCATE,
+            DEALLOCATE_SPAWNER_DATA,
+        };
+
+        ucsl::bits::Bitset<Flag> flags;
         const char* gameObjectClass;
         ucsl::strings::VariableString name;
         ucsl::objectids::ObjectIdV2 id;

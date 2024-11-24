@@ -4,14 +4,14 @@
 
 namespace ucsl::resources::fxcol::v1 {
     struct FxColCollisionShapeData {
-        enum class Shape : uint8_t {
+        enum class Shape : unsigned char {
             SPHERE,
             CYLINDER,
             ANISOTROPIC_OBB,
             ISOTROPIC_OBB,
         };
 
-        enum class Type : uint8_t {
+        enum class Type : unsigned char {
             SCENE_PARAMETER_INDEX,
             LIGHT_PARAMETER_INDEX,
             CAMERA,

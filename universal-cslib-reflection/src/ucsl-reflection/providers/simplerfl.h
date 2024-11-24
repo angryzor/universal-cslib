@@ -242,7 +242,7 @@ namespace ucsl::reflection::providers {
 					offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type>(obj)),
 					offset += dynamic_size_of<typename Fields::type>(obj, *util::addptr(&obj, thisOffset)),
 					Field<Fields>{ thisOffset }
-					)), ...);
+				)), ...);
 			}
 		};
 

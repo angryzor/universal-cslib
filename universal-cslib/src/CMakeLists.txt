@@ -1,5 +1,6 @@
 target_sources(universal-cslib
     INTERFACE FILE_SET HEADERS FILES
+        "ucsl/bitset.h"
         "ucsl/memory/iallocator.h"
         "ucsl/containers/arrays/array-base.h"
         "ucsl/containers/arrays/array.h"
