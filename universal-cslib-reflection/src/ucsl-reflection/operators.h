@@ -3,7 +3,8 @@
 #include <ucsl/containers/arrays/tarray.h>
 
 namespace ucsl::reflection {
-    template<typename Type> struct erased {
+    static constexpr size_t MOD_ERASED = 0x4552415345443030;
+    template<typename Type> struct erased : simplerfl::mod<MOD_ERASED> {
         using type = simplerfl::resolve_decl_t<Type>;
     };
 
@@ -35,42 +36,41 @@ namespace ucsl::reflection {
     };
 
     static constexpr size_t DESCTYPE_ARRAY = 0x4152524159303030;
-    template<typename Type> struct array : simplerfl::decl<DESCTYPE_ARRAY> {
+    template<typename Type, typename AllocatorSystem> struct array : simplerfl::decl<DESCTYPE_ARRAY> {
         using type = simplerfl::resolve_decl_t<Type>;
+        using allocator_system = AllocatorSystem;
     };
 
     static constexpr size_t DESCTYPE_TARRAY = 0x5441525241593030;
-    template<typename Type, ucsl::containers::arrays::AllocatorGetterFn* get_allocator> struct tarray : simplerfl::decl<DESCTYPE_TARRAY> {
+    template<typename Type, typename AllocatorSystem> struct tarray : simplerfl::decl<DESCTYPE_TARRAY> {
         using type = simplerfl::resolve_decl_t<Type>;
-        static constexpr ucsl::containers::arrays::AllocatorGetterFn* get_allocator = get_allocator;
+        using allocator_system = AllocatorSystem;
     };
 
-    template<typename Type> struct is_erased { static constexpr bool value = is_erased<Type::type>::value; };
-    template<typename T> struct is_erased<simplerfl::primitive<T>> { static constexpr bool value = false; };
-    template<typename Repr, Repr value> struct is_erased<constant<Repr, value>> { static constexpr bool value = false; };
-    template<typename Repr, simplerfl::strlit name, typename Underlying, typename... Options> struct is_erased<simplerfl::enumeration<Repr, name, Underlying, Options...>> { static constexpr bool value = false; };
-    template<typename T> struct is_erased<simplerfl::pointer<T>> { static constexpr bool value = false; };
-    template<typename Repr, simplerfl::strlit name, typename Base, typename... Fields> struct is_erased<simplerfl::structure<Repr, name, Base, Fields...>> { static constexpr bool value = false; };
-    template<typename Repr, simplerfl::strlit name, typename Parent, simplerfl::union_resolver<Parent> resolver, typename... Fields> struct is_erased<simplerfl::unionof<Repr, name, Parent, resolver, Fields...>> { static constexpr bool value = false; };
-    template<typename Parent, rflclass_resolver<Parent> resolver> struct is_erased<rflclass<Parent, resolver>> { static constexpr bool value = false; };
-    template<typename Type> struct is_erased<erased<Type>> { static constexpr bool value = true; };
-    template<typename Type> static constexpr bool is_erased_v = is_erased<Type>::value;
+    //template<typename Type> struct is_erased { static constexpr bool value = is_erased<Type::type>::value; };
+    //template<typename T> struct is_erased<simplerfl::primitive<T>> { static constexpr bool value = false; };
+    //template<typename Repr, Repr value> struct is_erased<constant<Repr, value>> { static constexpr bool value = false; };
+    //template<typename Repr, simplerfl::strlit name, typename Underlying, typename... Options> struct is_erased<simplerfl::enumeration<Repr, name, Underlying, Options...>> { static constexpr bool value = false; };
+    //template<typename T> struct is_erased<simplerfl::pointer<T>> { static constexpr bool value = false; };
+    //template<typename Repr, simplerfl::strlit name, typename Base, typename... Fields> struct is_erased<simplerfl::structure<Repr, name, Base, Fields...>> { static constexpr bool value = false; };
+    //template<typename Repr, simplerfl::strlit name, typename Parent, simplerfl::union_resolver<Parent> resolver, typename... Fields> struct is_erased<simplerfl::unionof<Repr, name, Parent, resolver, Fields...>> { static constexpr bool value = false; };
+    //template<typename Parent, rflclass_resolver<Parent> resolver> struct is_erased<rflclass<Parent, resolver>> { static constexpr bool value = false; };
+    //template<typename Type> struct is_erased<erased<Type>> { static constexpr bool value = true; };
+    template<typename Type> static constexpr bool is_erased_v = simplerfl::has_modifier_v<MOD_ERASED, Type>;
 }
 
 namespace simplerfl {
-    template<typename Type> struct desugar<ucsl::reflection::erased<Type>> { using type = typename desugar<typename ucsl::reflection::erased<Type>::type>::type; };
-
     template<typename Repr, Repr value> struct is_realigned<ucsl::reflection::constant<Repr, value>> { static constexpr bool value = false; };
     template<typename Parent, ucsl::reflection::rflclass_resolver<Parent> resolver> struct is_realigned<ucsl::reflection::rflclass<Parent, resolver>> { static constexpr bool value = false; };
     template<typename Parent, ucsl::reflection::game_object_class_resolver<Parent> resolver> struct is_realigned<ucsl::reflection::spawner_data_rflclass<Parent, resolver>> { static constexpr bool value = false; };
     template<typename Parent, ucsl::reflection::component_data_resolver<Parent> resolver> struct is_realigned<ucsl::reflection::component_data_rflclass<Parent, resolver>> { static constexpr bool value = false; };
-    template<typename Type> struct is_realigned<ucsl::reflection::array<Type>> { static constexpr bool value = false; };
-    template<typename Type, ucsl::containers::arrays::AllocatorGetterFn* get_allocator> struct is_realigned<ucsl::reflection::tarray<Type, get_allocator>> { static constexpr bool value = false; };
+    template<typename Type, typename AllocatorSystem> struct is_realigned<ucsl::reflection::array<Type, AllocatorSystem>> { static constexpr bool value = false; };
+    template<typename Type, typename AllocatorSystem> struct is_realigned<ucsl::reflection::tarray<Type, AllocatorSystem>> { static constexpr bool value = false; };
 
-    template<typename Type, long long value> struct representation_of_type<ucsl::reflection::constant<Type, value>> { using type = Type; };
-    template<typename Parent, ucsl::reflection::rflclass_resolver<Parent> resolver> struct representation_of_type<ucsl::reflection::rflclass<Parent, resolver>> { using type = void; };
-    template<typename Parent, ucsl::reflection::game_object_class_resolver<Parent> resolver> struct representation_of_type<ucsl::reflection::spawner_data_rflclass<Parent, resolver>> { using type = void; };
-    template<typename Parent, ucsl::reflection::component_data_resolver<Parent> resolver> struct representation_of_type<ucsl::reflection::component_data_rflclass<Parent, resolver>> { using type = void; };
-    template<typename Type> struct representation_of_type<ucsl::reflection::array<Type>> { using type = typename ucsl::containers::arrays::Array<typename representation_of_type<typename ucsl::reflection::array<Type>::type>::type>; };
-    template<typename Type, ucsl::containers::arrays::AllocatorGetterFn* get_allocator> struct representation_of_type<ucsl::reflection::tarray<Type, get_allocator>> { using type = typename ucsl::containers::arrays::TArray<typename representation_of_type<typename ucsl::reflection::tarray<Type, get_allocator>::type>::type, get_allocator>; };
+    template<typename Repr, long long value> struct representation<ucsl::reflection::constant<Repr, value>> { using type = Repr; };
+    template<typename Parent, ucsl::reflection::rflclass_resolver<Parent> resolver> struct representation<ucsl::reflection::rflclass<Parent, resolver>> { static_assert("Cannot get representation of dynamic type."); using type = void; };
+    template<typename Parent, ucsl::reflection::game_object_class_resolver<Parent> resolver> struct representation<ucsl::reflection::spawner_data_rflclass<Parent, resolver>> { static_assert("Cannot get representation of dynamic type."); using type = void; };
+    template<typename Parent, ucsl::reflection::component_data_resolver<Parent> resolver> struct representation<ucsl::reflection::component_data_rflclass<Parent, resolver>> { static_assert("Cannot get representation of dynamic type."); using type = void; };
+    template<typename Type, typename AllocatorSystem> struct representation<ucsl::reflection::array<Type, AllocatorSystem>> { using type = ucsl::containers::arrays::Array<typename representation<typename ucsl::reflection::array<Type, AllocatorSystem>::type>::type, AllocatorSystem>; };
+    template<typename Type, typename AllocatorSystem> struct representation<ucsl::reflection::tarray<Type, AllocatorSystem>> { using type = ucsl::containers::arrays::TArray<typename representation<typename ucsl::reflection::tarray<Type, AllocatorSystem>::type>::type, AllocatorSystem>; };
 }

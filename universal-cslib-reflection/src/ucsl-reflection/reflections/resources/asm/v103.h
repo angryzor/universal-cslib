@@ -83,7 +83,7 @@ namespace ucsl::resources::animation_state_machine::v103::reflections {
 		field<TransitionData, "stateEndTransition">,
 		field<unsigned short, "flagIndexCount">,
 		field<short, "flagIndexOffset">,
-		field<float, "pbaBlendMaskOpacity">
+		field<float, "pbaBlendFactor">
 	>;
 
 	using BlendNodeType = enumeration< impl::BlendNodeType, "BlendNodeType", unsigned char,

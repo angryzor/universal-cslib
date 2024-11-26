@@ -8,6 +8,7 @@
 #include <ucsl/containers/arrays/array.h>
 #include <ucsl/containers/arrays/tarray.h>
 #include <ucsl/strings/variable-string.h>
+#include "ranges.h"
 
 namespace ucsl::rfl {
 	template<typename T>
@@ -15,6 +16,8 @@ namespace ucsl::rfl {
 		const T* const items{};
 		const unsigned int count{};
 	public:
+		RflArray(const T* items, unsigned int count) : items{ items }, count{ count } {}
+
 		std::span<const T> GetItems() const { return { items, count }; }
 	};
 
@@ -37,7 +40,7 @@ namespace ucsl::rfl {
 		public:
 			const RflCustomAttribute* GetAttribute(const char* name) const {
 				auto s = items.GetItems();
-				auto res = std::find_if(s.begin(), s.end(), [name](auto& attr) { return attr.name == name || !strcmp(attr.name, name); });
+				auto res = std::find_if(s.begin(), s.end(), [name](auto& attr) { return attr.GetName() == name || !strcmp(attr.GetName(), name); });
 
 				return res == s.end() ? nullptr : &*res;
 			}
@@ -66,8 +69,10 @@ namespace ucsl::rfl {
 		};
 
 		class RflClassMember {
+		public:
 			using Type = typename TypeSet::MemberType;
 
+		private:
 			const char* name{};
 			const RflClass* const classDef{};
 			const RflClassEnum* const enumDef{};
@@ -79,6 +84,20 @@ namespace ucsl::rfl {
 			const RflCustomAttributes* const attributes{};
 
 		public:
+			class Value {
+				const char* name{};
+				Type type;
+				const void* value;
+
+			public:
+				const char* GetName() const { return name; }
+				Type GetType() const { return type; }
+				const void* GetValue() const { return value; }
+			};
+
+			RflClassMember(const char* name, const RflClass* classDef, const RflClassEnum* enumDef, Type type, Type subType, unsigned int arrayLength, unsigned int flags, unsigned int offset, const RflCustomAttributes* attributes)
+				: name{ name }, classDef{ classDef }, enumDef{ enumDef }, type{ type }, subType{ subType }, arrayLength{ arrayLength }, flags{ flags }, offset{ offset }, attributes{ attributes } {}
+
 			const char* GetName() const { return name; }
 			const RflClass* GetClass() const { return classDef; }
 			const RflClassEnum* GetEnum() const { return enumDef; }
@@ -95,9 +114,18 @@ namespace ucsl::rfl {
 			}
 			std::optional<std::span<const RflClassEnumMember>> GetFlagValues() const {
 				auto* attr = GetAttribute("DisplayIndex");
-				auto* flags = attr == nullptr ? nullptr : static_cast<const RflArray<const RflClassEnumMember>*>(attr->GetData());
+				auto* flags = attr == nullptr ? nullptr : attr->GetData<RflArray<const RflClassEnumMember>>();
 
-				return flags == nullptr ? std::nullopt : flags->GetItems();
+				return flags == nullptr ? std::nullopt : std::make_optional(flags->GetItems());
+			}
+			template<typename Range>
+			const Range* GetRange() const {
+				auto* attr = GetAttribute(Range::name);
+				return attr == nullptr ? nullptr : attr->GetData<Range>();
+			}
+			const char* GetCaption() const {
+				auto* attr = GetAttribute("Caption");
+				return attr == nullptr ? nullptr : attr->GetData<char>();
 			}
 			size_t GetSubTypeSize() const {
 				switch (GetSubType()) {
@@ -106,7 +134,7 @@ namespace ucsl::rfl {
 				case Type::STRUCT:
 					return GetClass()->GetSize();
 				default:
-					return TypeSet::metadata[GetSubType()].size;
+					return TypeSet::metadata[static_cast<unsigned int>(GetSubType())].size;
 				}
 			}
 			size_t GetSingleSize() const {
@@ -119,7 +147,7 @@ namespace ucsl::rfl {
 				case Type::FLAGS:
 					return GetSubTypeSize();
 				default:
-					return TypeSet::metadata[GetType()].size;
+					return TypeSet::metadata[static_cast<unsigned int>(GetType())].size;
 				}
 			}
 			size_t GetSize() const {
@@ -132,7 +160,7 @@ namespace ucsl::rfl {
 				case Type::STRUCT:
 					return GetClass()->GetAlignment();
 				default:
-					return TypeSet::metadata[GetSubType()].alignment;
+					return TypeSet::metadata[static_cast<unsigned int>(GetSubType())].alignment;
 				}
 			}
 			size_t GetAlignment() const {
@@ -145,7 +173,7 @@ namespace ucsl::rfl {
 				case Type::FLAGS:
 					return GetSubTypeAlignment();
 				default:
-					return TypeSet::metadata[GetType()].alignment;
+					return TypeSet::metadata[static_cast<unsigned int>(GetType())].alignment;
 				}
 			}
 		};
@@ -171,6 +199,9 @@ namespace ucsl::rfl {
 			const RflCustomAttributes* const attributes{};
 
 		public:
+			RflClass(const char* name, const RflClass* parent, unsigned int size, const RflClassEnum* enums, unsigned int enumCount, const RflClassMember* members, unsigned int memberCount, const RflCustomAttributes* attributes)
+				: name{ name }, parent{ parent }, size{ size }, enums{ enums, enumCount }, members{ members, memberCount }, attributes{ attributes } {}
+
 			const char* GetName() const { return name; }
 			const RflClass* GetParent() const { return parent; }
 			unsigned int GetSize() const { return size; }
@@ -221,6 +252,9 @@ namespace ucsl::rfl {
 			const unsigned int nameHash{};
 
 		public:
+			RflClass(const char* name, const RflClass* parent, unsigned int size, const RflClassEnum* enums, unsigned int enumCount, const RflClassMember* members, unsigned int memberCount, const RflCustomAttributes* attributes)
+				: name{ name }, parent{ parent }, size{ size }, enums{ enums, enumCount }, members{ members, memberCount }, attributes{ attributes } {}
+
 			const char* GetName() const { return name; }
 			const RflClass* GetParent() const { return parent; }
 			unsigned int GetSize() const { return size; }
@@ -315,8 +349,8 @@ namespace ucsl::rfl {
 				{ MemberType::MATRIX34, "matrix34", sizeof(math::Matrix34), alignof(math::Matrix34) },
 				{ MemberType::MATRIX44, "matrix44", sizeof(math::Matrix44), alignof(math::Matrix44) },
 				{ MemberType::POINTER, "pointer", sizeof(void*), alignof(void*) },
-				{ MemberType::ARRAY, "array", sizeof(containers::arrays::Array<void*>), alignof(containers::arrays::Array<void*>) },
-				{ MemberType::OLD_ARRAY, "oldarray", 0x18, 0x8 },
+				{ MemberType::ARRAY, "array", sizeof(containers::arrays::Array<size_t, ucsl::containers::arrays::dummy_allocator_system>), alignof(containers::arrays::Array<size_t, ucsl::containers::arrays::dummy_allocator_system>) },
+				{ MemberType::OLD_ARRAY, "oldarray", sizeof(containers::arrays::TArray<size_t, ucsl::containers::arrays::dummy_allocator_system>), alignof(containers::arrays::TArray<size_t, ucsl::containers::arrays::dummy_allocator_system>) },
 				{ MemberType::SIMPLE_ARRAY, "simplearray", 0x10, 0x8 },
 				{ MemberType::ENUM, "enum", (size_t)-1, (size_t)-1 },
 				{ MemberType::STRUCT, "struct", (size_t)-1, (size_t)-1 },
@@ -386,7 +420,7 @@ namespace ucsl::rfl {
 				{ MemberType::MATRIX34, "matrix34", sizeof(math::Matrix34), alignof(math::Matrix34) },
 				{ MemberType::MATRIX44, "matrix44", sizeof(math::Matrix44), alignof(math::Matrix44) },
 				{ MemberType::POINTER, "pointer", sizeof(void*), alignof(void*) },
-				{ MemberType::ARRAY, "array", sizeof(containers::arrays::Array<void*>), alignof(containers::arrays::Array<void*>) },
+				{ MemberType::ARRAY, "array", sizeof(containers::arrays::Array<size_t, ucsl::containers::arrays::dummy_allocator_system>), alignof(containers::arrays::Array<size_t, ucsl::containers::arrays::dummy_allocator_system>) },
 				{ MemberType::SIMPLE_ARRAY, "simplearray", 0x10, 0x8 },
 				{ MemberType::ENUM, "enum", (size_t)-1, (size_t)-1 },
 				{ MemberType::STRUCT, "struct", (size_t)-1, (size_t)-1 },

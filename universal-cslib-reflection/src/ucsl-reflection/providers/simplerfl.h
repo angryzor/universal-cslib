@@ -50,11 +50,11 @@ namespace ucsl::reflection::providers {
 		template<typename T>
 		static size_t dynamic_size_of(const opaque_obj& parent, const opaque_obj& self) {
 			if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
-				return GameInterface::RflClassNameRegistry::GetInstance()->GetClass(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSize();
+				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
-				return GameInterface::RflClassNameRegistry::GetInstance()->GetClass("GOCActivatorSpawner")->GetSize();
+				return GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->rflClass->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
-				return GameInterface::RflClassNameRegistry::GetInstance()->GetClass(GameInterface::get_spawner_data_class(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent)))->GetSize();
+				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->spawnerDataRflClass->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY)
 				return desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent) * dynamic_size_of<typename desugar_t<T>::type>(parent, self);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY)
@@ -70,11 +70,11 @@ namespace ucsl::reflection::providers {
 			if constexpr (is_realigned_v<T>)
 				return align_of_v<T>;
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
-				return GameInterface::RflClassNameRegistry::GetInstance()->GetClass(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetAlignment();
+				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetAlignment();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
-				return GameInterface::RflClassNameRegistry::GetInstance()->GetClass("GOCActivatorSpawner")->GetAlignment();
+				return GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->rflClass->GetAlignment();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
-				return GameInterface::RflClassNameRegistry::GetInstance()->GetClass(GameInterface::get_spawner_data_class(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent)))->GetAlignment();
+				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->spawnerDataRflClass->GetAlignment();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY)
 				return dynamic_align_of<typename desugar_t<T>::type>(parent);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY)
@@ -120,7 +120,7 @@ namespace ucsl::reflection::providers {
 		struct Constant {
 			constexpr static TypeKind kind = TypeKind::PRIMITIVE;
 			template<typename F>
-			constexpr auto visit(F f) const { return f(PrimitiveData<typename T::repr>{ T::value }); }
+			constexpr auto visit(F f) const { return f(PrimitiveData<typename T::repr>{ .constant_value = T::value }); }
 		};
 
 		template<typename T>
@@ -264,11 +264,11 @@ namespace ucsl::reflection::providers {
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return f(Union<desugar_t<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return f(Structure<desugar_t<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
-					return f(rflclass<GameInterface>::reflect(GameInterface::RflClassNameRegistry::GetInstance()->GetClass(desugar_t<T>::resolver((typename desugar_t<T>::parent&)parent))));
+					return f(typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(desugar_t<T>::resolver((typename desugar_t<T>::parent&)parent)) });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
-					return f(rflclass<GameInterface>::reflect(GameInterface::RflClassNameRegistry::GetInstance()->GetClass("GOCActivatorSpawner")));
+					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->rflClass });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
-					return f(rflclass<GameInterface>::reflect(GameInterface::RflClassNameRegistry::GetInstance()->GetClass(GameInterface::get_spawner_data_class(desugar_t<T>::resolver((typename desugar_t<T>::parent&)parent)))));
+					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->spawnerDataRflClass});
 				else static_assert("invalid desc type");
 			}
 		};

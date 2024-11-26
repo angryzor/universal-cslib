@@ -65,7 +65,7 @@ namespace ucsl::reflection::traversals {
 		typename Algorithm::result_type process_pointer(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Pointer refl) {
 			auto target = refl.get_target_type();
 
-			return algorithm.visit_pointer((Spread<S, opaque_obj*&>)objs..., PointerInfo{ target.get_alignment(parents)..., target.get_size(parents, objs) }..., [&](Spread<S, opaque_obj&>...targets) { return process_type(targets..., parents..., target); });
+			return algorithm.visit_pointer((Spread<S, opaque_obj*&>)objs..., PointerInfo{ target.get_alignment(parents), target.get_size(parents, objs) }..., [&](Spread<S, opaque_obj&>...targets) { return process_type(targets..., parents..., target); });
 		}
 
 		template<typename CArray>

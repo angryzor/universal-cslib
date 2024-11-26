@@ -75,7 +75,7 @@ namespace ucsl::resources::animation_state_machine::v103 {
 		};
 
 		const char* name;
-		char type;
+		StateType type;
 		bool transitImmediately;
 		ucsl::bits::Bitset<Flag> flags;
 		char defaultLayerIndex;
@@ -89,7 +89,7 @@ namespace ucsl::resources::animation_state_machine::v103 {
 		TransitionData stateEndTransition;
 		unsigned short flagIndexCount;
 		short flagIndexOffset;
-		float pbaBlendMaskOpacity;
+		float pbaBlendFactor;
 	};
 
 	enum class BlendNodeType : unsigned char {

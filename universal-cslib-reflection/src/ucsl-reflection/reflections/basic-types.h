@@ -65,19 +65,19 @@ namespace ucsl::reflections {
 		field<float, "w">
 	>;
 
-	template<typename T> size_t get_array_size(const containers::arrays::Array<T>& arr) { return arr.size(); }
-	template<typename T>
-	using Array = structure<containers::arrays::Array<T>, "Array", void,
-		field<dynamic_carray<T, containers::arrays::Array<T>, get_array_size<T>>*, "buffer">,
+	template<typename T, typename AllocatorSystem> size_t get_array_size(const containers::arrays::Array<T, AllocatorSystem>& arr) { return arr.size(); }
+	template<typename T, typename AllocatorSystem>
+	using Array = structure<containers::arrays::Array<T, AllocatorSystem>, "Array", void,
+		field<dynamic_carray<T, containers::arrays::Array<T, AllocatorSystem>, get_array_size<T, AllocatorSystem>>*, "buffer">,
 		field<size_t, "length">,
 		field<size_t, "capacity">,
 		field<erased<memory::IAllocator*>, "allocator">
 	>;
 
-	template<typename T, containers::arrays::AllocatorGetterFn* get_allocator> size_t get_tarray_size(const containers::arrays::TArray<T, get_allocator>& arr) { return arr.size(); }
-	template<typename T, containers::arrays::AllocatorGetterFn* get_allocator>
-	using TArray = structure<containers::arrays::TArray<T, get_allocator>, "TArray", void,
-		field<dynamic_carray<T, containers::arrays::TArray<T, get_allocator>, get_tarray_size<T, get_allocator>>*, "buffer">,
+	template<typename T, typename AllocatorSystem> size_t get_tarray_size(const containers::arrays::TArray<T, AllocatorSystem>& arr) { return arr.size(); }
+	template<typename T, typename AllocatorSystem>
+	using TArray = structure<containers::arrays::TArray<T, AllocatorSystem>, "TArray", void,
+		field<dynamic_carray<T, containers::arrays::TArray<T, AllocatorSystem>, get_tarray_size<T, AllocatorSystem>>*, "buffer">,
 		field<size_t, "length">,
 		field<size_t, "capacity">
 	>;
@@ -105,8 +105,8 @@ namespace simplerfl {
 	template<> struct canonical<ucsl::math::Matrix44> { using type = ucsl::reflections::Matrix44; };
 	template<> struct canonical<ucsl::math::Position> { using type = ucsl::reflections::Position; };
 	template<> struct canonical<ucsl::math::Rotation> { using type = ucsl::reflections::Rotation; };
-	template<typename T> struct canonical<ucsl::containers::arrays::Array<T>> { using type = ucsl::reflection::array<T>; };
-	template<typename T, ucsl::containers::arrays::AllocatorGetterFn* get_allocator> struct canonical<ucsl::containers::arrays::TArray<T, get_allocator>> { using type = ucsl::reflection::tarray<T, get_allocator>; };
+	template<typename T, typename AllocatorSystem> struct canonical<ucsl::containers::arrays::Array<T, AllocatorSystem>> { using type = ucsl::reflection::array<T, AllocatorSystem>; };
+	template<typename T, typename AllocatorSystem> struct canonical<ucsl::containers::arrays::TArray<T, AllocatorSystem>> { using type = ucsl::reflection::tarray<T, AllocatorSystem>; };
 	template<> struct canonical<ucsl::strings::VariableString> { using type = primitive<ucsl::strings::VariableString>; };
 	template<> struct canonical<ucsl::objectids::ObjectIdV1> { using type = primitive<ucsl::objectids::ObjectIdV1>; };
 	template<> struct canonical<ucsl::objectids::ObjectIdV2> { using type = primitive<ucsl::objectids::ObjectIdV2>; };

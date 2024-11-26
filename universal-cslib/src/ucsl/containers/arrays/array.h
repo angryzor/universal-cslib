@@ -2,24 +2,33 @@
 #include "array-base.h"
 
 namespace ucsl::containers::arrays {
-	inline memory::IAllocator* get_array_allocator(void* arr) { return *reinterpret_cast<memory::IAllocator**>(reinterpret_cast<size_t>(arr) + 0x18); }
+	template<typename T, typename AllocatorSystem>
+	struct Array;
 
-	template<typename T>
-	class Array : public ArrayBase<T, size_t, get_array_allocator> {
-		memory::IAllocator* allocator{};
+	template<typename T, typename AllocatorSystem>
+	struct ArrayArrayAllocatorSystem {
+		using allocator_type = typename AllocatorSystem::allocator_type;
+
+		inline static allocator_type* get_allocator(const ArrayBase<T, size_t, ArrayArrayAllocatorSystem<T, AllocatorSystem>>& arr) { return static_cast<const Array<T, AllocatorSystem>&>(arr).allocator; }
+	};
+
+	template<typename T, typename AllocatorSystem>
+	class Array : public ArrayBase<T, size_t, ArrayArrayAllocatorSystem<T, AllocatorSystem>> {
+		friend struct ArrayArrayAllocatorSystem<T, AllocatorSystem>;
+		AllocatorSystem::allocator_type* allocator{};
 
 	public:
-		Array() : ArrayBase<T, size_t>{} {}
-		Array(memory::IAllocator* allocator) : allocator{ allocator }, ArrayBase<T, size_t, get_array_allocator>{} {}
-		Array(memory::IAllocator* allocator, size_t capacity) : allocator{ allocator }, ArrayBase<T, size_t, get_array_allocator>{ capacity } {}
-		Array(const Array<T>& other) : allocator{ other.allocator } {
-			this->ArrayBase<T, size_t, get_array_allocator>::ArrayBase(other);
+		Array() : ArrayBase<T, size_t, ArrayArrayAllocatorSystem<T, AllocatorSystem>>{} {}
+		Array(AllocatorSystem::allocator_type* allocator) : allocator{ allocator }, ArrayBase<T, size_t, ArrayArrayAllocatorSystem<T, AllocatorSystem>>{} {}
+		Array(AllocatorSystem::allocator_type* allocator, size_t capacity) : allocator{ allocator }, ArrayBase<T, size_t, ArrayArrayAllocatorSystem<T, AllocatorSystem>>{ capacity } {}
+		Array(const Array<T, AllocatorSystem>& other) : allocator{ other.allocator } {
+			this->ArrayBase<T, size_t, ArrayArrayAllocatorSystem<T, AllocatorSystem>>::ArrayBase(other);
 		}
-		Array(Array<T>&& other) : allocator{ other.allocator } {
-			this->ArrayBase<T, size_t, get_array_allocator>::ArrayBase(std::move(other));
+		Array(Array<T, AllocatorSystem>&& other) : allocator{ other.allocator } {
+			this->ArrayBase<T, size_t, ArrayArrayAllocatorSystem<T, AllocatorSystem>>::ArrayBase(std::move(other));
 		}
 
-		void change_allocator(memory::IAllocator* new_allocator) {
+		void change_allocator(AllocatorSystem::allocator_type* new_allocator) {
 			if (!new_allocator || allocator == new_allocator)
 				return;
 
@@ -40,18 +49,18 @@ namespace ucsl::containers::arrays {
 			allocator = new_allocator;
 		}
 
-		void swap(Array<T>& other) noexcept {
-			ArrayBase<T, size_t, get_array_allocator>::swap(*this, other);
+		void swap(Array<T, AllocatorSystem>& other) noexcept {
+			ArrayBase<T, size_t, ArrayArrayAllocatorSystem<T, AllocatorSystem>>::swap(*this, other);
 			std::swap(allocator, other.allocator);
 		}
 	};
 
-	template<typename T, size_t Len>
-	class InplaceArray : public Array<T> {
+	template<typename T, size_t Len, typename AllocatorSystem>
+	class InplaceArray : public Array<T, AllocatorSystem> {
 		T reserved[Len];
 
 	public:
-		InplaceArray(memory::IAllocator* allocator) : Array<T>{ allocator } {
+		InplaceArray(AllocatorSystem::allocator_type* allocator) : Array<T, AllocatorSystem>{ allocator } {
 			this->capacity_and_flags = Len | this->DONT_DEALLOCATE_FLAG;
 			this->buffer = reserved;
 		}

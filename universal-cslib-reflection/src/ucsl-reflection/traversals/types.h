@@ -1,5 +1,6 @@
 #pragma once
 #include <optional>
+#include <ucsl/rfl/ranges.h>
 
 namespace ucsl::reflection::traversals {
 	struct RootInfo {
@@ -49,10 +50,10 @@ namespace ucsl::reflection::traversals {
 		size_t itemAlignment{};
 	};
 
-	template<typename T>
-	struct PrimitiveInfo {
+	template<typename T> struct PrimitiveInfo {
 		bool erased{};
 		std::optional<T> constantValue{};
+		const ucsl::rfl::ranges::range_t<T>* range{};
 	};
 
 	template<typename T>
@@ -62,6 +63,6 @@ namespace ucsl::reflection::traversals {
 
 	template<typename T>
 	struct FlagsInfo {
-		const T* flags{};
+		const T& flags{};
 	};
 }

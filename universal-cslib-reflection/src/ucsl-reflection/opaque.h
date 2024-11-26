@@ -6,11 +6,11 @@
 namespace ucsl::reflection {
 	class opaque_obj {};
 
-	template<template<typename> typename A, typename GameInterface>
+	template<template<typename, typename> typename A, typename GameInterface>
 	class OpaqueRflArray {
 	protected:
-		template<template<typename> typename A2>
-		class RflArray : public A<opaque_obj> {
+		template<template<typename, typename> typename A2>
+		class RflArray : public A<opaque_obj, typename GameInterface::AllocatorSystem> {
 		public:
 			void change_allocator(ucsl::memory::IAllocator* new_allocator, const typename GameInterface::RflSystem::RflClassMember* member) {
 				if (!new_allocator || this->allocator == new_allocator)
@@ -34,7 +34,7 @@ namespace ucsl::reflection {
 			}
 
 			void reserve(size_t desired_cap, const typename GameInterface::RflSystem::RflClassMember* member) {
-				auto* allocator = this->get_allocator(this);
+				auto* allocator = this->get_allocator();
 				auto cap = this->capacity();
 
 				if (desired_cap <= cap)
@@ -57,11 +57,11 @@ namespace ucsl::reflection {
 			}
 
 			template<typename... Args>
-			opaque_obj& emplace_back(const typename GameInterface::RflSystem::RflClassMember* member, Args&&... args) {
+			void emplace_back(const typename GameInterface::RflSystem::RflClassMember* member, Args&&... args) {
 				this->reserve(this->length + 1, member);
 
-				if (member->GetSubType() == GameInterface::RflSystem::RflClassMember::TYPE_STRUCT)
-					GameInterface::RflTypeInfoRegistry::GetInstance()->ConstructObject(this->get_allocator(this), &at(this->length, member), member->GetStructClass()->GetName());
+				if (member->GetSubType() == GameInterface::RflSystem::RflClassMember::Type::STRUCT)
+					GameInterface::RflTypeInfoRegistry::GetInstance()->ConstructObject(this->get_allocator(), &at(this->length, member), member->GetClass()->GetName());
 				else
 					memset(&at(this->length, member), 0, member->GetSubTypeSize());
 
@@ -72,10 +72,10 @@ namespace ucsl::reflection {
 				if (i >= this->length)
 					return;
 
-				if (member->GetSubType() == GameInterface::RflSystem::RflClassMember::TYPE_STRUCT)
+				if (member->GetSubType() == GameInterface::RflSystem::RflClassMember::Type::STRUCT)
 					GameInterface::RflTypeInfoRegistry::GetInstance()->CleanupLoadedObject(&at(i, member), member->GetName());
 
-				memmove(&at(i), &at(i + 1, member), member->GetSubTypeSize() * (this->length - i - 1));
+				memmove(&at(i, member), &at(i + 1, member), member->GetSubTypeSize() * (this->length - i - 1));
 
 				this->length--;
 			}
@@ -85,7 +85,7 @@ namespace ucsl::reflection {
 					return;
 
 				for (size_t i = 0; i < this->length; i++)
-					if (member->GetSubType() == GameInterface::RflSystem::RflClassMember::TYPE_STRUCT)
+					if (member->GetSubType() == GameInterface::RflSystem::RflClassMember::Type::STRUCT)
 						GameInterface::RflTypeInfoRegistry::GetInstance()->CleanupLoadedObject(&at(i, member), member->GetName());
 
 				this->length = 0;
@@ -178,7 +178,7 @@ namespace ucsl::reflection {
 			const opaque_obj& operator*() { return accessor[idx]; }
 		};
 
-		template<typename T> OpaqueRflArray(A<T>& underlying, const typename GameInterface::RflSystem::RflClassMember* member) : underlying{ static_cast<RflArray<A>&>(underlying) }, member{ member } {}
+		template<typename T> OpaqueRflArray(A<T, typename GameInterface::AllocatorSystem>& underlying, const typename GameInterface::RflSystem::RflClassMember* member) : underlying{ static_cast<RflArray<A>&>(underlying) }, member{ member } {}
 		template<typename T> OpaqueRflArray(const OpaqueRflArray<A, GameInterface>& other, const typename GameInterface::RflSystem::RflClassMember* member) : underlying{ other.underlying }, member{ other.member } {}
 
 		void change_allocator(ucsl::memory::IAllocator* new_allocator) { underlying.change_allocator(new_allocator, member); }

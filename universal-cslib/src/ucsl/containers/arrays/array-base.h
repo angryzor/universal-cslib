@@ -6,19 +6,19 @@
 #include <ucsl/memory/iallocator.h>
 
 namespace ucsl::containers::arrays {
-	typedef memory::IAllocator* AllocatorGetterFn(void* arr);
+	struct dummy_allocator_system { using allocator_type = void; };
 
-	template<typename T, typename S, AllocatorGetterFn* get_allocator>
+	template<typename T, typename S, typename ArrayAllocatorSystem>
 	class ArrayBase {
 	protected:
 		static constexpr unsigned int DONT_DEALLOCATE_FLAG = 0x80000000;
 		static constexpr unsigned int CAPACITY_MASK = ~DONT_DEALLOCATE_FLAG;
 
-		static constexpr AllocatorGetterFn* get_allocator = get_allocator;
-
 		T* buffer{};
 		S length{};
 		S capacity_and_flags{ DONT_DEALLOCATE_FLAG };
+
+		ArrayAllocatorSystem::allocator_type* get_allocator() const { return ArrayAllocatorSystem::get_allocator(*this); }
 
 	public:
 		using value_type = T;
@@ -43,14 +43,14 @@ namespace ucsl::containers::arrays {
 	public:
 		ArrayBase() {}
 		ArrayBase(size_type capacity) { reserve(capacity); }
-		ArrayBase(const ArrayBase<T, S, get_allocator>& other) : ArrayBase<T, S, get_allocator>{ other.capacity() } { insert(cbegin(), other.cbegin(), other.cend()); }
-		ArrayBase(ArrayBase<T, S, get_allocator>&& other) : buffer{ other.buffer }, length{ other.length }, capacity{ other.capacity } {
+		ArrayBase(const ArrayBase<T, S, ArrayAllocatorSystem>& other) : ArrayBase<T, S, ArrayAllocatorSystem>{ other.capacity() } { insert(cbegin(), other.cbegin(), other.cend()); }
+		ArrayBase(ArrayBase<T, S, ArrayAllocatorSystem>&& other) : buffer{ other.buffer }, length{ other.length }, capacity{ other.capacity } {
 			other.buffer = nullptr;
 			other.length = 0;
 			other.capacity = DONT_DEALLOCATE_FLAG;
 		}
 		~ArrayBase() {
-			auto* allocator = get_allocator(this);
+			auto* allocator = get_allocator();
 
 			std::destroy(begin(), end());
 
@@ -104,7 +104,7 @@ namespace ucsl::containers::arrays {
 
 		void reserve(size_type desired_cap)
 		{
-			auto* allocator = get_allocator(this);
+			auto* allocator = get_allocator();
 			auto cap = capacity();
 
 			if (desired_cap <= cap)
@@ -254,7 +254,7 @@ namespace ucsl::containers::arrays {
 			std::uninitialized_fill_n(end(), count, value);
 		}
 
-		void swap(ArrayBase<T, S, get_allocator>& other) noexcept {
+		void swap(ArrayBase<T, S, ArrayAllocatorSystem>& other) noexcept {
 			std::swap(buffer, other.buffer);
 			std::swap(length, other.length);
 			std::swap(capacity_and_flags, other.capacity_and_flags);
@@ -281,23 +281,23 @@ namespace ucsl::containers::arrays {
 	};
 }
 
-template<typename T, typename S, ucsl::containers::arrays::AllocatorGetterFn* get_allocator> bool operator==(const ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& lhs, const ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& rhs) { return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()); }
-template<typename T, typename S, ucsl::containers::arrays::AllocatorGetterFn* get_allocator> bool operator!=(const ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& lhs, const ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& rhs) { return !operator==(lhs, rhs); }
-template<typename T, typename S, ucsl::containers::arrays::AllocatorGetterFn* get_allocator> bool operator<(const ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& lhs, const ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& rhs) { return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()); }
-template<typename T, typename S, ucsl::containers::arrays::AllocatorGetterFn* get_allocator> bool operator>(const ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& lhs, const ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& rhs) { return std::lexicographical_compare(rhs.begin(), rhs.end(), lhs.begin(), lhs.end()); }
-template<typename T, typename S, ucsl::containers::arrays::AllocatorGetterFn* get_allocator> bool operator<=(const ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& lhs, const ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& rhs) { return !operator<(lhs, rhs); }
-template<typename T, typename S, ucsl::containers::arrays::AllocatorGetterFn* get_allocator> bool operator>=(const ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& lhs, const ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& rhs) { return !operator>(lhs, rhs); }
+template<typename T, typename S, typename ArrayAllocatorSystem> bool operator==(const ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& lhs, const ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& rhs) { return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()); }
+template<typename T, typename S, typename ArrayAllocatorSystem> bool operator!=(const ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& lhs, const ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& rhs) { return !operator==(lhs, rhs); }
+template<typename T, typename S, typename ArrayAllocatorSystem> bool operator<(const ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& lhs, const ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& rhs) { return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()); }
+template<typename T, typename S, typename ArrayAllocatorSystem> bool operator>(const ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& lhs, const ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& rhs) { return std::lexicographical_compare(rhs.begin(), rhs.end(), lhs.begin(), lhs.end()); }
+template<typename T, typename S, typename ArrayAllocatorSystem> bool operator<=(const ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& lhs, const ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& rhs) { return !operator<(lhs, rhs); }
+template<typename T, typename S, typename ArrayAllocatorSystem> bool operator>=(const ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& lhs, const ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& rhs) { return !operator>(lhs, rhs); }
 
 namespace std {
-	template<typename T, typename S, ucsl::containers::arrays::AllocatorGetterFn* get_allocator> void swap(ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& lhs, ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& rhs) { lhs.swap(rhs); }
+	template<typename T, typename S, typename ArrayAllocatorSystem> void swap(ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& lhs, ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& rhs) { lhs.swap(rhs); }
 
-	template<typename T, typename S, ucsl::containers::arrays::AllocatorGetterFn* get_allocator, typename U> ucsl::containers::arrays::ArrayBase<T, S, get_allocator>::size_type erase(ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& c, const U& value) {
+	template<typename T, typename S, typename ArrayAllocatorSystem, typename U> ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>::size_type erase(ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& c, const U& value) {
 		auto it = std::remove(c.begin(), c.end(), value);
 		auto r = c.end() - it;
 		c.erase(it, c.end());
 		return r;
 	}
-	template<typename T, typename S, ucsl::containers::arrays::AllocatorGetterFn* get_allocator, typename Pred> ucsl::containers::arrays::ArrayBase<T, S, get_allocator>::size_type erase(ucsl::containers::arrays::ArrayBase<T, S, get_allocator>& c, Pred pred) {
+	template<typename T, typename S, typename ArrayAllocatorSystem, typename Pred> ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>::size_type erase(ucsl::containers::arrays::ArrayBase<T, S, ArrayAllocatorSystem>& c, Pred pred) {
 		auto it = std::remove_if(c.begin(), c.end(), pred);
 		auto r = c.end() - it;
 		c.erase(it, c.end());

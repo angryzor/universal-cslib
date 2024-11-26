@@ -2,10 +2,18 @@
 #include "array-base.h"
 
 namespace ucsl::containers::arrays {
-	template<typename T, AllocatorGetterFn* get_allocator>
-	class TArray : public ArrayBase<T, size_t, get_allocator>
-	{
+	namespace internal {
+		template<typename AllocatorSystem, typename A>
+		struct TArrayArrayAllocatorSystem {
+			using allocator_type = typename AllocatorSystem::allocator_type;
+
+			inline static allocator_type* get_allocator(const A& arr) { return AllocatorSystem::get_allocator(); }
+		};
+	}
+
+	template<typename T, typename AllocatorSystem>
+	class TArray : public ArrayBase<T, size_t, internal::TArrayArrayAllocatorSystem<AllocatorSystem, TArray<T, AllocatorSystem>>> {
 	public:
-		using ArrayBase<T, size_t, get_allocator>::ArrayBase;
+		using ArrayBase<T, size_t, internal::TArrayArrayAllocatorSystem<AllocatorSystem, TArray<T, AllocatorSystem>>>::ArrayBase;
 	};
 }

@@ -3,6 +3,7 @@
 #include <ucsl/containers/arrays/array.h>
 #include <ucsl/containers/arrays/tarray.h>
 #include <ucsl/rfl/rflclass.h>
+#include <ucsl/rfl/ranges.h>
 #include <ucsl/math.h>
 #include <ucsl/colors.h>
 #include <ucsl/strings/variable-string.h>
@@ -17,6 +18,7 @@ namespace ucsl::reflection::providers {
 		using MemberType = typename GameInterface::RflSystem::RflClassMember::Type;
 
 		struct Primitive {
+			const GameInterface::RflSystem::RflClassMember* member;
 			MemberType type;
 
 			constexpr static TypeKind kind = TypeKind::PRIMITIVE;
@@ -24,18 +26,18 @@ namespace ucsl::reflection::providers {
 			auto visit(F f) {
 				switch (type) {
 				case MemberType::BOOL: return f(PrimitiveData<bool>{});
-				case MemberType::SINT8: return f(PrimitiveData<int8_t>{});
-				case MemberType::UINT8: return f(PrimitiveData<uint8_t>{});
-				case MemberType::SINT16: return f(PrimitiveData<int16_t>{});
-				case MemberType::UINT16: return f(PrimitiveData<uint16_t>{});
-				case MemberType::SINT32: return f(PrimitiveData<int32_t>{});
-				case MemberType::UINT32: return f(PrimitiveData<uint32_t>{});
-				case MemberType::SINT64: return f(PrimitiveData<int64_t>{});
-				case MemberType::UINT64: return f(PrimitiveData<uint64_t>{});
-				case MemberType::FLOAT: return f(PrimitiveData<float>{});
-				case MemberType::VECTOR2: return f(PrimitiveData<math::Vector2>{});
-				case MemberType::VECTOR3: return f(PrimitiveData<math::Vector3>{});
-				case MemberType::VECTOR4: return f(PrimitiveData<math::Vector4>{});
+				case MemberType::SINT8: return f(PrimitiveData<int8_t>{ .range = member->GetRange<ucsl::rfl::ranges::RangeSint32>() });
+				case MemberType::UINT8: return f(PrimitiveData<uint8_t>{ .range = member->GetRange<ucsl::rfl::ranges::RangeUint32>() });
+				case MemberType::SINT16: return f(PrimitiveData<int16_t>{ .range = member->GetRange<ucsl::rfl::ranges::RangeSint32>() });
+				case MemberType::UINT16: return f(PrimitiveData<uint16_t>{ .range = member->GetRange<ucsl::rfl::ranges::RangeUint32>() });
+				case MemberType::SINT32: return f(PrimitiveData<int32_t>{ .range = member->GetRange<ucsl::rfl::ranges::RangeSint32>() });
+				case MemberType::UINT32: return f(PrimitiveData<uint32_t>{ .range = member->GetRange<ucsl::rfl::ranges::RangeUint32>() });
+				case MemberType::SINT64: return f(PrimitiveData<int64_t>{ .range = member->GetRange<ucsl::rfl::ranges::RangeSint64>() });
+				case MemberType::UINT64: return f(PrimitiveData<uint64_t>{ .range = member->GetRange<ucsl::rfl::ranges::RangeUint64>() });
+				case MemberType::FLOAT: return f(PrimitiveData<float>{ .range = member->GetRange<ucsl::rfl::ranges::RangeFloat>() });
+				case MemberType::VECTOR2: return f(PrimitiveData<math::Vector2>{ .range = member->GetRange<ucsl::rfl::ranges::RangeVector2>() });
+				case MemberType::VECTOR3: return f(PrimitiveData<math::Vector3>{ .range = member->GetRange<ucsl::rfl::ranges::RangeVector3>() });
+				case MemberType::VECTOR4: return f(PrimitiveData<math::Vector4>{ .range = member->GetRange<ucsl::rfl::ranges::RangeVector4>() });
 				case MemberType::QUATERNION: return f(PrimitiveData<math::Quaternion>{});
 				case MemberType::MATRIX34: return f(PrimitiveData<math::Matrix34>{});
 				case MemberType::MATRIX44: return f(PrimitiveData<math::Matrix44>{});
@@ -65,7 +67,7 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::ARRAY;
 			SubType get_item_type() const { return { member }; }
-			constexpr auto get_accessor(opaque_obj& obj) const { return OpaqueRflArray<containers::arrays::Array, GameInterface>{ (containers::arrays::Array<opaque_obj>&)obj, member }; }
+			constexpr auto get_accessor(opaque_obj& obj) const { return OpaqueRflArray<containers::arrays::Array, GameInterface>{ (containers::arrays::Array<opaque_obj, typename GameInterface::AllocatorSystem>&)obj, member }; }
 		};
 
 		struct TArray {
@@ -73,7 +75,7 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::TARRAY;
 			SubType get_item_type() const { return { member }; }
-			constexpr auto get_accessor(opaque_obj& obj) const { return OpaqueRflArray<GameInterface::template TArray, GameInterface>{ (GameInterface::template TArray<opaque_obj>&)obj, member }; }
+			constexpr auto get_accessor(opaque_obj& obj) const { return OpaqueRflArray<containers::arrays::TArray, GameInterface>{ (containers::arrays::TArray<opaque_obj, typename GameInterface::AllocatorSystem>&)obj, member }; }
 		};
 
 		struct CArray {
@@ -88,7 +90,7 @@ namespace ucsl::reflection::providers {
 			const GameInterface::RflSystem::RflClassMember* member;
 
 			constexpr static TypeKind kind = TypeKind::ENUM;
-			Primitive get_underlying_primitive() const { return { member->GetSubType() }; }
+			Primitive get_underlying_primitive() const { return { member, member->GetSubType() }; }
 			auto get_options() { return member->GetEnum()->GetValues(); }
 		};
 
@@ -96,7 +98,7 @@ namespace ucsl::reflection::providers {
 			const GameInterface::RflSystem::RflClassMember* member;
 
 			constexpr static TypeKind kind = TypeKind::FLAGS;
-			Primitive get_underlying_primitive() const { return { member->GetSubType() }; }
+			Primitive get_underlying_primitive() const { return { member, member->GetSubType() }; }
 			auto get_values() { return member->GetFlagValues(); }
 		};
 
@@ -113,7 +115,6 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			const char* get_name() const { return rflClass->GetName(); }
-			size_t get_alignment() const { return rflClass->GetAlignment(); }
 
 			std::optional<Structure> get_base() const {
 				auto* parent = rflClass->GetParent();
@@ -140,7 +141,7 @@ namespace ucsl::reflection::providers {
 			auto visit(const opaque_obj& parent, F f) const {
 				switch (member->GetSubType()) {
 				case MemberType::STRUCT: return f(Structure{ member->GetClass() });
-				default: return f(Primitive{ member->GetSubType() });
+				default: return f(Primitive{ member, member->GetSubType() });
 				}
 			}
 		};
@@ -171,15 +172,29 @@ namespace ucsl::reflection::providers {
 				case MemberType::POINTER: return f(Pointer{ member });
 				case MemberType::ENUM: return f(Enum{ member });
 				case MemberType::FLAGS: return f(Flags{ member });
-				case MemberType::SIMPLE_ARRAY: assert(!"This RflClass member type (SIMPLE_ARRAY) is not implemented yet because it is unused."); return f(Primitive{ MemberType::VOID });
+				case MemberType::SIMPLE_ARRAY: assert(!"This RflClass member type (SIMPLE_ARRAY) is not implemented yet because it is unused."); return f(Primitive{ member, MemberType::VOID });
 				case MemberType::STRUCT: return f(Structure{ member->GetClass() });
-				default: return f(Primitive{ member->GetType() });
+				default: return f(Primitive{ member, member->GetType() });
 				}
 			}
 		};
 
-		static constexpr Structure reflect(const GameInterface::RflSystem::RflClass* rflClass) {
-			return Structure{ rflClass };
+		struct RootType {
+			const GameInterface::RflSystem::RflClass* rflClass;
+
+			bool is_erased() const { return false; }
+
+			size_t get_size(const opaque_obj& parent, const opaque_obj& self) const { return rflClass->GetSize(); }
+			size_t get_alignment(const opaque_obj& parent) const { return rflClass->GetAlignment(); }
+
+			template<typename F>
+			auto visit(const opaque_obj& parent, F f) const {
+				return f(Structure{ rflClass });
+			}
+		};
+
+		static constexpr RootType reflect(const GameInterface::RflSystem::RflClass* rflClass) {
+			return { rflClass };
 		}
 	};
 }

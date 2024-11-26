@@ -2,6 +2,7 @@
 #include <ucsl/containers/arrays/array.h>
 #include <ucsl/bitset.h>
 #include <ucsl/math.h>
+#include <ucsl/object-id.h>
 
 namespace ucsl::resources::object_world::v2 {
     struct ObjectTransformData {
@@ -16,6 +17,7 @@ namespace ucsl::resources::object_world::v2 {
         void* data;
     };
 
+    template<typename AllocatorSystem>
     struct ObjectData {
         enum class Flag : unsigned int {
             DEALLOCATE,
@@ -29,14 +31,15 @@ namespace ucsl::resources::object_world::v2 {
         ucsl::objectids::ObjectIdV1 parentID;
         ObjectTransformData transform;
         ObjectTransformData localTransform;
-        ucsl::containers::arrays::Array<ComponentData> componentData;
+        ucsl::containers::arrays::Array<ComponentData, AllocatorSystem> componentData;
         void* spawnerData;
     };
 
+    template<typename AllocatorSystem>
     struct ObjectWorldData {
         unsigned int unk1;
         unsigned int unk2;
         unsigned char flags;
-        ucsl::containers::arrays::Array<ObjectData*> objects;
+        ucsl::containers::arrays::Array<ObjectData*, AllocatorSystem> objects;
     };
 }

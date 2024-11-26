@@ -4,17 +4,7 @@
 #include <Eigen/Eigen>
 // #include <unsupported/Eigen/AlignedVector3>
 
-#define UCSL_PACK(...) __VA_ARGS__
-#define UCSL_NEWTYPE_WITH_ATTRS(ClassName, BaseClass, ConstructorName, Attrs) \
-	class Attrs ClassName : public BaseClass { \
-	public: \
-		using BaseClass::ConstructorName; \
-    \
-		inline ClassName(const BaseClass& other) : BaseClass{ other } {} \
-		inline ClassName(BaseClass& other) : BaseClass{ std::move(other) } {} \
-	}
-#define UCSL_NEWTYPE(ClassName, BaseClass, ConstructorName) UCSL_NEWTYPE_WITH_ATTRS(ClassName, BaseClass, ConstructorName,)
-#define UCSL_NEWTYPE_ALIGNED(ClassName, BaseClass, ConstructorName, Alignment) UCSL_NEWTYPE_WITH_ATTRS(ClassName, BaseClass, ConstructorName, alignas(Alignment))
+#include "newtype.h"
 
 namespace ucsl::math {
 	UCSL_NEWTYPE(Vector2, Eigen::Vector2f, Matrix);

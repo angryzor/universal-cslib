@@ -5,11 +5,10 @@
 #include <ucsl/rfl/rflclass.h>
 
 namespace ucsl::reflection::game_interfaces::standalone {
-	template<typename TS>
 	struct StandaloneRflSystem {
 		class RflClass;
 
-		using TypeSet = TS;
+		using TypeSet = ucsl::rfl::type_sets::wars;
 		class RflClassEnumMember {
 		public:
 			int index{};
@@ -50,7 +49,7 @@ namespace ucsl::reflection::game_interfaces::standalone {
 			Type GetSubType() const { return subType; }
 			unsigned int GetArrayLength() const { return arrayLength; }
 			unsigned int GetOffset() const { return offset; }
-			const std::vector<RflClassEnumMember>* GetFlagValues() const { return flagValues.has_value() ? &flagValues.value() : nullptr; }
+			const std::optional<std::vector<RflClassEnumMember>>& GetFlagValues() const { return flagValues; }
 			size_t GetSubTypeSize() const {
 				switch (GetSubType()) {
 				case Type::VOID:
