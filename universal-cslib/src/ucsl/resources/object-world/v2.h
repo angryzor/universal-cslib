@@ -40,6 +40,6 @@ namespace ucsl::resources::object_world::v2 {
         unsigned int unk1;
         unsigned int unk2;
         unsigned char flags;
-        ucsl::containers::arrays::Array<ObjectData*, AllocatorSystem> objects;
+        ucsl::containers::arrays::Array<ObjectData<AllocatorSystem>*, AllocatorSystem> objects;
     };
 }

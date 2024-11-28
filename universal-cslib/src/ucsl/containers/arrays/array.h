@@ -3,7 +3,7 @@
 
 namespace ucsl::containers::arrays {
 	template<typename T, typename AllocatorSystem>
-	struct Array;
+	class Array;
 
 	template<typename T, typename AllocatorSystem>
 	struct ArrayArrayAllocatorSystem {

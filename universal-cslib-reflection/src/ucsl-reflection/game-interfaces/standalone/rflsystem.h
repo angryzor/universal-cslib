@@ -50,6 +50,9 @@ namespace ucsl::reflection::game_interfaces::standalone {
 			unsigned int GetArrayLength() const { return arrayLength; }
 			unsigned int GetOffset() const { return offset; }
 			const std::optional<std::vector<RflClassEnumMember>>& GetFlagValues() const { return flagValues; }
+			template<typename Range>
+			const Range* GetRange() const { return nullptr; }
+			const char* GetCaption() const { return nullptr; }
 			size_t GetSubTypeSize() const {
 				switch (GetSubType()) {
 				case Type::VOID:
@@ -57,7 +60,7 @@ namespace ucsl::reflection::game_interfaces::standalone {
 				case Type::STRUCT:
 					return GetClass()->GetSize();
 				default:
-					return rfl::type_sets::rangers::metadata[static_cast<unsigned int>(GetSubType())].size;
+					return TypeSet::metadata[static_cast<unsigned int>(GetSubType())].size;
 				}
 			}
 			size_t GetSingleSize() const {
@@ -70,7 +73,7 @@ namespace ucsl::reflection::game_interfaces::standalone {
 				case Type::FLAGS:
 					return GetSubTypeSize();
 				default:
-					return rfl::type_sets::rangers::metadata[static_cast<unsigned int>(GetType())].size;
+					return TypeSet::metadata[static_cast<unsigned int>(GetType())].size;
 				}
 			}
 			size_t GetSize() const {
@@ -83,7 +86,7 @@ namespace ucsl::reflection::game_interfaces::standalone {
 				case Type::STRUCT:
 					return GetClass()->GetAlignment();
 				default:
-					return rfl::type_sets::rangers::metadata[static_cast<unsigned int>(GetSubType())].alignment;
+					return TypeSet::metadata[static_cast<unsigned int>(GetSubType())].alignment;
 				}
 			}
 			size_t GetAlignment() const {
@@ -96,7 +99,7 @@ namespace ucsl::reflection::game_interfaces::standalone {
 				case Type::FLAGS:
 					return GetSubTypeAlignment();
 				default:
-					return rfl::type_sets::rangers::metadata[static_cast<unsigned int>(GetType())].alignment;
+					return TypeSet::metadata[static_cast<unsigned int>(GetType())].alignment;
 				}
 			}
 		};

@@ -8,7 +8,6 @@
 #include "reflection-db.h"
 
 namespace ucsl::reflection::game_interfaces::standalone {
-	template<typename TypeSet>
 	struct StandaloneGameInterface {
 		class NativeCAllocator : public memory::IAllocator {
 		public:
@@ -18,43 +17,34 @@ namespace ucsl::reflection::game_interfaces::standalone {
 
 		inline static NativeCAllocator nativeCAllocator{};
 
-		inline static memory::IAllocator* get_fallback_allocator() { return &nativeCAllocator; }
-		inline static memory::IAllocator* get_fallback_allocator_for_tarray(void* arr) { return get_fallback_allocator(); }
+		struct AllocatorSystem {
+			using allocator_type = memory::IAllocator;
 
-		template<typename T> struct TArray : public containers::arrays::TArray<T, get_fallback_allocator_for_tarray> {};
+			static memory::IAllocator* get_allocator() { return &nativeCAllocator; }
+		};
 
-		using RflSystem = StandaloneRflSystem<TypeSet>;
+		using RflSystem = StandaloneRflSystem;
+
+		using GameObjectClass = GameObjectClass;
 
 		inline static ReflectionDB<RflSystem> reflectionDB;
 
 		class RflClassNameRegistry {
+		public:
 			inline static RflClassNameRegistry* instance{};
 
-		public:
-			static void Initialize() {
-				instance = new RflClassNameRegistry{};
-			}
+			static RflClassNameRegistry* GetInstance() { return instance; }
 
-			static RflClassNameRegistry* GetInstance() {
-				return instance;
-			}
-
-			typename const RflSystem::RflClass* GetClass(const char* name) {
+			typename const RflSystem::RflClass* GetClassByName(const char* name) {
 				return &*reflectionDB.rflClasses[name];
 			}
 		};
 
 		class RflTypeInfoRegistry {
+		public:
 			inline static RflTypeInfoRegistry* instance{};
 
-		public:
-			static void Initialize() {
-				instance = new RflTypeInfoRegistry{};
-			}
-
-			static RflTypeInfoRegistry* GetInstance() {
-				return instance;
-			}
+			static RflTypeInfoRegistry* GetInstance() { return instance; }
 
 			void* ConstructObject(memory::IAllocator* allocator, void* instance, const char* rflClassName) {
 				return instance;
@@ -64,8 +54,38 @@ namespace ucsl::reflection::game_interfaces::standalone {
 			}
 		};
 
-		static const char* get_spawner_data_class(const char* objectName) {
-			return reflectionDB.spawnerDataRflClasses[objectName].c_str();
+		class GameObjectRegistry {
+		public:
+			const GameObjectClass* GetGameObjectClassByName(const char* name) {
+				return &reflectionDB.gameObjectClasses[name];
+			}
+		};
+
+		class GOComponentRegistry {
+		public:
+			const GOComponentRegistryItem* GetComponentInformationByName(const char* name) {
+				return &reflectionDB.componentRegistryItems[name];
+			}
+		};
+
+		class GameObjectSystem {
+			GameObjectRegistry gameObjectRegistryInstance;
+			GOComponentRegistry goComponentRegistryInstance;
+
+		public:
+			inline static GameObjectSystem* instance{};
+			GameObjectRegistry* gameObjectRegistry{ &gameObjectRegistryInstance };
+			GOComponentRegistry* goComponentRegistry{ &goComponentRegistryInstance };
+
+			static GameObjectSystem* GetInstance() {
+				return instance;
+			}
+		};
+
+		void boot() {
+			RflClassNameRegistry::instance = new RflClassNameRegistry{};
+			RflTypeInfoRegistry::instance = new RflTypeInfoRegistry{};
+			GameObjectSystem::instance = new GameObjectSystem{};
 		}
 	};
 }
