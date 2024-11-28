@@ -125,7 +125,9 @@ namespace ucsl::rfl {
 			}
 			const char* GetCaption() const {
 				auto* attr = GetAttribute("Caption");
-				return attr == nullptr ? nullptr : attr->GetData<char>();
+				auto* caption = attr == nullptr ? nullptr : attr->GetData<const char*>();
+
+				return caption == nullptr ? nullptr : *caption;
 			}
 			size_t GetSubTypeSize() const {
 				switch (GetSubType()) {

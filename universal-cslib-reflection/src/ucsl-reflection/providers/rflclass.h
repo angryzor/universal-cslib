@@ -90,16 +90,38 @@ namespace ucsl::reflection::providers {
 			const GameInterface::RflSystem::RflClassMember* member;
 
 			constexpr static TypeKind kind = TypeKind::ENUM;
-			Primitive get_underlying_primitive() const { return { member, member->GetSubType() }; }
 			auto get_options() { return member->GetEnum()->GetValues(); }
+			template<typename F>
+			auto visit(F f) {
+				switch (member->GetSubType()) {
+				case MemberType::SINT8: return f(PrimitiveData<int8_t>{});
+				case MemberType::SINT16: return f(PrimitiveData<int16_t>{});
+				case MemberType::SINT32: return f(PrimitiveData<int32_t>{});
+				case MemberType::SINT64: return f(PrimitiveData<int64_t>{});
+				default: assert(!"reflective operation assertion failed: unknown primitive type"); return f(PrimitiveData<int32_t>{});
+				}
+			}
 		};
 
 		struct Flags {
 			const GameInterface::RflSystem::RflClassMember* member;
 
 			constexpr static TypeKind kind = TypeKind::FLAGS;
-			Primitive get_underlying_primitive() const { return { member, member->GetSubType() }; }
 			auto get_values() { return member->GetFlagValues(); }
+			template<typename F>
+			auto visit(F f) {
+				switch (member->GetSubType()) {
+				case MemberType::SINT8: return f(PrimitiveData<int8_t>{});
+				case MemberType::UINT8: return f(PrimitiveData<uint8_t>{});
+				case MemberType::SINT16: return f(PrimitiveData<int16_t>{});
+				case MemberType::UINT16: return f(PrimitiveData<uint16_t>{});
+				case MemberType::SINT32: return f(PrimitiveData<int32_t>{});
+				case MemberType::UINT32: return f(PrimitiveData<uint32_t>{});
+				case MemberType::SINT64: return f(PrimitiveData<int64_t>{});
+				case MemberType::UINT64: return f(PrimitiveData<uint64_t>{});
+				default: assert(!"reflective operation assertion failed: unknown primitive type"); return f(PrimitiveData<int32_t>{});
+				}
+			}
 		};
 
 		struct Field {

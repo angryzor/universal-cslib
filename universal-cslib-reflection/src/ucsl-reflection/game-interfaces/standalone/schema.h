@@ -8,8 +8,8 @@
 namespace ucsl::reflection::game_interfaces::standalone {
 	struct Schema {
 		struct ObjectInfo {
-			std::optional<std::string> category{};
 			std::optional<std::shared_ptr<typename StandaloneRflSystem::RflClass>> rfl_class{};
+			std::optional<std::string> category{};
 		};
 
 		struct ComponentInfo {

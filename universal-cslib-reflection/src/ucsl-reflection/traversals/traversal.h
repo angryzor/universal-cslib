@@ -25,12 +25,20 @@ namespace ucsl::reflection::traversals {
 
 		template<typename Enum>
 		typename Algorithm::result_type process_enum(Spread<S, opaque_obj&>... objs, bool erased, Enum refl) {
-			return algorithm.visit_enum(objs..., EnumInfo{ refl.get_options() }, [&](Spread<S, opaque_obj&>... underlyings) { return process_primitive(underlyings..., erased, refl.get_underlying_primitive()); });
+			return refl.visit([&](auto repr) {
+				using Repr = typename decltype(repr)::repr;
+
+				return algorithm.visit_enum(reinterpret_cast<Repr&>(objs)..., EnumInfo{ refl.get_options() });
+			});
 		}
 
 		template<typename Flags>
 		typename Algorithm::result_type process_flags(Spread<S, opaque_obj&>... objs, bool erased, Flags refl) {
-			return algorithm.visit_flags(objs..., FlagsInfo{ refl.get_values() }, [&](Spread<S, opaque_obj&>... objs) { return process_primitive(objs..., erased, refl.get_underlying_primitive()); });
+			return refl.visit([&](auto repr) {
+				using Repr = typename decltype(repr)::repr;
+
+				return algorithm.visit_flags(reinterpret_cast<Repr&>(objs)..., FlagsInfo{ refl.get_values() });
+			});
 		}
 
 		template<typename Array>
@@ -112,7 +120,7 @@ namespace ucsl::reflection::traversals {
 
 		template<typename Structure>
 		typename Algorithm::result_type process_struct(Spread<S, opaque_obj&>... objs, Spread<S, size_t>... alignments, Structure refl) {
-			return algorithm.visit_struct(objs..., StructureInfo{ refl.get_name(), alignments }..., [&](Spread<S, opaque_obj&>... objs) { return process_fields(objs..., alignments..., refl); });
+			return algorithm.visit_struct(objs..., StructureInfo{ refl.get_name(), alignments, refl.rflClass }..., [&](Spread<S, opaque_obj&>... objs) { return process_fields(objs..., alignments..., refl); });
 		}
 
 		template<typename Type>
@@ -128,7 +136,7 @@ namespace ucsl::reflection::traversals {
 					else if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) return process_carray(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return process_union(objs..., parents..., refl.get_size(parents, objs)..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) return process_struct(objs..., refl.get_alignment(parents)..., r);
-					else assert(false && "invalid type kind"); return typename Algorithm::result_type{};
+					else static_assert(false, "invalid type kind");
 				});
 			});
 		}
@@ -150,6 +158,11 @@ namespace ucsl::reflection::traversals {
 		template<typename T, typename Refl>
 		typename Algorithm::result_type operator()(Spread<S, T&>... objs, Refl refl) {
 			return process_root(((Spread<S, opaque_obj&>)objs)..., refl);
+		}
+
+		template<typename Refl>
+		typename Algorithm::result_type operator()(Spread<S, void*>... objs, Refl refl) {
+			return process_root((*(Spread<S, opaque_obj*>)objs)..., refl);
 		}
 
 		template<typename T, typename ...Args>

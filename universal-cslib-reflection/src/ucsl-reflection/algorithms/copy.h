@@ -23,25 +23,24 @@ namespace ucsl::reflection::algorithms {
 			if (obj1.GetAllocator())
 				obj1.Set(obj2.c_str());
 			else
-				obj1.Set(obj2.c_str(), -1, GameInterface::get_fallback_allocator());
+				obj1.Set(obj2.c_str(), -1, GameInterface::AllocatorSystem::get_allocator());
 
 			return 0;
 		}
 
-		// Copy currently doesn't handle pointer-based data
 		result_type visit_primitive(const char*& obj1, const char*& obj2, const PrimitiveInfo<const char*>& info) {
-			assert(false);
+			assert(false && "copy currently doesn't handle pointers");
 			return 0;
 		}
 
-		template<typename F, typename O>
-		result_type visit_enum(opaque_obj& obj1, opaque_obj& obj2, const EnumInfo<O>& info, F f) {
-			return f(obj1, obj2);
+		template<typename T, typename O>
+		result_type visit_enum(T& obj1, T& obj2, const EnumInfo<O>& info) {
+			return visit_primitive(obj1, obj2, PrimitiveInfo<T>{});
 		}
 
-		template<typename F, typename O>
-		result_type visit_flags(opaque_obj& obj1, opaque_obj& obj2, const FlagsInfo<O>& info, F f) {
-			return f(obj1, obj2);
+		template<typename T, typename O>
+		result_type visit_flags(T& obj1, T& obj2, const FlagsInfo<O>& info) {
+			return visit_primitive(obj1, obj2, PrimitiveInfo<T>{});
 		}
 
 		template<typename F, typename A, typename C, typename D>
@@ -68,26 +67,28 @@ namespace ucsl::reflection::algorithms {
 			return 0;
 		}
 
-		template<typename F, typename O>
-		result_type visit_carray(opaque_obj* obj1, opaque_obj* obj2, const CArrayInfo<O>& info, F f) {
-			for (size_t i = 0; i < info.length; i++)
-				f(util::addptr(obj1, i * info.stride), util.addptr(obj2, i * info.stride));
+		template<typename F>
+		result_type visit_carray(opaque_obj* obj1, opaque_obj* obj2, const CArrayInfo& info1, const CArrayInfo& info2, F f) {
+			assert(info1.size == info2.size && info1.stride == info2.stride && "carray copy currently expects equal size arrays");
+
+			for (size_t i = 0; i < info1.size; i++)
+				f(*util::addptr(obj1, i * info1.stride), *util::addptr(obj2, i * info1.stride));
 			return 0;
 		}
 
 		template<typename F>
-		result_type visit_pointer(opaque_obj*& obj1, opaque_obj*& obj2, const PointerInfo& info, F f) {
-			assert(false);
+		result_type visit_pointer(opaque_obj*& obj1, opaque_obj*& obj2, const PointerInfo& info1, const PointerInfo& info2, F f) {
+			assert(false && "copy currently doesn't handle pointers");
 			return 0;
 		}
 
 		template<typename F>
-		result_type visit_union(opaque_obj& obj1, opaque_obj& obj2, const UnionInfo& info, F f) {
+		result_type visit_union(opaque_obj& obj1, opaque_obj& obj2, const UnionInfo& info1, const UnionInfo& info2, F f) {
 			return f(obj1, obj2);
 		}
 
 		template<typename F>
-		result_type visit_type(opaque_obj& obj1, opaque_obj& obj2, const TypeInfo& info, F f) {
+		result_type visit_type(opaque_obj& obj1, opaque_obj& obj2, const TypeInfo& info1, const TypeInfo& info2, F f) {
 			return f(obj1, obj2);
 		}
 
@@ -97,17 +98,17 @@ namespace ucsl::reflection::algorithms {
 		}
 
 		template<typename F>
-		result_type visit_base_struct(opaque_obj& obj1, opaque_obj& obj2, const StructureInfo& info, F f) {
+		result_type visit_base_struct(opaque_obj& obj1, opaque_obj& obj2, const StructureInfo& info1, const StructureInfo& info2, F f) {
 			return f(obj1, obj2);
 		}
 
 		template<typename F>
-		result_type visit_struct(opaque_obj& obj1, opaque_obj& obj2, const StructureInfo& info, F f) {
+		result_type visit_struct(opaque_obj& obj1, opaque_obj& obj2, const StructureInfo& info1, const StructureInfo& info2, F f) {
 			return f(obj1, obj2);
 		}
 
 		template<typename F>
-		result_type visit_root(opaque_obj& obj1, opaque_obj& obj2, const RootInfo& info, F f) {
+		result_type visit_root(opaque_obj& obj1, opaque_obj& obj2, const RootInfo& info1, const RootInfo& info2, F f) {
 			return f(obj1, obj2);
 		}
 	};

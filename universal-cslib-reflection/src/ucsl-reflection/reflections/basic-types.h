@@ -87,7 +87,9 @@ namespace ucsl::reflections {
 		field<erased<memory::IAllocator*>, "allocator">
 	>;
 
-	using ObjectIdV1 = primitive<objectids::ObjectIdV1>;
+	using ObjectIdV1 = structure<objectids::ObjectIdV1, "ObjectId", void,
+		field<unsigned int, "id">
+	>;
 
 	using ObjectIdV2 = structure<objectids::ObjectIdV2, "ObjectId", void,
 		field<unsigned long long, "groupId">,

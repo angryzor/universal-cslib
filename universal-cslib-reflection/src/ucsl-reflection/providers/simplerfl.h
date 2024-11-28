@@ -129,8 +129,9 @@ namespace ucsl::reflection::providers {
 		template<typename T>
 		struct Enum {
 			constexpr static TypeKind kind = TypeKind::ENUM;
-			constexpr auto get_underlying_primitive() const { return Primitive<primitive<typename T::underlying>>{}; }
 			constexpr std::vector<EnumMember> get_options() const { return get_enum_members(typename T::options{}); }
+			template<typename F>
+			constexpr auto visit(F f) const { return f(PrimitiveData<typename T::underlying>{}); }
 		};
 
 		//struct Flags {
@@ -214,6 +215,10 @@ namespace ucsl::reflection::providers {
 		struct Structure {
 			using Base = typename T::base;
 			using Fields = typename T::fields;
+
+			// TODO: Refactor this. I'm doing this for RFL DnD. I may prefer to pass refl structs into traversal algos,
+			// but don't know how to send those around in ImGui DnD data.
+			const GameInterface::RflSystem::RflClass* rflClass;
 
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			constexpr const char* get_name() const { return T::name; }
