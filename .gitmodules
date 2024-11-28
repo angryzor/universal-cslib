@@ -1,6 +1,0 @@
-[submodule "vendor/simple-reflection"]
-	path = vendor/simple-reflection/simple-reflection
-	url = https://github.com/angryzor/simple-reflection.git
-[submodule "vendor/eigen/eigen"]
-	path = vendor/eigen/eigen
-	url = https://gitlab.com/libeigen/eigen.git
