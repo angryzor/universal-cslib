@@ -90,7 +90,7 @@ namespace ucsl::reflection::providers {
 			const GameInterface::RflSystem::RflClassMember* member;
 
 			constexpr static TypeKind kind = TypeKind::ENUM;
-			auto& get_options() const { return member->GetEnum()->GetValues(); }
+			decltype(auto) get_options() const { return member->GetEnum()->GetValues(); }
 			template<typename F>
 			auto visit(F f) {
 				switch (member->GetSubType()) {
@@ -107,7 +107,7 @@ namespace ucsl::reflection::providers {
 			const GameInterface::RflSystem::RflClassMember* member;
 
 			constexpr static TypeKind kind = TypeKind::FLAGS;
-			auto& get_values() { return member->GetFlagValues(); }
+			decltype(auto) get_values() { return member->GetFlagValues(); }
 			template<typename F>
 			auto visit(F f) {
 				switch (member->GetSubType()) {
