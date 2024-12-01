@@ -1,7 +1,9 @@
 #pragma once
+#ifndef EXPORTING_TYPES
 #include <span>
 #include <ranges>
 #include <optional>
+#endif
 #include <ucsl/colors.h>
 #include <ucsl/math.h>
 #include <ucsl/object-id.h>
@@ -18,7 +20,9 @@ namespace ucsl::rfl {
 	public:
 		RflArray(const T* items, unsigned int count) : items{ items }, count{ count } {}
 
+#ifndef EXPORTING_TYPES
 		std::span<const T> GetItems() const { return { items, count }; }
+#endif
 	};
 
 	template<typename TypeSet, typename RflClass>
@@ -65,7 +69,9 @@ namespace ucsl::rfl {
 
 		public:
 			const char* GetName() const { return name; }
+#ifndef EXPORTING_TYPES
 			std::span<const RflClassEnumMember> GetValues() const { return values.GetItems(); }
+#endif
 		};
 
 		class RflClassMember {
@@ -112,12 +118,14 @@ namespace ucsl::rfl {
 
 				return attributes == nullptr ? nullptr : attributes->GetAttribute(name);
 			}
+#ifndef EXPORTING_TYPES
 			std::optional<std::span<const RflClassEnumMember>> GetFlagValues() const {
 				auto* attr = GetAttribute("DisplayIndex");
 				auto* flags = attr == nullptr ? nullptr : attr->GetData<RflArray<const RflClassEnumMember>>();
 
 				return flags == nullptr ? std::nullopt : std::make_optional(flags->GetItems());
 			}
+#endif
 			template<typename Range>
 			const Range* GetRange() const {
 				auto* attr = GetAttribute(Range::name);
@@ -207,8 +215,10 @@ namespace ucsl::rfl {
 			const char* GetName() const { return name; }
 			const RflClass* GetParent() const { return parent; }
 			unsigned int GetSize() const { return size; }
+#ifndef EXPORTING_TYPES
 			std::span<const RflClassEnum> GetEnums() const { return enums.GetItems(); }
 			std::span<const RflClassMember> GetMembers() const { return members.GetItems(); }
+#endif
 			const RflCustomAttributes* GetAttributes() const { return attributes; }
 			const RflCustomAttribute* GetAttribute(const char* name) const {
 				auto* attributes = GetAttributes();
@@ -260,8 +270,10 @@ namespace ucsl::rfl {
 			const char* GetName() const { return name; }
 			const RflClass* GetParent() const { return parent; }
 			unsigned int GetSize() const { return size; }
+#ifndef EXPORTING_TYPES
 			std::span<const RflClassEnum> GetEnums() const { return enums.GetItems(); }
 			std::span<const RflClassMember> GetMembers() const { return members.GetItems(); }
+#endif
 			const RflCustomAttributes* GetAttributes() const { return attributes; }
 			const RflCustomAttribute* GetAttribute(const char* name) const {
 				auto* attributes = GetAttributes();

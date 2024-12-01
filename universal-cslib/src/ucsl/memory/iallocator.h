@@ -1,4 +1,5 @@
 #pragma once
+#include <new>
 
 namespace ucsl::memory
 {

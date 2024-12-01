@@ -95,9 +95,13 @@ namespace ucsl::reflection::providers {
 			auto visit(F f) {
 				switch (member->GetSubType()) {
 				case MemberType::SINT8: return f(PrimitiveData<int8_t>{});
+				case MemberType::UINT8: return f(PrimitiveData<uint8_t>{});
 				case MemberType::SINT16: return f(PrimitiveData<int16_t>{});
+				case MemberType::UINT16: return f(PrimitiveData<uint16_t>{});
 				case MemberType::SINT32: return f(PrimitiveData<int32_t>{});
+				case MemberType::UINT32: return f(PrimitiveData<uint32_t>{});
 				case MemberType::SINT64: return f(PrimitiveData<int64_t>{});
+				case MemberType::UINT64: return f(PrimitiveData<uint64_t>{});
 				default: assert(!"reflective operation assertion failed: unknown primitive type"); return f(PrimitiveData<int32_t>{});
 				}
 			}

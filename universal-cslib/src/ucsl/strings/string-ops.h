@@ -1,5 +1,7 @@
 #pragma once
+#ifndef EXPORTING_TYPES
 #include <cstring>
+#endif
 #include <ucsl/memory/iallocator.h>
 
 namespace ucsl::strings {

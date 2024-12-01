@@ -1,5 +1,4 @@
 #pragma once
-#include <ucsl/containers/arrays/array.h>
 #include <ucsl/math.h>
 
 namespace ucsl::resources::vertex_animation_texture::v1_miller {

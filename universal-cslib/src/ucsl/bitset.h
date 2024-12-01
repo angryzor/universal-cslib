@@ -1,11 +1,15 @@
 #pragma once
 
 namespace ucsl::bits {
+#ifdef EXPORTING_TYPES
+	template <typename T, typename U = T>
+#else
 	template <typename T, bool isenum> struct bitset_type {};
 	template <typename T> struct bitset_type<T, true> { using type = std::underlying_type_t<T>; };
 	template <typename T> struct bitset_type<T, false> { using type = T; };
 
 	template <typename T, typename U = typename bitset_type<T, std::is_enum<T>::value>::type>
+#endif
 	class Bitset
 	{
 	public:

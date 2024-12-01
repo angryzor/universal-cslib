@@ -1,11 +1,27 @@
 #pragma once
+#ifndef EXPORTING_TYPES
 #include <cstddef>
 #include <iterator>
 #include <ranges>
 #include <memory>
 #include <ucsl/memory/iallocator.h>
+#endif
 
 namespace ucsl::containers::arrays {
+	struct dummy_allocator_system { using allocator_type = void; };
+
+#ifdef EXPORTING_TYPES
+	template<typename T, typename S, typename ArrayAllocatorSystem>
+	class ArrayBase {
+	protected:
+		static constexpr unsigned int DONT_DEALLOCATE_FLAG = 0x80000000;
+		static constexpr unsigned int CAPACITY_MASK = ~DONT_DEALLOCATE_FLAG;
+
+		T* buffer{};
+		S length{};
+		S capacity_and_flags{ DONT_DEALLOCATE_FLAG };
+	};
+#else
 	struct dummy_allocator_system { using allocator_type = void; };
 
 	template<typename T, typename S, typename ArrayAllocatorSystem>
@@ -179,8 +195,8 @@ namespace ucsl::containers::arrays {
 			return target;
 		}
 
-		template<typename T>
-		iterator insert(const_iterator pos, std::initializer_list<T> ilist) {
+		template<typename U>
+		iterator insert(const_iterator pos, std::initializer_list<U> ilist) {
 			auto count = ilist.size();
 			difference_type index = pos - begin();
 			measurement m = measure(index, count);
@@ -303,4 +319,5 @@ namespace std {
 		c.erase(it, c.end());
 		return r;
 	}
+#endif
 }
