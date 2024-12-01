@@ -22,8 +22,6 @@ namespace ucsl::containers::arrays {
 		S capacity_and_flags{ DONT_DEALLOCATE_FLAG };
 	};
 #else
-	struct dummy_allocator_system { using allocator_type = void; };
-
 	template<typename T, typename S, typename ArrayAllocatorSystem>
 	class ArrayBase {
 	protected:
