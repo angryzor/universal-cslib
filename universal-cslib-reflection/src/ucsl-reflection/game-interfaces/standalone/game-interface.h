@@ -82,7 +82,7 @@ namespace ucsl::reflection::game_interfaces::standalone {
 			}
 		};
 
-		void boot() {
+		static void boot() {
 			RflClassNameRegistry::instance = new RflClassNameRegistry{};
 			RflTypeInfoRegistry::instance = new RflTypeInfoRegistry{};
 			GameObjectSystem::instance = new GameObjectSystem{};
