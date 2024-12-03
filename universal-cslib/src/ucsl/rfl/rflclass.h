@@ -336,13 +336,11 @@ namespace ucsl::rfl {
 				FLAGS,
 				CSTRING,
 				STRING,
-				OBJECT_ID,
+				OBJECT_ID_V1,
 				POSITION,
 				COLOR_BYTE,
 				COLOR_FLOAT,
 			};
-
-			using ObjectId = objectids::ObjectIdV1;
 
 			inline static const Metadata<MemberType> metadata[] = {
 				{ MemberType::VOID, "void", (size_t)-1, (size_t)-1 },
@@ -371,13 +369,15 @@ namespace ucsl::rfl {
 				{ MemberType::FLAGS, "flags", (size_t)-1, (size_t)-1 },
 				{ MemberType::CSTRING, "cstring", sizeof(const char*), alignof(const char*) },
 				{ MemberType::STRING, "string", sizeof(strings::VariableString), alignof(strings::VariableString) },
-				{ MemberType::OBJECT_ID, "csetobjectid", sizeof(ObjectId), alignof(ObjectId) },
+				{ MemberType::OBJECT_ID_V1, "csetobjectid", sizeof(objectids::ObjectIdV1), alignof(objectids::ObjectIdV1) },
 				{ MemberType::POSITION, "position", sizeof(math::Position), alignof(math::Position) },
 				{ MemberType::COLOR_BYTE, "color8", sizeof(colors::Color8), alignof(colors::Color8) },
 				{ MemberType::COLOR_FLOAT, "colorf", sizeof(colors::Colorf), alignof(colors::Colorf) },
 			};
 
 			static constexpr bool supports_old_array = true;
+			static constexpr bool supports_object_id_v1 = true;
+			static constexpr bool supports_object_id_v2 = false;
 		};
 
 		struct rangers {
@@ -407,13 +407,11 @@ namespace ucsl::rfl {
 				FLAGS,
 				CSTRING,
 				STRING,
-				OBJECT_ID,
+				OBJECT_ID_V2,
 				POSITION,
 				COLOR_BYTE,
 				COLOR_FLOAT,
 			};
-
-			using ObjectId = objectids::ObjectIdV2;
 
 			inline static const Metadata<MemberType> metadata[] = {
 				{ MemberType::VOID, "void", (size_t)-1, (size_t)-1 },
@@ -441,13 +439,15 @@ namespace ucsl::rfl {
 				{ MemberType::FLAGS, "flags", (size_t)-1, (size_t)-1 },
 				{ MemberType::CSTRING, "cstring", sizeof(const char*), alignof(const char*) },
 				{ MemberType::STRING, "string", sizeof(strings::VariableString), alignof(strings::VariableString) },
-				{ MemberType::OBJECT_ID, "csetobjectid", sizeof(ObjectId), alignof(ObjectId) },
+				{ MemberType::OBJECT_ID_V2, "csetobjectid", sizeof(objectids::ObjectIdV2), alignof(objectids::ObjectIdV2) },
 				{ MemberType::POSITION, "position", sizeof(math::Position), alignof(math::Position) },
 				{ MemberType::COLOR_BYTE, "color8", sizeof(colors::Color8), alignof(colors::Color8) },
 				{ MemberType::COLOR_FLOAT, "colorf", sizeof(colors::Colorf), alignof(colors::Colorf) },
 			};
 
 			static constexpr bool supports_old_array = false;
+			static constexpr bool supports_object_id_v1 = false;
+			static constexpr bool supports_object_id_v2 = true;
 		};
 	}
 

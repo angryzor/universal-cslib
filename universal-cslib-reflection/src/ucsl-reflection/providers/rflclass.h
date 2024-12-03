@@ -24,6 +24,14 @@ namespace ucsl::reflection::providers {
 			constexpr static TypeKind kind = TypeKind::PRIMITIVE;
 			template<typename F>
 			auto visit(F f) {
+				if constexpr (GameInterface::RflSystem::TypeSet::supports_object_id_v1)
+					if (type == MemberType::OBJECT_ID_V1)
+						return f(PrimitiveData<objectids::ObjectIdV1>{});
+
+				if constexpr (GameInterface::RflSystem::TypeSet::supports_object_id_v2)
+					if (type == MemberType::OBJECT_ID_V2)
+						return f(PrimitiveData<objectids::ObjectIdV2>{});
+
 				switch (type) {
 				case MemberType::BOOL: return f(PrimitiveData<bool>{});
 				case MemberType::SINT8: return f(PrimitiveData<int8_t>{ .range = member->GetRange<ucsl::rfl::ranges::RangeSint32>() });
@@ -43,7 +51,6 @@ namespace ucsl::reflection::providers {
 				case MemberType::MATRIX44: return f(PrimitiveData<math::Matrix44>{});
 				case MemberType::CSTRING: return f(PrimitiveData<const char*>{});
 				case MemberType::STRING: return f(PrimitiveData<strings::VariableString>{});
-				case MemberType::OBJECT_ID: return f(PrimitiveData<typename GameInterface::RflSystem::TypeSet::ObjectId>{});
 				case MemberType::COLOR_BYTE: return f(PrimitiveData<colors::Color8>{});
 				case MemberType::COLOR_FLOAT: return f(PrimitiveData<colors::Colorf>{});
 				case MemberType::POSITION: return f(PrimitiveData<math::Position>{});
