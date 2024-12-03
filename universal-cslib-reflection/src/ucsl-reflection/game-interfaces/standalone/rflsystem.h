@@ -43,7 +43,7 @@ namespace ucsl::reflection::game_interfaces::standalone {
 				COLOR_FLOAT,
 			};
 
-			inline static const Metadata<MemberType> metadata[] = {
+			inline static const ucsl::rfl::type_sets::Metadata<MemberType> metadata[] = {
 				{ MemberType::VOID, "void", (size_t)-1, (size_t)-1 },
 				{ MemberType::BOOL, "bool", sizeof(bool), alignof(bool) },
 				{ MemberType::SINT8, "sint8", sizeof(char), alignof(char) },
