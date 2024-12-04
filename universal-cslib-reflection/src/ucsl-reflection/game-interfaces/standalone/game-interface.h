@@ -20,22 +20,22 @@ namespace ucsl::reflection::game_interfaces::standalone {
 		struct AllocatorSystem {
 			using allocator_type = memory::IAllocator;
 
-			static memory::IAllocator* get_allocator() { return &nativeCAllocator; }
+			inline static memory::IAllocator* get_allocator() { return &nativeCAllocator; }
 		};
 
 		using RflSystem = StandaloneRflSystem;
 
 		using GameObjectClass = GameObjectClass;
 
-		inline static ReflectionDB<RflSystem> reflectionDB;
+		inline static ReflectionDB<RflSystem> reflectionDB{};
 
 		class RflClassNameRegistry {
 		public:
 			inline static RflClassNameRegistry* instance{};
 
-			static RflClassNameRegistry* GetInstance() { return instance; }
+			inline static RflClassNameRegistry* GetInstance() { return instance; }
 
-			typename const RflSystem::RflClass* GetClassByName(const char* name) {
+			inline typename const RflSystem::RflClass* GetClassByName(const char* name) {
 				return &*reflectionDB.rflClasses[name];
 			}
 		};
@@ -44,45 +44,45 @@ namespace ucsl::reflection::game_interfaces::standalone {
 		public:
 			inline static RflTypeInfoRegistry* instance{};
 
-			static RflTypeInfoRegistry* GetInstance() { return instance; }
+			inline static RflTypeInfoRegistry* GetInstance() { return instance; }
 
-			void* ConstructObject(memory::IAllocator* allocator, void* instance, const char* rflClassName) {
+			inline void* ConstructObject(memory::IAllocator* allocator, void* instance, const char* rflClassName) {
 				return instance;
 			}
 
-			void CleanupLoadedObject(void* instance, const char* rflClassName) {
+			inline void CleanupLoadedObject(void* instance, const char* rflClassName) {
 			}
 		};
 
 		class GameObjectRegistry {
 		public:
-			const GameObjectClass* GetGameObjectClassByName(const char* name) {
+			inline const GameObjectClass* GetGameObjectClassByName(const char* name) {
 				return &reflectionDB.gameObjectClasses[name];
 			}
 		};
 
 		class GOComponentRegistry {
 		public:
-			const GOComponentRegistryItem* GetComponentInformationByName(const char* name) {
+			inline const GOComponentRegistryItem* GetComponentInformationByName(const char* name) {
 				return &reflectionDB.componentRegistryItems[name];
 			}
 		};
 
 		class GameObjectSystem {
-			GameObjectRegistry gameObjectRegistryInstance;
-			GOComponentRegistry goComponentRegistryInstance;
+			GameObjectRegistry gameObjectRegistryInstance{};
+			GOComponentRegistry goComponentRegistryInstance{};
 
 		public:
 			inline static GameObjectSystem* instance{};
 			GameObjectRegistry* gameObjectRegistry{ &gameObjectRegistryInstance };
 			GOComponentRegistry* goComponentRegistry{ &goComponentRegistryInstance };
 
-			static GameObjectSystem* GetInstance() {
+			inline static GameObjectSystem* GetInstance() {
 				return instance;
 			}
 		};
 
-		static void boot() {
+		inline static void boot() {
 			RflClassNameRegistry::instance = new RflClassNameRegistry{};
 			RflTypeInfoRegistry::instance = new RflTypeInfoRegistry{};
 			GameObjectSystem::instance = new GameObjectSystem{};
