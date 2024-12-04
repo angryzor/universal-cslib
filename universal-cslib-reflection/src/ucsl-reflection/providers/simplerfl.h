@@ -102,10 +102,10 @@ namespace ucsl::reflection::providers {
 		};
 
 		template<typename... Options>
-		consteval static std::vector<EnumMember> get_enum_members(std::tuple<Options...>) {
+		consteval static auto get_enum_members(std::tuple<Options...>) {
 			long long counter{};
 
-			return { get_enum_member<Options>::call(counter)... };
+			return std::array{ get_enum_member<Options>::call(counter)... };
 		}
 
 
@@ -129,7 +129,7 @@ namespace ucsl::reflection::providers {
 		template<typename T>
 		struct Enum {
 			constexpr static TypeKind kind = TypeKind::ENUM;
-			constexpr static std::vector<EnumMember> get_options() { return get_enum_members(typename T::options{}); }
+			constexpr static auto get_options() { return get_enum_members(typename T::options{}); }
 			template<typename F>
 			constexpr static auto visit(F f) { return f(PrimitiveData<typename T::underlying>{}); }
 		};
@@ -208,6 +208,8 @@ namespace ucsl::reflection::providers {
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			constexpr static const char* get_name() { return nullptr; }
 			constexpr static auto get_base() { return std::optional<EmptyStruct>{}; }
+			constexpr static size_t get_size(const opaque_obj& parent, const opaque_obj& obj) { return 0; }
+			constexpr static size_t get_alignment(const opaque_obj& parent) { return 0; }
 			template<typename F> constexpr static void visit_fields(const opaque_obj& obj, F f) {}
 		};
 
@@ -222,6 +224,8 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			constexpr static const char* get_name() { return T::name; }
+			constexpr static size_t get_size(const opaque_obj& parent, const opaque_obj& obj) { return dynamic_size_of<T>(parent, obj); }
+			constexpr static size_t get_alignment(const opaque_obj& parent) { return dynamic_align_of<T>(parent); }
 			constexpr static auto get_base() {
 				if constexpr (!std::is_same_v<Base, primitive<void>>)
 					return std::make_optional(Structure<Base>{});

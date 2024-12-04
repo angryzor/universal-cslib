@@ -48,7 +48,7 @@ namespace ucsl::reflection::traversals {
 
 			return algorithm.visit_array(
 				std::get<S>(accessors)...,
-				ArrayInfo{ item.get_alignment(parents), item.get_size(parents, objs) }...,
+				ArrayInfo{ .itemAlignment = item.get_alignment(parents), .itemSize = item.get_size(parents, objs) }...,
 				[]() { return nullptr; },
 				[](void* obj) {},
 				[&](Spread<S, opaque_obj&>... items) { return process_type(items..., parents..., item); }
@@ -62,7 +62,7 @@ namespace ucsl::reflection::traversals {
 
 			return algorithm.visit_tarray(
 				std::get<S>(accessors)...,
-				ArrayInfo{ item.get_alignment(parents), item.get_size(parents, objs) }...,
+				ArrayInfo{ .itemAlignment = item.get_alignment(parents), .itemSize = item.get_size(parents, objs) }...,
 				[]() { return nullptr; },
 				[](void* obj) {},
 				[&](Spread<S, opaque_obj&>... items) { return process_type(items..., parents..., item); }
@@ -84,8 +84,8 @@ namespace ucsl::reflection::traversals {
 		}
 
 		template<typename Union>
-		typename Algorithm::result_type process_union(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Spread<S, size_t>... sizes, Union refl) {
-			return algorithm.visit_union(objs..., UnionInfo{ sizes }..., [&](Spread<S, opaque_obj&>... objs) {
+		typename Algorithm::result_type process_union(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Union refl) {
+			return algorithm.visit_union(objs..., UnionInfo{}, [&](Spread<S, opaque_obj&>... objs) {
 				typename Algorithm::result_type result{};
 
 				refl.visit_current_field(*std::get<0>(std::tuple{ &parents... }), [&](auto chosen) { result = process_type(objs..., parents..., chosen.get_type()); });
@@ -100,13 +100,13 @@ namespace ucsl::reflection::traversals {
 		}
 
 		template<typename Structure>
-		typename Algorithm::result_type process_fields(Spread<S, opaque_obj&>... objs, Structure refl) {
+		typename Algorithm::result_type process_fields(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Structure refl) {
 			typename Algorithm::result_type result{};
 
 			auto base = refl.get_base();
 
 			if (base.has_value())
-				result |= process_base_struct(objs..., base.value());
+				result |= process_base_struct(objs..., parents..., base.value());
 
 			refl.visit_fields(*std::get<0>(std::tuple{ &objs... }), [&](auto field) { result |= process_field(objs..., field); });
 
@@ -114,18 +114,20 @@ namespace ucsl::reflection::traversals {
 		}
 
 		template<typename Structure>
-		typename Algorithm::result_type process_base_struct(Spread<S, opaque_obj&>... objs, Structure refl) {
-			return algorithm.visit_base_struct(objs..., StructureInfo{ refl.get_name() }..., [&](Spread<S, opaque_obj&>... objs) { return process_fields(objs..., refl); });
+		typename Algorithm::result_type process_base_struct(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Structure refl) {
+			return algorithm.visit_type(objs..., TypeInfo{ .alignment = refl.get_alignment(parents), .size = refl.get_size(parents, objs) }..., [&](Spread<S, opaque_obj&>... objs) {
+				return algorithm.visit_base_struct(objs..., StructureInfo{ refl.get_name() }, [&](Spread<S, opaque_obj&>... objs) { return process_fields(objs..., parents..., refl); });
+			});
 		}
 
 		template<typename Structure>
-		typename Algorithm::result_type process_struct(Spread<S, opaque_obj&>... objs, Structure refl) {
-			return algorithm.visit_struct(objs..., StructureInfo{ refl.get_name(), refl.rflClass }..., [&](Spread<S, opaque_obj&>... objs) { return process_fields(objs..., refl); });
+		typename Algorithm::result_type process_struct(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Structure refl) {
+			return algorithm.visit_struct(objs..., StructureInfo{ refl.get_name(), refl.rflClass }, [&](Spread<S, opaque_obj&>... objs) { return process_fields(objs..., parents..., refl); });
 		}
 
 		template<typename Type>
 		typename Algorithm::result_type process_type(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Type refl) {
-			return algorithm.visit_type(objs..., TypeInfo{ refl.get_alignment(parents), refl.get_size(parents, objs) }..., [&](Spread<S, opaque_obj&>... objs) {
+			return algorithm.visit_type(objs..., TypeInfo{ .alignment = refl.get_alignment(parents), .size = refl.get_size(parents, objs) }..., [&](Spread<S, opaque_obj&>... objs) {
 				return refl.visit(*std::get<0>(std::tuple{ &parents... }), [&](auto r) {
 					if constexpr (decltype(r)::kind == providers::TypeKind::PRIMITIVE) return process_primitive(objs..., refl.is_erased(), r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::ENUM) return process_enum(objs..., refl.is_erased(), r);
@@ -134,8 +136,8 @@ namespace ucsl::reflection::traversals {
 					else if constexpr (decltype(r)::kind == providers::TypeKind::TARRAY) return process_tarray(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) return process_pointer(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) return process_carray(objs..., parents..., r);
-					else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return process_union(objs..., parents..., refl.get_size(parents, objs)..., r);
-					else if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) return process_struct(objs..., r);
+					else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return process_union(objs..., parents..., r);
+					else if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) return process_struct(objs..., parents..., r);
 					else static_assert(false, "invalid type kind");
 				});
 			});
@@ -143,7 +145,7 @@ namespace ucsl::reflection::traversals {
 
 		template<typename Type>
 		typename Algorithm::result_type process_root(Spread<S, opaque_obj&>... objs, Type refl) {
-			return algorithm.visit_root(objs..., RootInfo{ refl.get_alignment(objs), refl.get_size(objs, objs) }..., [&](Spread<S, opaque_obj&>...objs) { return process_type(objs..., objs..., refl); });
+			return algorithm.visit_root(objs..., RootInfo{ .alignment = refl.get_alignment(objs), .size = refl.get_size(objs, objs) }..., [&](Spread<S, opaque_obj&>...objs) { return process_type(objs..., objs..., refl); });
 		}
 
 	public:

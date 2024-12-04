@@ -148,6 +148,8 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			const char* get_name() const { return rflClass->GetName(); }
+			size_t get_size(const opaque_obj& parent, const opaque_obj& self) const { return rflClass->GetSize(); }
+			size_t get_alignment(const opaque_obj& parent) const { return rflClass->GetAlignment(); }
 
 			std::optional<Structure> get_base() const {
 				auto* parent = rflClass->GetParent();

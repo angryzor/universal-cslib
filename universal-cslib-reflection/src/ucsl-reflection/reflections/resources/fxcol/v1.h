@@ -98,6 +98,7 @@ namespace ucsl::resources::fxcol::v1::reflections {
         case impl::FxColCollisionShapeData::Type::LIGHT_PARAMETER_INDEX: return 1;
         case impl::FxColCollisionShapeData::Type::HEAT_HAZE: return 2;
         case impl::FxColCollisionShapeData::Type::CAMERA: return 3;
+        default: assert(false && "unknown type"); return 0;
         }
     },
         field<SceneParameterIndexParameters, "sceneParameterIndex">,

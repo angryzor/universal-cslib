@@ -13,9 +13,7 @@ namespace ucsl::reflection::traversals {
 		const void* rflClass{};
 	};
 
-	struct UnionInfo {
-		size_t size{};
-	};
+	struct UnionInfo {};
 
 	struct FieldInfo {
 		const char* name{};
@@ -46,8 +44,8 @@ namespace ucsl::reflection::traversals {
 	};
 
 	struct ArrayInfo {
-		size_t itemSize{};
 		size_t itemAlignment{};
+		size_t itemSize{};
 	};
 
 	template<typename T> struct PrimitiveInfo {
