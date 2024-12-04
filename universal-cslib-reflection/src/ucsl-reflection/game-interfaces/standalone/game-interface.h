@@ -27,7 +27,7 @@ namespace ucsl::reflection::game_interfaces::standalone {
 
 		using GameObjectClass = GameObjectClass;
 
-		inline static ReflectionDB<RflSystem> reflectionDB{};
+		inline static ReflectionDB<RflSystem>* reflectionDB{};
 
 		class RflClassNameRegistry {
 		public:
@@ -35,8 +35,8 @@ namespace ucsl::reflection::game_interfaces::standalone {
 
 			inline static RflClassNameRegistry* GetInstance() { return instance; }
 
-			inline typename const RflSystem::RflClass* GetClassByName(const char* name) {
-				return &*reflectionDB.rflClasses[name];
+			inline static typename const RflSystem::RflClass* GetClassByName(const char* name) {
+				return &*reflectionDB->rflClasses.at(name);
 			}
 		};
 
@@ -46,25 +46,25 @@ namespace ucsl::reflection::game_interfaces::standalone {
 
 			inline static RflTypeInfoRegistry* GetInstance() { return instance; }
 
-			inline void* ConstructObject(memory::IAllocator* allocator, void* instance, const char* rflClassName) {
+			inline static void* ConstructObject(memory::IAllocator* allocator, void* instance, const char* rflClassName) {
 				return instance;
 			}
 
-			inline void CleanupLoadedObject(void* instance, const char* rflClassName) {
+			inline static void CleanupLoadedObject(void* instance, const char* rflClassName) {
 			}
 		};
 
 		class GameObjectRegistry {
 		public:
-			inline const GameObjectClass* GetGameObjectClassByName(const char* name) {
-				return &reflectionDB.gameObjectClasses[name];
+			inline static const GameObjectClass* GetGameObjectClassByName(const char* name) {
+				return &reflectionDB->gameObjectClasses.at(name);
 			}
 		};
 
 		class GOComponentRegistry {
 		public:
-			inline const GOComponentRegistryItem* GetComponentInformationByName(const char* name) {
-				return &reflectionDB.componentRegistryItems[name];
+			inline static const GOComponentRegistryItem* GetComponentInformationByName(const char* name) {
+				return &reflectionDB->componentRegistryItems.at(name);
 			}
 		};
 
@@ -83,6 +83,7 @@ namespace ucsl::reflection::game_interfaces::standalone {
 		};
 
 		inline static void boot() {
+			reflectionDB = new ReflectionDB<RflSystem>{};
 			RflClassNameRegistry::instance = new RflClassNameRegistry{};
 			RflTypeInfoRegistry::instance = new RflTypeInfoRegistry{};
 			GameObjectSystem::instance = new GameObjectSystem{};
