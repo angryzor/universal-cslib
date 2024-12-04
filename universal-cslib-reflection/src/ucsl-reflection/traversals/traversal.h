@@ -100,13 +100,13 @@ namespace ucsl::reflection::traversals {
 		}
 
 		template<typename Structure>
-		typename Algorithm::result_type process_fields(Spread<S, opaque_obj&>... objs, Spread<S, size_t>... alignments, Structure refl) {
+		typename Algorithm::result_type process_fields(Spread<S, opaque_obj&>... objs, Structure refl) {
 			typename Algorithm::result_type result{};
 
 			auto base = refl.get_base();
 
 			if (base.has_value())
-				result |= process_base_struct(objs..., alignments..., base.value());
+				result |= process_base_struct(objs..., base.value());
 
 			refl.visit_fields(*std::get<0>(std::tuple{ &objs... }), [&](auto field) { result |= process_field(objs..., field); });
 
@@ -114,13 +114,13 @@ namespace ucsl::reflection::traversals {
 		}
 
 		template<typename Structure>
-		typename Algorithm::result_type process_base_struct(Spread<S, opaque_obj&>... objs, Spread<S, size_t>... alignments, Structure refl) {
-			return algorithm.visit_base_struct(objs..., StructureInfo{ refl.get_name(), alignments }..., [&](Spread<S, opaque_obj&>... objs) { return process_fields(objs..., alignments..., refl); });
+		typename Algorithm::result_type process_base_struct(Spread<S, opaque_obj&>... objs, Structure refl) {
+			return algorithm.visit_base_struct(objs..., StructureInfo{ refl.get_name() }..., [&](Spread<S, opaque_obj&>... objs) { return process_fields(objs..., refl); });
 		}
 
 		template<typename Structure>
-		typename Algorithm::result_type process_struct(Spread<S, opaque_obj&>... objs, Spread<S, size_t>... alignments, Structure refl) {
-			return algorithm.visit_struct(objs..., StructureInfo{ refl.get_name(), alignments, refl.rflClass }..., [&](Spread<S, opaque_obj&>... objs) { return process_fields(objs..., alignments..., refl); });
+		typename Algorithm::result_type process_struct(Spread<S, opaque_obj&>... objs, Structure refl) {
+			return algorithm.visit_struct(objs..., StructureInfo{ refl.get_name(), refl.rflClass }..., [&](Spread<S, opaque_obj&>... objs) { return process_fields(objs..., refl); });
 		}
 
 		template<typename Type>
@@ -135,7 +135,7 @@ namespace ucsl::reflection::traversals {
 					else if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) return process_pointer(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) return process_carray(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return process_union(objs..., parents..., refl.get_size(parents, objs)..., r);
-					else if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) return process_struct(objs..., refl.get_alignment(parents)..., r);
+					else if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) return process_struct(objs..., r);
 					else static_assert(false, "invalid type kind");
 				});
 			});

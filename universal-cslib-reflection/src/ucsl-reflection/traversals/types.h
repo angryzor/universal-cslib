@@ -10,7 +10,6 @@ namespace ucsl::reflection::traversals {
 
 	struct StructureInfo {
 		const char* name{};
-		size_t alignment{};
 		const void* rflClass{};
 	};
 
