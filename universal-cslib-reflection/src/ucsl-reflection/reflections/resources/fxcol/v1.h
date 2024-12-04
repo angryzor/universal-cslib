@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 #include <ucsl/resources/fxcol/v1.h>
 #include <simple-reflection/simple-reflection.h>
 #include <ucsl-reflection/operators.h>
@@ -57,6 +58,7 @@ namespace ucsl::resources::fxcol::v1::reflections {
         case impl::FxColCollisionShapeData::Shape::CYLINDER: return 1;
         case impl::FxColCollisionShapeData::Shape::ANISOTROPIC_OBB: return 2;
         case impl::FxColCollisionShapeData::Shape::ISOTROPIC_OBB: return 3;
+        default: assert(false && "unknown shape"); return 0;
         }
     }, 
         field<SphereExtents, "sphere">,
