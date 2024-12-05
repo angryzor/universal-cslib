@@ -98,12 +98,12 @@ namespace ucsl::reflection::algorithms {
 		}
 
 		template<typename F>
-		result_type visit_base_struct(opaque_obj& obj1, opaque_obj& obj2, const StructureInfo& info1, const StructureInfo& info2, F f) {
+		result_type visit_base_struct(opaque_obj& obj1, opaque_obj& obj2, const StructureInfo& info, F f) {
 			return f(obj1, obj2);
 		}
 
 		template<typename F>
-		result_type visit_struct(opaque_obj& obj1, opaque_obj& obj2, const StructureInfo& info1, const StructureInfo& info2, F f) {
+		result_type visit_struct(opaque_obj& obj1, opaque_obj& obj2, const StructureInfo& info, F f) {
 			return f(obj1, obj2);
 		}
 
