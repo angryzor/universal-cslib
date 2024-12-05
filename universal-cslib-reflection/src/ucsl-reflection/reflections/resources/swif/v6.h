@@ -246,7 +246,7 @@ namespace ucsl::resources::swif::v6::reflections {
 
 	using SRS_USERDATA = structure<impl::SRS_USERDATA, "SRS_USERDATA", void,
 		field<unsigned int, "count">,
-		field<SRS_DATA*, "items">
+		field<dynamic_carray<SRS_DATA, impl::SRS_USERDATA, [](const impl::SRS_USERDATA& userData) -> size_t { return userData.count; }>*, "items">
 	>;
 
 	// Textures
