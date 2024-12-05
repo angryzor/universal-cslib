@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(universal-cslib VERSION 1.0.18
+project(universal-cslib VERSION 1.0.19
                  DESCRIPTION "Universal CSLib"
                  LANGUAGES CXX)
 
@@ -20,7 +20,7 @@ include(CMakePackageConfigHelpers)
 write_basic_package_version_file(universal-cslib-config-version.cmake VERSION ${PROJECT_VERSION} COMPATIBILITY SameMinorVersion)
 configure_file(cmake/universal-cslib-config.cmake "${CMAKE_CURRENT_BINARY_DIR}/universal-cslib-config.cmake" COPYONLY)
 if(${UCSL_EIGEN_MATH})
-export(TARGETS universal-cslib universal-cslib-reflection Eigen3::eigen FILE universal-cslib-targets.cmake)
+export(TARGETS universal-cslib universal-cslib-reflection eigen FILE universal-cslib-targets.cmake)
 else()
 export(TARGETS universal-cslib universal-cslib-reflection FILE universal-cslib-targets.cmake)
 endif()
