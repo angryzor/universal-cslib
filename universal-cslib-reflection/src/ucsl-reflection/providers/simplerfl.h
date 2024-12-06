@@ -20,32 +20,32 @@ namespace ucsl::reflection::providers {
 				size_t offset{};
 
 				if constexpr (!std::is_same_v<Base, void>)
-					offset = dynamic_size_of<Base>(self, self);
+					offset = dynamic_size_of_struct<Base>::get(self);
 
 				((
 					offset = util::align(offset, dynamic_align_of<typename Fields::type>(self)),
 					offset += dynamic_size_of<typename Fields::type>(self, *util::addptr(&self, offset))
-					), ...);
+				), ...);
 
-				return util::align(offset, dynamic_align_of<structure<Repr, name, Base, Fields...>>(self));
+				return util::align(offset, align_of_v<structure<Repr, name, Base, Fields...>>);
 			}
 		};
 
-		template<typename T>
-		struct dynamic_align_of_struct;
-		template<typename Repr, strlit name, typename Base, typename... Fields>
-		struct dynamic_align_of_struct<structure<Repr, name, Base, Fields...>> {
-			static size_t get() {
-				size_t maxAlign{};
+		//template<typename T>
+		//struct dynamic_align_of_struct;
+		//template<typename Repr, strlit name, typename Base, typename... Fields>
+		//struct dynamic_align_of_struct<structure<Repr, name, Base, Fields...>> {
+		//	static size_t get() {
+		//		size_t maxAlign{};
 
-				if constexpr (!std::is_same_v<Base, void>)
-					maxAlign = std::max(maxAlign, dynamic_align_of<Base>(*(const opaque_obj*)nullptr));
+		//		if constexpr (!std::is_same_v<Base, void>)
+		//			maxAlign = std::max(maxAlign, dynamic_align_of<Base>(*(const opaque_obj*)nullptr));
 
-				((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type>(*(const opaque_obj*)nullptr))), ...);
+		//		((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type>(*(const opaque_obj*)nullptr))), ...);
 
-				return maxAlign;
-			}
-		};
+		//		return maxAlign;
+		//	}
+		//};
 
 		template<typename T>
 		static size_t dynamic_size_of(const opaque_obj& parent, const opaque_obj& self) {
@@ -79,8 +79,8 @@ namespace ucsl::reflection::providers {
 				return dynamic_align_of<typename desugar_t<T>::type>(parent);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY)
 				return dynamic_align_of<typename desugar_t<T>::type>(parent);
-			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
-				return dynamic_align_of_struct<desugar_t<T>>::get();
+			//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
+			//	return dynamic_align_of_struct<desugar_t<T>>::get();
 			else
 				return align_of_v<T>;
 		}
