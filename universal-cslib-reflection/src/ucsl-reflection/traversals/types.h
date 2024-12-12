@@ -33,9 +33,10 @@ namespace ucsl::reflection::traversals {
 		size_t size{};
 	};
 
+	template<typename A, typename S>
 	struct PointerInfo {
-		size_t targetAlignment{};
-		size_t targetSize{};
+		A getTargetAlignment;
+		S getTargetSize;
 	};
 
 	struct CArrayInfo {

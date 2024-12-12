@@ -12,6 +12,9 @@ namespace ucsl::reflection::traversals {
 
 		//using Objs = Spread<S, opaque_obj&>;
 
+		bool has_root{};
+		std::tuple<Spread<S, opaque_obj*>...> roots{};
+
 		Algorithm algorithm;
 			
 		template<typename Primitive>
@@ -48,7 +51,7 @@ namespace ucsl::reflection::traversals {
 
 			return algorithm.visit_array(
 				std::get<S>(accessors)...,
-				ArrayInfo{ .itemAlignment = item.get_alignment(parents), .itemSize = item.get_size(parents, objs) }...,
+				ArrayInfo{ .itemAlignment = item.get_alignment(parents, *std::get<S>(roots)), .itemSize = item.get_size(parents, *std::get<S>(roots), objs) }...,
 				[]() { return nullptr; },
 				[](void* obj) {},
 				[&, item](Spread<S, opaque_obj&>... items) { return process_type(items..., parents..., item); }
@@ -62,7 +65,7 @@ namespace ucsl::reflection::traversals {
 
 			return algorithm.visit_tarray(
 				std::get<S>(accessors)...,
-				ArrayInfo{ .itemAlignment = item.get_alignment(parents), .itemSize = item.get_size(parents, objs) }...,
+				ArrayInfo{ .itemAlignment = item.get_alignment(parents, *std::get<S>(roots)), .itemSize = item.get_size(parents, *std::get<S>(roots), objs) }...,
 				[]() { return nullptr; },
 				[](void* obj) {},
 				[&, item](Spread<S, opaque_obj&>... items) { return process_type(items..., parents..., item); }
@@ -73,14 +76,21 @@ namespace ucsl::reflection::traversals {
 		typename Algorithm::result_type process_pointer(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Pointer refl) {
 			auto target = refl.get_target_type();
 
-			return algorithm.visit_pointer((Spread<S, opaque_obj*&>)objs..., PointerInfo{ target.get_alignment(parents), target.get_size(parents, *(Spread<S, opaque_obj*&>)objs) }..., [&, target](Spread<S, opaque_obj&>...targets) { return process_type(targets..., parents..., target); });
+			return algorithm.visit_pointer(
+				(Spread<S, opaque_obj*&>)objs...,
+				PointerInfo{
+					.getTargetAlignment = [&parents, lroots = std::get<S>(roots), target]() { return target.get_alignment(parents, *lroots); },
+					.getTargetSize = [&parents, lroots = std::get<S>(roots), &objs, target]() { return target.get_size(parents, *lroots, *(Spread<S, opaque_obj*&>)objs); },
+				}...,
+				[&, target](Spread<S, opaque_obj&>...targets) { return process_type(targets..., parents..., target); }
+			);
 		}
 
 		template<typename CArray>
 		typename Algorithm::result_type process_carray(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, CArray refl) {
 			auto item = refl.get_item_type();
 
-			return algorithm.visit_carray(&objs..., CArrayInfo{ refl.get_length(parents), item.get_size(parents, objs) }..., [&, item](Spread<S, opaque_obj&>... items) { return process_type(items..., parents..., item); });
+			return algorithm.visit_carray(&objs..., CArrayInfo{ refl.get_length(parents), item.get_size(parents, *std::get<S>(roots), objs) }..., [&, item](Spread<S, opaque_obj&>... items) { return process_type(items..., parents..., item); });
 		}
 
 		template<typename Union>
@@ -108,14 +118,14 @@ namespace ucsl::reflection::traversals {
 			if (base.has_value())
 				result |= process_base_struct(objs..., parents..., base.value());
 
-			refl.visit_fields(*std::get<0>(std::tuple{ &objs... }), [&](auto field) { result |= process_field(objs..., field); });
+			refl.visit_fields(*std::get<0>(std::tuple{ &objs... }), *std::get<0>(roots), [&](auto field) { result |= process_field(objs..., field); });
 
 			return result;
 		}
 
 		template<typename Structure>
 		typename Algorithm::result_type process_base_struct(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Structure refl) {
-			return algorithm.visit_type(objs..., TypeInfo{ .alignment = refl.get_alignment(parents), .size = refl.get_size(parents, objs) }..., [&, refl](Spread<S, opaque_obj&>... objs) {
+			return algorithm.visit_type(objs..., TypeInfo{ .alignment = refl.get_alignment(parents, *std::get<S>(roots)), .size = refl.get_size(parents, *std::get<S>(roots), objs) }..., [&, refl](Spread<S, opaque_obj&>... objs) {
 				return algorithm.visit_base_struct(objs..., StructureInfo{ refl.get_name() }, [&, refl](Spread<S, opaque_obj&>... objs) { return process_fields(objs..., parents..., refl); });
 			});
 		}
@@ -127,8 +137,12 @@ namespace ucsl::reflection::traversals {
 
 		template<typename Type>
 		typename Algorithm::result_type process_type(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Type refl) {
-			return algorithm.visit_type(objs..., TypeInfo{ .alignment = refl.get_alignment(parents), .size = refl.get_size(parents, objs) }..., [&, refl](Spread<S, opaque_obj&>... objs) {
-				return refl.visit(*std::get<0>(std::tuple{ &parents... }), [&, refl](auto r) {
+			if (!has_root) {
+				roots = { &objs... };
+				has_root = true;
+			}
+			return algorithm.visit_type(objs..., TypeInfo{ .alignment = refl.get_alignment(parents, *std::get<S>(roots)), .size = refl.get_size(parents, *std::get<S>(roots), objs) }..., [&, refl](Spread<S, opaque_obj&>... objs) {
+				return refl.visit(*std::get<0>(std::tuple{ &parents... }), *std::get<0>(roots), [&, refl](auto r) {
 					if constexpr (decltype(r)::kind == providers::TypeKind::PRIMITIVE) return process_primitive(objs..., refl.is_erased(), r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::ENUM) return process_enum(objs..., refl.is_erased(), r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::FLAGS) return process_flags(objs..., refl.is_erased(), r);
@@ -145,7 +159,7 @@ namespace ucsl::reflection::traversals {
 
 		template<typename Type>
 		typename Algorithm::result_type process_root(Spread<S, opaque_obj&>... objs, Type refl) {
-			return algorithm.visit_root(objs..., RootInfo{ .alignment = refl.get_alignment(objs), .size = refl.get_size(objs, objs) }..., [&, refl](Spread<S, opaque_obj&>...objs) { return process_type(objs..., objs..., refl); });
+			return algorithm.visit_root(objs..., RootInfo{ .alignment = refl.get_alignment(objs, objs), .size = refl.get_size(objs, objs, objs) }..., [&, refl](Spread<S, opaque_obj&>...objs) { return process_type(objs..., objs..., refl); });
 		}
 
 	public:

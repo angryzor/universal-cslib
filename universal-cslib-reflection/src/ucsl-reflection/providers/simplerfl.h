@@ -4,6 +4,7 @@
 #include <ucsl-reflection/opaque.h>
 #include <ucsl-reflection/util/memory.h>
 #include <vector>
+#include <algorithm>
 #include "types.h"
 #include "rflclass.h"
 
@@ -16,15 +17,15 @@ namespace ucsl::reflection::providers {
 		struct dynamic_size_of_struct;
 		template<typename Repr, strlit name, typename Base, typename... Fields>
 		struct dynamic_size_of_struct<structure<Repr, name, Base, Fields...>> {
-			static size_t get(const opaque_obj& self) {
+			static size_t get(const opaque_obj& self, const opaque_obj& root) {
 				size_t offset{};
 
 				if constexpr (!std::is_same_v<Base, void>)
-					offset = dynamic_size_of_struct<Base>::get(self);
+					offset = dynamic_size_of_struct<Base>::get(self, root);
 
 				((
-					offset = util::align(offset, dynamic_align_of<typename Fields::type>(self)),
-					offset += dynamic_size_of<typename Fields::type>(self, *util::addptr(&self, offset))
+					offset = util::align(offset, dynamic_align_of<typename Fields::type>(self, root)),
+					offset += dynamic_size_of<typename Fields::type>(self, root, *util::addptr(&self, offset))
 				), ...);
 
 				return util::align(offset, align_of_v<structure<Repr, name, Base, Fields...>>);
@@ -48,25 +49,27 @@ namespace ucsl::reflection::providers {
 		//};
 
 		template<typename T>
-		static size_t dynamic_size_of(const opaque_obj& parent, const opaque_obj& self) {
+		static size_t dynamic_size_of(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& self) {
 			if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
 				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
 				return GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSpawnerDataClass()->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
 				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSpawnerDataClass()->GetSize();
+			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
+				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent, (const typename desugar_t<T>::root&)root))->GetSpawnerDataClass()->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY)
-				return desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent) * dynamic_size_of<typename desugar_t<T>::type>(parent, self);
+				return desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent) * dynamic_size_of<typename desugar_t<T>::type>(parent, root, self);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY)
-				return desugar_t<T>::size * dynamic_size_of<typename desugar_t<T>::type>(parent, self);
+				return desugar_t<T>::size * dynamic_size_of<typename desugar_t<T>::type>(parent, root, self);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
-				return dynamic_size_of_struct<desugar_t<T>>::get(self);
+				return dynamic_size_of_struct<desugar_t<T>>::get(self, root);
 			else
 				return size_of_v<T>;
 		}
 
 		template<typename T>
-		static size_t dynamic_align_of(const opaque_obj& parent) {
+		static size_t dynamic_align_of(const opaque_obj& parent, const opaque_obj& root) {
 			if constexpr (is_realigned_v<T>)
 				return align_of_v<T>;
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
@@ -75,10 +78,12 @@ namespace ucsl::reflection::providers {
 				return GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSpawnerDataClass()->GetAlignment();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
 				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSpawnerDataClass()->GetAlignment();
+			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
+				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent, (const typename desugar_t<T>::root&)root))->GetSpawnerDataClass()->GetAlignment();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY)
-				return dynamic_align_of<typename desugar_t<T>::type>(parent);
+				return dynamic_align_of<typename desugar_t<T>::type>(parent, root);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY)
-				return dynamic_align_of<typename desugar_t<T>::type>(parent);
+				return dynamic_align_of<typename desugar_t<T>::type>(parent, root);
 			//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
 			//	return dynamic_align_of_struct<desugar_t<T>>::get();
 			else
@@ -208,9 +213,9 @@ namespace ucsl::reflection::providers {
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			constexpr static const char* get_name() { return nullptr; }
 			constexpr static auto get_base() { return std::optional<EmptyStruct>{}; }
-			constexpr static size_t get_size(const opaque_obj& parent, const opaque_obj& obj) { return 0; }
-			constexpr static size_t get_alignment(const opaque_obj& parent) { return 0; }
-			template<typename F> constexpr static void visit_fields(const opaque_obj& obj, F f) {}
+			constexpr static size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& obj) { return 0; }
+			constexpr static size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) { return 0; }
+			template<typename F> constexpr static void visit_fields(const opaque_obj& obj, const opaque_obj& root, F f) {}
 		};
 
 		template<typename T>
@@ -224,8 +229,8 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			constexpr static const char* get_name() { return T::name; }
-			constexpr static size_t get_size(const opaque_obj& parent, const opaque_obj& obj) { return dynamic_size_of<T>(parent, obj); }
-			constexpr static size_t get_alignment(const opaque_obj& parent) { return dynamic_align_of<T>(parent); }
+			constexpr static size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& obj) { return dynamic_size_of<T>(parent, root, obj); }
+			constexpr static size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) { return dynamic_align_of<T>(parent, root); }
 			constexpr static auto get_base() {
 				if constexpr (!std::is_same_v<Base, primitive<void>>)
 					return std::make_optional(Structure<Base>{});
@@ -234,11 +239,11 @@ namespace ucsl::reflection::providers {
 			}
 
 			template<typename F>
-			constexpr static void visit_fields(const opaque_obj& obj, F f) { _visit_fields(obj, f, Fields{}); }
+			constexpr static void visit_fields(const opaque_obj& obj, const opaque_obj& root, F f) { _visit_fields(obj, root, f, Fields{}); }
 
 		private:
 			template<typename F, typename... Fields>
-			constexpr static void _visit_fields(const opaque_obj& obj, F f, std::tuple<Fields...>) {
+			constexpr static void _visit_fields(const opaque_obj& obj, const opaque_obj& root, F f, std::tuple<Fields...>) {
 				size_t offset{};
 				size_t thisOffset{};
 
@@ -246,22 +251,61 @@ namespace ucsl::reflection::providers {
 					offset = size_of_v<Base>;
 
 				(f((
-					offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type>(obj)),
-					offset += dynamic_size_of<typename Fields::type>(obj, *util::addptr(&obj, thisOffset)),
+					offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type>(obj, root)),
+					offset += dynamic_size_of<typename Fields::type>(obj, root, *util::addptr(&obj, thisOffset)),
 					Field<Fields>{ thisOffset }
 				)), ...);
 			}
 		};
 
+		//	template<typename F>
+		//	constexpr static void visit_fields(const opaque_obj& obj, const opaque_obj& root, F f) {
+		//		_visit_fields(obj, root, f, std::make_index_sequence<std::tuple_size_v<Fields>>{});
+		//	}
+
+		//private:
+		//	template<typename F, size_t... Is>
+		//	constexpr static void _visit_fields(const opaque_obj& obj, const opaque_obj& root, F f, std::index_sequence<Is...>) {
+		//		auto fields = _get_fields(obj, root, Fields{});
+		//		constexpr auto prios = _get_sorted_field_indices(std::index_sequence<Is...>{});
+
+		//		(f(std::get<prios[Is].first>(fields)), ...);
+		//	}
+
+		//	template<size_t... Is>
+		//	consteval static auto _get_sorted_field_indices(std::index_sequence<Is...>) {
+		//		auto prios = std::array<std::pair<size_t, char>, std::tuple_size_v<Fields>>{ std::pair{ Is, get_priority_v<typename std::tuple_element_t<Is, Fields>::type> }... };
+
+		//		std::sort(prios.begin(), prios.end(), [](const auto& a, const auto& b) { return a.second == b.second ? a.first < b.first : a.second < b.second; });
+
+		//		return prios;
+		//	}
+
+		//	template<typename... Fields>
+		//	constexpr static auto _get_fields(const opaque_obj& obj, const opaque_obj& root, std::tuple<Fields...>) {
+		//		size_t offset{};
+		//		size_t thisOffset{};
+
+		//		if constexpr (!std::is_same_v<Base, primitive<void>>)
+		//			offset = size_of_v<Base>;
+
+		//		return std::tuple{ (
+		//			offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type>(obj, root)),
+		//			offset += dynamic_size_of<typename Fields::type>(obj, root, *util::addptr(&obj, thisOffset)),
+		//			Field<Fields>{ thisOffset }
+		//		)... };
+		//	}
+		//};
+
 		template<typename T>
 		struct Type {
-			constexpr static size_t get_size(const opaque_obj& parent, const opaque_obj& obj) { return dynamic_size_of<T>(parent, obj); }
-			constexpr static size_t get_alignment(const opaque_obj& parent) { return dynamic_align_of<T>(parent); }
+			constexpr static size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& obj) { return dynamic_size_of<T>(parent, root, obj); }
+			constexpr static size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) { return dynamic_align_of<T>(parent, root); }
 
 			constexpr static bool is_erased() { return ucsl::reflection::is_erased_v<T>; }
 
 			template<typename F>
-			constexpr static auto visit(const opaque_obj& parent, F f) {
+			constexpr static auto visit(const opaque_obj& parent, const opaque_obj& root, F f) {
 				if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE) return f(Primitive<desugar_t<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_CONSTANT) return f(Constant<desugar_t<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ENUMERATION) return f(Enum<desugar_t<T>>{});
@@ -278,6 +322,8 @@ namespace ucsl::reflection::providers {
 					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSpawnerDataClass() });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
 					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSpawnerDataClass() });
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
+					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent, (const typename desugar_t<T>::root&)root))->GetSpawnerDataClass() });
 				else static_assert("invalid desc type");
 			}
 		};

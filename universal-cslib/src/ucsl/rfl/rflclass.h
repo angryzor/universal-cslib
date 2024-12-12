@@ -226,7 +226,7 @@ namespace ucsl::rfl {
 				return attributes == nullptr ? nullptr : attributes->GetAttribute(name);
 			}
 			size_t GetAlignment() const {
-				size_t maxAlignment = 0;
+				size_t maxAlignment = 1;
 
 				if (GetParent())
 					maxAlignment = GetParent()->GetAlignment();
@@ -282,7 +282,7 @@ namespace ucsl::rfl {
 			}
 			unsigned int GetNameHash() const { return nameHash; }
 			size_t GetAlignment() const {
-				size_t maxAlignment = 0;
+				size_t maxAlignment = 1;
 
 				if (GetParent())
 					maxAlignment = GetParent()->GetAlignment();

@@ -193,7 +193,7 @@ namespace ucsl::reflection::game_interfaces::standalone {
 			auto GetMembers() const { return std::views::all(members) | std::views::transform([](const auto& m) -> const RflClassMember& { return *m; }); }
 			unsigned int GetNameHash() const { return nameHash; }
 			size_t GetAlignment() const {
-				size_t maxAlignment = 0;
+				size_t maxAlignment = 1;
 
 				if (GetParent())
 					maxAlignment = GetParent()->GetAlignment();

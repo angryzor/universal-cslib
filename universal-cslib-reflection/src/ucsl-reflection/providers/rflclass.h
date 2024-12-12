@@ -148,8 +148,8 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			const char* get_name() const { return rflClass->GetName(); }
-			size_t get_size(const opaque_obj& parent, const opaque_obj& self) const { return rflClass->GetSize(); }
-			size_t get_alignment(const opaque_obj& parent) const { return rflClass->GetAlignment(); }
+			size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& self) const { return rflClass->GetSize(); }
+			size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) const { return rflClass->GetAlignment(); }
 
 			std::optional<Structure> get_base() const {
 				auto* parent = rflClass->GetParent();
@@ -158,7 +158,7 @@ namespace ucsl::reflection::providers {
 			}
 
 			template<typename F>
-			void visit_fields(const opaque_obj& obj, F f) const {
+			void visit_fields(const opaque_obj& obj, const opaque_obj& root, F f) const {
 				for (const auto& member : rflClass->GetMembers())
 					f(Field{ &member });
 			}
@@ -169,11 +169,11 @@ namespace ucsl::reflection::providers {
 
 			bool is_erased() const { return false; }
 
-			size_t get_size(const opaque_obj& parent, const opaque_obj& self) { return member->GetSubTypeSize(); }
-			size_t get_alignment(const opaque_obj& parent) { return member->GetSubTypeAlignment(); }
+			size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& self) const { return member->GetSubTypeSize(); }
+			size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) const { return member->GetSubTypeAlignment(); }
 
 			template<typename F>
-			auto visit(const opaque_obj& parent, F f) const {
+			auto visit(const opaque_obj& parent, const opaque_obj& root, F f) const {
 				switch (member->GetSubType()) {
 				case MemberType::STRUCT: return f(Structure{ member->GetClass() });
 				default: return f(Primitive{ member, member->GetSubType() });
@@ -187,14 +187,14 @@ namespace ucsl::reflection::providers {
 
 			bool is_erased() const { return false; }
 
-			size_t get_size(const opaque_obj& parent, const opaque_obj& self) {
+			size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& self) const {
 				if (allowCArray) return member->GetSize();
 				else return member->GetSingleSize();
 			}
-			size_t get_alignment(const opaque_obj& parent) { return member->GetAlignment(); }
+			size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) const { return member->GetAlignment(); }
 
 			template<typename F>
-			auto visit(const opaque_obj& parent, F f) const {
+			auto visit(const opaque_obj& parent, const opaque_obj& root, F f) const {
 				if (allowCArray && member->GetArrayLength() > 0)
 					return f(CArray{ member });
 
@@ -219,11 +219,11 @@ namespace ucsl::reflection::providers {
 
 			bool is_erased() const { return false; }
 
-			size_t get_size(const opaque_obj& parent, const opaque_obj& self) const { return rflClass->GetSize(); }
-			size_t get_alignment(const opaque_obj& parent) const { return rflClass->GetAlignment(); }
+			size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& self) const { return rflClass->GetSize(); }
+			size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) const { return rflClass->GetAlignment(); }
 
 			template<typename F>
-			auto visit(const opaque_obj& parent, F f) const {
+			auto visit(const opaque_obj& parent, const opaque_obj& root, F f) const {
 				return f(Structure{ rflClass });
 			}
 		};
