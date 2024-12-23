@@ -14,8 +14,8 @@ namespace ucsl::resources::kd_tree::v1 {
 	};
 
 	struct ResKdTreeLeafNodeData {
-		int numObjects;
-		int startObjectIndex;
+		int objectCount;
+		int objectsOffset;
 	};
 
 	struct ResKdTreeData {
