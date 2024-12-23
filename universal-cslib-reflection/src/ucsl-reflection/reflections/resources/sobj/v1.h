@@ -1,5 +1,4 @@
 #pragma once
-#include <ucsl/math.h>
 #include <ucsl/resources/sobj/v1.h>
 #include <simple-reflection/simple-reflection.h>
 #include <ucsl-reflection/operators.h>
@@ -16,22 +15,16 @@ namespace ucsl::resources::sobj::v1::reflections {
 		field<math::Position, "rotation">
 	>;
 
-	using ObjectInstanceData = structure<impl::ObjectInstanceData, "ObjectInstanceData", void,
-		field<ObjectTransformData, "transform">,
-		field<ObjectTransformData, "localTransform">
-	>;
-
-	using ObjectData = structure<impl::ObjectData, "ObjectData", void,
-		field<unsigned int, "id">,
-		field<unsigned int, "unk2">,
-		field<unsigned int, "unk3">,
-		field<float, "unk4">,
+	template<typename AllocatorSystem>
+	using ObjectData = structure<impl::ObjectData<AllocatorSystem>, "ObjectData", void,
+		field<ucsl::objectids::ObjectIdV1, "id">,
+		field<unsigned int, "objectClassId">,
+		field<unsigned int, "bvhNode">,
+		field<float, "replicationInterval">,
 		field<float, "m_distance">,
 		field<float, "m_range">,
-		field<dynamic_carray<ObjectInstanceData, impl::ObjectData, [](const impl::ObjectData& parent) -> size_t { return parent.instanceCount; }>*, "instances">,
-		field<unsigned int, "instanceCount">,
-		field<unsigned int, "unk5">,
-		field<spawner_data_rflclass_with_root<impl::ObjectData, impl::SetObjectData, [](const impl::ObjectData& parent, const impl::SetObjectData& root) -> const char* {
+		field<containers::arrays::TArray<ObjectTransformData, AllocatorSystem>, "instances">,
+		field<spawner_data_rflclass_with_root<impl::ObjectData<AllocatorSystem>, impl::SetObjectData<AllocatorSystem>, [](const impl::ObjectData<AllocatorSystem>& parent, const impl::SetObjectData<AllocatorSystem>& root) -> const char* {
 			for (size_t i = 0; i < root.objectTypeCount; i++) {
 				auto& type = root.objectTypes[i];
 				for (size_t j = 0; j < type.objectIndexCount; j++) {
@@ -50,23 +43,23 @@ namespace ucsl::resources::sobj::v1::reflections {
 		field<dynamic_carray<unsigned short, impl::ObjectTypeData, [](const impl::ObjectTypeData& parent) -> size_t { return parent.objectIndexCount; }>*, "objectIndices">
 	>;
 
-	using SetObjectData = structure<impl::SetObjectData, "SetObjectData", void,
+	template<typename AllocatorSystem>
+	using SetObjectData = structure<impl::SetObjectData<AllocatorSystem>, "SetObjectData", void,
 		field<unsigned int, "magic">,
 		field<unsigned int, "version">,
 		field<unsigned int, "objectTypeCount">,
-		field<dynamic_carray<ObjectTypeData, impl::SetObjectData, [](const impl::SetObjectData& parent) -> size_t { return parent.objectTypeCount; }>*, "objectTypes">,
-		field<int, "unk1">,
-		field<dynamic_carray<ObjectData*, impl::SetObjectData, [](const impl::SetObjectData& parent) -> size_t { return parent.objectCount; }>*, "objects">,
+		field<dynamic_carray<ObjectTypeData, impl::SetObjectData<AllocatorSystem>, [](const impl::SetObjectData<AllocatorSystem>& parent) -> size_t { return parent.objectTypeCount; }>*, "objectTypes">,
+		field<size_t, "bvh">,
+		field<dynamic_carray<ObjectData<AllocatorSystem>*, impl::SetObjectData<AllocatorSystem>, [](const impl::SetObjectData<AllocatorSystem>& parent) -> size_t { return parent.objectCount; }>*, "objects">,
 		field<unsigned int, "objectCount">,
-		field<unsigned int, "unk2">,
-		field<unsigned int, "unk3">
+		field<unsigned int, "bvhNodeCount">,
+		field<unsigned int, "objectInstanceCount">
 	>;
 }
 
 namespace simplerfl {
 	template<> struct canonical<ucsl::resources::sobj::v1::ObjectTransformData> { using type = ucsl::resources::sobj::v1::reflections::ObjectTransformData; };
-	template<> struct canonical<ucsl::resources::sobj::v1::ObjectInstanceData> { using type = ucsl::resources::sobj::v1::reflections::ObjectInstanceData; };
-	template<> struct canonical<ucsl::resources::sobj::v1::ObjectData> { using type = ucsl::resources::sobj::v1::reflections::ObjectData; };
+	template<typename AllocatorSystem> struct canonical<ucsl::resources::sobj::v1::ObjectData<AllocatorSystem>> { using type = ucsl::resources::sobj::v1::reflections::ObjectData<AllocatorSystem>; };
 	template<> struct canonical<ucsl::resources::sobj::v1::ObjectTypeData> { using type = ucsl::resources::sobj::v1::reflections::ObjectTypeData; };
-	template<> struct canonical<ucsl::resources::sobj::v1::SetObjectData> { using type = ucsl::resources::sobj::v1::reflections::SetObjectData; };
+	template<typename AllocatorSystem> struct canonical<ucsl::resources::sobj::v1::SetObjectData<AllocatorSystem>> { using type = ucsl::resources::sobj::v1::reflections::SetObjectData<AllocatorSystem>; };
 }

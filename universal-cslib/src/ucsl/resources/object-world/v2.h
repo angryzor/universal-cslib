@@ -31,7 +31,7 @@ namespace ucsl::resources::object_world::v2 {
         ucsl::objectids::ObjectIdV1 parentID;
         ObjectTransformData transform;
         ObjectTransformData localTransform;
-        ucsl::containers::arrays::Array<ComponentData, AllocatorSystem> componentData;
+        ucsl::containers::arrays::Array<ComponentData*, AllocatorSystem> componentData;
         void* spawnerData;
     };
 

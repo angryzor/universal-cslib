@@ -1,7 +1,4 @@
 add_library(universal-cslib INTERFACE)
 target_compile_features(universal-cslib INTERFACE cxx_std_20)
-if(${UCSL_EIGEN_MATH})
-	target_link_libraries(universal-cslib INTERFACE Eigen3::Eigen)
-	target_compile_definitions(universal-cslib INTERFACE UCSL_EIGEN_MATH=1)
-endif()
+target_link_libraries(universal-cslib INTERFACE Eigen3::Eigen)
 add_subdirectory(src)

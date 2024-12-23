@@ -61,6 +61,17 @@ namespace ucsl::reflection {
         using allocator_system = AllocatorSystem;
     };
 
+    //static constexpr unsigned long long DESCTYPE_OFFSET = 0x4f46465345543030;
+    //template<typename AddrRepr, typename Type> struct offset : simplerfl::decl<DESCTYPE_OFFSET> {
+    //    using type = simplerfl::resolve_decl_t<Type>;
+    //    using repr = AddrRepr;
+    //};
+
+    //static constexpr unsigned long long DESCTYPE_STRING_OFFSET = 0x4f46465345545354;
+    //template<typename AddrRepr> struct offset : simplerfl::decl<DESCTYPE_STRING_OFFSET> {
+    //    using repr = AddrRepr;
+    //};
+
     //template<typename Type> struct is_erased { static constexpr bool value = is_erased<Type::type>::value; };
     //template<typename T> struct is_erased<simplerfl::primitive<T>> { static constexpr bool value = false; };
     //template<typename Repr, Repr value> struct is_erased<constant<Repr, value>> { static constexpr bool value = false; };
@@ -84,6 +95,7 @@ namespace simplerfl {
     template<typename Parent, ucsl::reflection::component_data_resolver<Parent> resolver> struct is_realigned<ucsl::reflection::component_data_rflclass<Parent, resolver>> { static constexpr bool value = false; };
     template<typename Type, typename AllocatorSystem> struct is_realigned<ucsl::reflection::array<Type, AllocatorSystem>> { static constexpr bool value = false; };
     template<typename Type, typename AllocatorSystem> struct is_realigned<ucsl::reflection::tarray<Type, AllocatorSystem>> { static constexpr bool value = false; };
+    //template<typename AddrRepr, typename Type> struct is_realigned<ucsl::reflection::offset<AddrRepr, Type>> { static constexpr bool value = false; };
 
     template<typename Repr, long long value> struct representation<ucsl::reflection::constant<Repr, value>> { using type = Repr; };
     template<typename Parent, ucsl::reflection::rflclass_resolver<Parent> resolver> struct representation<ucsl::reflection::rflclass<Parent, resolver>> { static_assert("Cannot get representation of dynamic type."); using type = void; };
@@ -92,4 +104,5 @@ namespace simplerfl {
     template<typename Parent, ucsl::reflection::component_data_resolver<Parent> resolver> struct representation<ucsl::reflection::component_data_rflclass<Parent, resolver>> { static_assert("Cannot get representation of dynamic type."); using type = void; };
     template<typename Type, typename AllocatorSystem> struct representation<ucsl::reflection::array<Type, AllocatorSystem>> { using type = ucsl::containers::arrays::Array<typename representation<typename ucsl::reflection::array<Type, AllocatorSystem>::type>::type, AllocatorSystem>; };
     template<typename Type, typename AllocatorSystem> struct representation<ucsl::reflection::tarray<Type, AllocatorSystem>> { using type = ucsl::containers::arrays::TArray<typename representation<typename ucsl::reflection::tarray<Type, AllocatorSystem>::type>::type, AllocatorSystem>; };
+    //template<typename AddrRepr, typename Type> struct representation<ucsl::reflection::offset<AddrRepr, Type>> { using type = AddrRepr; };
 }

@@ -86,6 +86,24 @@ namespace ucsl::reflection::traversals {
 			);
 		}
 
+		//template<typename Offset>
+		//typename Algorithm::result_type process_offset(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Offset refl) {
+		//	auto target = refl.get_target_type();
+
+		//	return refl.visit([&](auto repr) {
+		//		using Repr = typename decltype(repr)::repr;
+
+		//		algorithm.visit_offset(
+		//			reinterpret_cast<Repr&>(objs)...,
+		//			OffsetInfo{
+		//				.getTargetAlignment = [&parents, lroots = std::get<S>(roots), target]() { return target.get_alignment(parents, *lroots); },
+		//				.getTargetSize = [&parents, lroots = std::get<S>(roots), &objs, target]() { return target.get_size(parents, *lroots, *(util::addptr(&objs, reinterpret_cast<Repr&>(objs)))); },
+		//			}...,
+		//			[&, target](Spread<S, opaque_obj&>...targets) { return process_type(targets..., parents..., target); }
+		//		);
+		//	});
+		//}
+
 		template<typename CArray>
 		typename Algorithm::result_type process_carray(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, CArray refl) {
 			auto item = refl.get_item_type();
@@ -149,6 +167,7 @@ namespace ucsl::reflection::traversals {
 					else if constexpr (decltype(r)::kind == providers::TypeKind::ARRAY) return process_array(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::TARRAY) return process_tarray(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) return process_pointer(objs..., parents..., r);
+					//else if constexpr (decltype(r)::kind == providers::TypeKind::OFFSET) return process_offset(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) return process_carray(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return process_union(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) return process_struct(objs..., parents..., r);

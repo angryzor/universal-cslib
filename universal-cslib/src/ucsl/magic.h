@@ -15,5 +15,7 @@ namespace ucsl {
 
         operator std::string() const { return std::string(std::data(buffer), N); }
         constexpr operator std::string_view() const { return std::string_view(std::data(buffer), N); }
+
+        bool operator==(const magic_t<N>& other) const { return buffer == other.buffer; }
     };
 }

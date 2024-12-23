@@ -149,6 +149,14 @@ namespace ucsl::reflection::providers {
 			constexpr static auto get_target_type() { return Type<typename T::target>{}; }
 		};
 
+		//template<typename T>
+		//struct Offset {
+		//	constexpr static TypeKind kind = TypeKind::OFFSET;
+		//	constexpr static auto get_target_type() { return Type<typename T::target>{}; }
+		//	template<typename F>
+		//	constexpr static auto visit(F f) { return f(PrimitiveData<typename T::repr>{}); }
+		//};
+
 		template<typename T>
 		struct Array {
 			constexpr static TypeKind kind = TypeKind::ARRAY;
@@ -310,6 +318,7 @@ namespace ucsl::reflection::providers {
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_CONSTANT) return f(Constant<desugar_t<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ENUMERATION) return f(Enum<desugar_t<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER) return f(Pointer<desugar_t<T>>{});
+				//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_OFFSET) return f(Offset<desugar_t<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ARRAY) return f(Array<desugar_t<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_TARRAY) return f(TArray<desugar_t<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY) return f(DynamicCArray<desugar_t<T>>{});

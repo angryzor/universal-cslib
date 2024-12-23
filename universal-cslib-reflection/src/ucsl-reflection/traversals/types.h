@@ -39,6 +39,12 @@ namespace ucsl::reflection::traversals {
 		S getTargetSize;
 	};
 
+	//template<typename A, typename S>
+	//struct OffsetInfo {
+	//	A getTargetAlignment;
+	//	S getTargetSize;
+	//};
+
 	struct CArrayInfo {
 		size_t size{};
 		size_t stride{};

@@ -1,5 +1,7 @@
 #pragma once
+#include <ucsl/containers/arrays/tarray.h>
 #include <ucsl/math.h>
+#include <ucsl/object-id.h>
 
 namespace ucsl::resources::sobj::v1 {
 	struct ObjectTransformData {
@@ -7,20 +9,15 @@ namespace ucsl::resources::sobj::v1 {
 		ucsl::math::Position rotation;
 	};
 
-	struct ObjectInstanceData {
-		ObjectTransformData transform;
-		ObjectTransformData localTransform;
-	};
-
+	template<typename AllocatorSystem>
 	struct ObjectData {
-		unsigned int id;
-		unsigned int unk2;
-		unsigned int unk3;
-		float unk4;
+		ucsl::objectids::ObjectIdV1 id;
+		unsigned int objectClassId;
+		unsigned int bvhNode;
+		float replicationInterval;
 		float m_distance;
 		float m_range;
-		ObjectInstanceData* instances;
-		unsigned int instanceCount;
+		containers::arrays::TArray<ObjectTransformData, AllocatorSystem> instances;
 		// parameter data follows, aligned at 16
 	};
 
@@ -30,15 +27,16 @@ namespace ucsl::resources::sobj::v1 {
 		unsigned short* objectIndices;
 	};
 
+	template<typename AllocatorSystem>
 	struct SetObjectData {
 		unsigned int magic;
 		unsigned int version;
 		unsigned int objectTypeCount;
 		ObjectTypeData* objectTypes;
-		int unk1;
-		ObjectData** objects;
+		size_t bvh;
+		ObjectData<AllocatorSystem>** objects;
 		unsigned int objectCount;
-		unsigned int unk2;
-		unsigned int unk3;
+		unsigned int bvhNodeCount;
+		unsigned int objectInstanceCount;
 	};
 }
