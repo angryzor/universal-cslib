@@ -2,7 +2,7 @@
 #include <ucsl/math.h>
 
 namespace ucsl::resources::fxcol::v1 {
-    struct FxColCollisionShapeData {
+    struct ShapeData {
         enum class Shape : unsigned char {
             SPHERE,
             CYLINDER,
@@ -95,26 +95,37 @@ namespace ucsl::resources::fxcol::v1 {
         math::Rotation rotation;
     };
 
-    struct FxColBoundingVolumeData {
+    enum class KdTreeNodeType {
+        SPLIT_X,
+        SPLIT_Y,
+        SPLIT_Z,
+        LEAF,
+    };
+
+    // This is very similar to the node list in ResKdTree, with the single difference that an invalid node
+    // has the deadZoneStartCoord set to -1 instead of 0.
+    struct KdTreeNodeData {
+        int deadZoneStartCoordOrLeafIndexAndNodeType; // Type is in lower 2 bits for intermediate nodes, and deadzone start is in the other bits. For leaf nodes the other bits contain the leaf index (the index is shifted left 2 bits).
+        float deadZoneEndCoord;
+    };
+
+    struct KdTreeLeafData {
         unsigned int shapeCount;
-        int shapeStartIdx;
+        int shapeOffset;
         math::Position aabbMin;
         math::Position aabbMax;
     };
 
-    struct FxColUnk1Data {
-        int unk1;
-        int unk2;
-    };
-
+    // The K/D tree nodes are not used by the engine, it builds its own ResKdTree from the leaf AABBs, so it can be omitted.
+    // NOTE: IT DOES USE THE LEAVES, THESE _MUST_ BE PRESENT.
     struct FxColData {
         unsigned int magic;
         unsigned int version;
-        unsigned int collisionShapeCount;
-        FxColCollisionShapeData* collisionShapes;
-        unsigned int boundingVolumeCount;
-        FxColBoundingVolumeData* boundingVolumes;
-        unsigned int unk1Count;
-        FxColUnk1Data* unk1s;
+        unsigned int shapeCount;
+        ShapeData* shapes;
+        unsigned int kdTreeLeafCount;
+        KdTreeLeafData* kdTreeLeaves;
+        unsigned int kdTreeNodeCount;
+        KdTreeNodeData* kdTreeNodes;
     };
 }

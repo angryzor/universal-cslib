@@ -9,7 +9,7 @@ namespace ucsl::resources::kd_tree::v1 {
 	};
 
 	struct ResKdTreeNodeData {
-		float deadZoneStartCoordOrLeafIndexAndNodeType; // Type is in lower 2 bits for intermediate nodes, and deadzone start is in the other bits. For leaf nodes the other bits contain the leaf index (the index is shifted left 2 bits).
+		unsigned int deadZoneStartCoordOrLeafIndexAndNodeType; // Type is in lower 2 bits for intermediate nodes, and deadzone start is in the other bits. For leaf nodes the other bits contain the leaf index (the index is shifted left 2 bits).
 		float deadZoneEndCoord;
 	};
 

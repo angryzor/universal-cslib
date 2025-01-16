@@ -169,14 +169,22 @@ namespace ucsl::resources::swif::v6 {
         unsigned short flags{};
         unsigned int firstFrame{};
         unsigned int lastFrame{};
-        SRS_KEYFRAME* keyFrames{};
+        SRS_KEYFRAME_PTR keyFrames{};
 
         inline EInterpolationType GetInterpolationType() const {
             return static_cast<EInterpolationType>(flags & 0x3);
         }
 
+        inline void SetInterpolationType(EInterpolationType type) {
+            flags = (flags & ~0x3) | (static_cast<unsigned int>(type) & 0x3);
+        }
+
         inline ETrackDataType GetDataType() const {
             return static_cast<ETrackDataType>((flags >> 4) & 0xF);
+        }
+
+        inline void SetDataType(ETrackDataType type) {
+            flags = (flags & ~(0xF << 4)) | ((static_cast<unsigned int>(type) & 0xF) << 4);
         }
     };
 

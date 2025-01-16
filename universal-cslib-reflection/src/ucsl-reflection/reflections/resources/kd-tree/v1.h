@@ -17,7 +17,7 @@ namespace ucsl::resources::kd_tree::v1::reflections {
 	>;
 
 	using ResKdTreeNodeData = structure<impl::ResKdTreeNodeData, "ResKdTreeNodeData", void,
-		field<float, "deadZoneStartCoordOrLeafIndexAndNodeType">,
+		field<unsigned int, "deadZoneStartCoordOrLeafIndexAndNodeType">,
 		field<float, "deadZoneEndCoord">
 	>;
 

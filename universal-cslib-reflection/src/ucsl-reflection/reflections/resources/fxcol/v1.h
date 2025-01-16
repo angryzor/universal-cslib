@@ -11,32 +11,32 @@ namespace ucsl::resources::fxcol::v1::reflections {
 
     namespace impl = ucsl::resources::fxcol::v1;
 
-    using Shape = enumeration<impl::FxColCollisionShapeData::Shape, "Shape", unsigned char,
+    using Shape = enumeration<impl::ShapeData::Shape, "Shape", unsigned char,
         option<"SPHERE">,
         option<"CYLINDER">,
         option<"ANISOTROPIC_OBB">,
         option<"ISOTROPIC_OBB">
     >;
 
-    using Type = enumeration<impl::FxColCollisionShapeData::Type, "Type", unsigned char,
+    using Type = enumeration<impl::ShapeData::Type, "Type", unsigned char,
         option<"SCENE_PARAMETER_INDEX">,
         option<"LIGHT_PARAMETER_INDEX">,
         option<"CAMERA">,
         option<"HEAT_HAZE">
     >;
 
-    using SphereExtents = structure<impl::FxColCollisionShapeData::SphereExtents, "SphereExtents", void,
+    using SphereExtents = structure<impl::ShapeData::SphereExtents, "SphereExtents", void,
         field<float, "radius">,
         field<float, "borderThickness">
     >;
 
-    using CylinderExtents = structure<impl::FxColCollisionShapeData::CylinderExtents, "CylinderExtents", void,
+    using CylinderExtents = structure<impl::ShapeData::CylinderExtents, "CylinderExtents", void,
         field<float, "radius">,
         field<float, "halfHeight">,
         field<float, "borderThickness">
     >;
 
-    using AnisotropicObbExtents = structure<impl::FxColCollisionShapeData::AnisotropicObbExtents, "AnisotropicObbExtents", void,
+    using AnisotropicObbExtents = structure<impl::ShapeData::AnisotropicObbExtents, "AnisotropicObbExtents", void,
         field<float, "depth">,
         field<float, "width">,
         field<float, "height">,
@@ -45,19 +45,19 @@ namespace ucsl::resources::fxcol::v1::reflections {
         field<float, "negativeDepthBorderThickness">
     >;
 
-    using IsotropicObbExtents = structure<impl::FxColCollisionShapeData::IsotropicObbExtents, "IsotropicObbExtents", void,
+    using IsotropicObbExtents = structure<impl::ShapeData::IsotropicObbExtents, "IsotropicObbExtents", void,
         field<float, "depth">,
         field<float, "width">,
         field<float, "height">,
         field<float, "borderThickness">
     >;
 
-    using Extents = unionof<impl::FxColCollisionShapeData::Extents, "Extents", impl::FxColCollisionShapeData, [](const impl::FxColCollisionShapeData& parent) -> size_t {
+    using Extents = unionof<impl::ShapeData::Extents, "Extents", impl::ShapeData, [](const impl::ShapeData& parent) -> size_t {
         switch (parent.shape) {
-        case impl::FxColCollisionShapeData::Shape::SPHERE: return 0;
-        case impl::FxColCollisionShapeData::Shape::CYLINDER: return 1;
-        case impl::FxColCollisionShapeData::Shape::ANISOTROPIC_OBB: return 2;
-        case impl::FxColCollisionShapeData::Shape::ISOTROPIC_OBB: return 3;
+        case impl::ShapeData::Shape::SPHERE: return 0;
+        case impl::ShapeData::Shape::CYLINDER: return 1;
+        case impl::ShapeData::Shape::ANISOTROPIC_OBB: return 2;
+        case impl::ShapeData::Shape::ISOTROPIC_OBB: return 3;
         default: assert(false && "unknown shape"); return 0;
         }
     }, 
@@ -67,21 +67,21 @@ namespace ucsl::resources::fxcol::v1::reflections {
         field<IsotropicObbExtents, "isotropicObb">
     >;
 
-    using SceneParameterIndexParameters = structure<impl::FxColCollisionShapeData::SceneParameterIndexParameters, "SceneParameterIndexParameters", void,
+    using SceneParameterIndexParameters = structure<impl::ShapeData::SceneParameterIndexParameters, "SceneParameterIndexParameters", void,
         field<unsigned int, "sceneParameterIndex">,
         field<float, "interpolationTime">
     >;
 
-    using LightParameterIndexParameters = structure<impl::FxColCollisionShapeData::LightParameterIndexParameters, "LightParameterIndexParameters", void,
+    using LightParameterIndexParameters = structure<impl::ShapeData::LightParameterIndexParameters, "LightParameterIndexParameters", void,
         field<unsigned int, "lightParameterIndex">
     >;
 
-    using HeatHazeParameters = structure<impl::FxColCollisionShapeData::HeatHazeParameters, "HeatHazeParameters", void,
+    using HeatHazeParameters = structure<impl::ShapeData::HeatHazeParameters, "HeatHazeParameters", void,
         field<float, "heatHazeMaxHeight">,
         field<float, "interpolationTime">
     >;
 
-    using CameraParameters = structure<impl::FxColCollisionShapeData::CameraParameters, "CameraParameters", void,
+    using CameraParameters = structure<impl::ShapeData::CameraParameters, "CameraParameters", void,
         field<unsigned int, "unk1">,
         field<unsigned int, "unk2">,
         field<float, "bloomScale">,
@@ -92,12 +92,12 @@ namespace ucsl::resources::fxcol::v1::reflections {
         field<float, "interpolationTime">
     >;
 
-    using Parameters = unionof<impl::FxColCollisionShapeData::Parameters, "Parameters", impl::FxColCollisionShapeData, [](const impl::FxColCollisionShapeData& parent) -> size_t {
+    using Parameters = unionof<impl::ShapeData::Parameters, "Parameters", impl::ShapeData, [](const impl::ShapeData& parent) -> size_t {
         switch (parent.type) {
-        case impl::FxColCollisionShapeData::Type::SCENE_PARAMETER_INDEX: return 0;
-        case impl::FxColCollisionShapeData::Type::LIGHT_PARAMETER_INDEX: return 1;
-        case impl::FxColCollisionShapeData::Type::HEAT_HAZE: return 2;
-        case impl::FxColCollisionShapeData::Type::CAMERA: return 3;
+        case impl::ShapeData::Type::SCENE_PARAMETER_INDEX: return 0;
+        case impl::ShapeData::Type::LIGHT_PARAMETER_INDEX: return 1;
+        case impl::ShapeData::Type::HEAT_HAZE: return 2;
+        case impl::ShapeData::Type::CAMERA: return 3;
         default: assert(false && "unknown type"); return 0;
         }
     },
@@ -107,7 +107,7 @@ namespace ucsl::resources::fxcol::v1::reflections {
         field<CameraParameters, "camera">
     >;
 
-    using FxColCollisionShapeData = structure<impl::FxColCollisionShapeData, "FxColCollisionShapeData", void,
+    using ShapeData = structure<impl::ShapeData, "ShapeData", void,
         field<const char*, "name">,
         field<Shape, "shape">,
         field<Type, "type">,
@@ -120,45 +120,53 @@ namespace ucsl::resources::fxcol::v1::reflections {
         field<math::Rotation, "rotation">
     >;
 
-    using FxColBoundingVolumeData = structure<impl::FxColBoundingVolumeData, "FxColBoundingVolumeData", void,
-        field<unsigned int, "shapeCount">,
-        field<int, "shapeStartIdx">,
-        field<math::Position, "aabbMin">,
-        field<math::Position, "aabbMax">
+    using KdTreeNodeType = enumeration<impl::KdTreeNodeType, "KdTreeNodeType", unsigned char,
+        option<"SPLIT_X">,
+        option<"SPLIT_Y">,
+        option<"SPLIT_Z">,
+        option<"LEAF">
     >;
 
-    using FxColUnk1Data = structure<impl::FxColUnk1Data, "FxColUnk1Data", void,
-        field<int, "unk1">,
-        field<int, "unk2">
+    using KdTreeNodeData = structure<impl::KdTreeNodeData, "KdTreeNodeData", void,
+        field<int, "deadZoneStartCoordOrLeafIndexAndNodeType">,
+        field<float, "deadZoneEndCoord">
+    >;
+
+    using KdTreeLeafData = structure<impl::KdTreeLeafData, "KdTreeLeafData", void,
+        field<unsigned int, "shapeCount">,
+        field<int, "shapeOffset">,
+        field<math::Position, "aabbMin">,
+        field<math::Position, "aabbMax">
     >;
 
     using FxColData = structure<impl::FxColData, "FxColData", void,
         field<constant<unsigned int, 0x4658434F>, "magic">,
         field<constant<unsigned int, 1>, "version">,
-        field<unsigned int, "collisionShapeCount">,
-        field<dynamic_carray<FxColCollisionShapeData, impl::FxColData, [](const impl::FxColData& parent) -> size_t { return parent.collisionShapeCount; }>*, "collisionShapes">,
-        field<unsigned int, "boundingVolumeCount">,
-        field<dynamic_carray<FxColBoundingVolumeData, impl::FxColData, [](const impl::FxColData& parent) -> size_t { return parent.boundingVolumeCount; }>*, "boundingVolumes">,
-        field<unsigned int, "unk1Count">,
-        field<dynamic_carray<FxColUnk1Data, impl::FxColData, [](const impl::FxColData& parent) -> size_t { return parent.unk1Count; }>*, "unk1s">
+        field<unsigned int, "shapeCount">,
+        field<dynamic_carray<ShapeData, impl::FxColData, [](const impl::FxColData& parent) -> size_t { return parent.shapeCount; }>*, "shapes">,
+        field<unsigned int, "kdTreeLeafCount">,
+        field<dynamic_carray<KdTreeLeafData, impl::FxColData, [](const impl::FxColData& parent) -> size_t { return parent.kdTreeLeafCount; }>*, "kdTreeLeaves">,
+        field<unsigned int, "kdTreeNodeCount">,
+        field<dynamic_carray<KdTreeNodeData, impl::FxColData, [](const impl::FxColData& parent) -> size_t { return parent.kdTreeNodeCount; }>*, "kdTreeNodes">
     >;
 }
 
 namespace simplerfl {
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData::Shape> { using type = ucsl::resources::fxcol::v1::reflections::Shape; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData::Type> { using type = ucsl::resources::fxcol::v1::reflections::Type; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData::SphereExtents> { using type = ucsl::resources::fxcol::v1::reflections::SphereExtents; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData::CylinderExtents> { using type = ucsl::resources::fxcol::v1::reflections::CylinderExtents; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData::AnisotropicObbExtents> { using type = ucsl::resources::fxcol::v1::reflections::AnisotropicObbExtents; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData::IsotropicObbExtents> { using type = ucsl::resources::fxcol::v1::reflections::IsotropicObbExtents; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData::Extents> { using type = ucsl::resources::fxcol::v1::reflections::Extents; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData::SceneParameterIndexParameters> { using type = ucsl::resources::fxcol::v1::reflections::SceneParameterIndexParameters; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData::LightParameterIndexParameters> { using type = ucsl::resources::fxcol::v1::reflections::LightParameterIndexParameters; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData::HeatHazeParameters> { using type = ucsl::resources::fxcol::v1::reflections::HeatHazeParameters; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData::CameraParameters> { using type = ucsl::resources::fxcol::v1::reflections::CameraParameters; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData::Parameters> { using type = ucsl::resources::fxcol::v1::reflections::Parameters; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColCollisionShapeData> { using type = ucsl::resources::fxcol::v1::reflections::FxColCollisionShapeData; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColBoundingVolumeData> { using type = ucsl::resources::fxcol::v1::reflections::FxColBoundingVolumeData; };
-    template<> struct canonical<ucsl::resources::fxcol::v1::FxColUnk1Data> { using type = ucsl::resources::fxcol::v1::reflections::FxColUnk1Data; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData::Shape> { using type = ucsl::resources::fxcol::v1::reflections::Shape; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData::Type> { using type = ucsl::resources::fxcol::v1::reflections::Type; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData::SphereExtents> { using type = ucsl::resources::fxcol::v1::reflections::SphereExtents; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData::CylinderExtents> { using type = ucsl::resources::fxcol::v1::reflections::CylinderExtents; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData::AnisotropicObbExtents> { using type = ucsl::resources::fxcol::v1::reflections::AnisotropicObbExtents; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData::IsotropicObbExtents> { using type = ucsl::resources::fxcol::v1::reflections::IsotropicObbExtents; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData::Extents> { using type = ucsl::resources::fxcol::v1::reflections::Extents; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData::SceneParameterIndexParameters> { using type = ucsl::resources::fxcol::v1::reflections::SceneParameterIndexParameters; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData::LightParameterIndexParameters> { using type = ucsl::resources::fxcol::v1::reflections::LightParameterIndexParameters; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData::HeatHazeParameters> { using type = ucsl::resources::fxcol::v1::reflections::HeatHazeParameters; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData::CameraParameters> { using type = ucsl::resources::fxcol::v1::reflections::CameraParameters; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData::Parameters> { using type = ucsl::resources::fxcol::v1::reflections::Parameters; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::ShapeData> { using type = ucsl::resources::fxcol::v1::reflections::ShapeData; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::KdTreeNodeType> { using type = ucsl::resources::fxcol::v1::reflections::KdTreeNodeType; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::KdTreeNodeData> { using type = ucsl::resources::fxcol::v1::reflections::KdTreeNodeData; };
+    template<> struct canonical<ucsl::resources::fxcol::v1::KdTreeLeafData> { using type = ucsl::resources::fxcol::v1::reflections::KdTreeLeafData; };
     template<> struct canonical<ucsl::resources::fxcol::v1::FxColData> { using type = ucsl::resources::fxcol::v1::reflections::FxColData; };
 }

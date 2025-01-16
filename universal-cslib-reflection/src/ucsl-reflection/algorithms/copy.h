@@ -76,8 +76,8 @@ namespace ucsl::reflection::algorithms {
 			return 0;
 		}
 
-		template<typename F>
-		result_type visit_pointer(opaque_obj*& obj1, opaque_obj*& obj2, const PointerInfo& info1, const PointerInfo& info2, F f) {
+		template<typename F, typename A1, typename S1, typename A2, typename S2>
+		result_type visit_pointer(opaque_obj*& obj1, opaque_obj*& obj2, const PointerInfo<A1, S1>& info1, const PointerInfo<A2, S2>& info2, F f) {
 			assert(false && "copy currently doesn't handle pointers");
 			return 0;
 		}
