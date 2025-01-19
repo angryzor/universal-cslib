@@ -21,6 +21,6 @@ namespace ucsl::resources::scfnt::v1000 {
         Character* chars;
         int charCount;
         long long ttfDataSize;
-        char ttfData;
+        // char ttfData[ttfDataSize];
     };
 }
