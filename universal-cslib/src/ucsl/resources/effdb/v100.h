@@ -25,7 +25,7 @@ namespace ucsl::resources::effdb::v100 {
     struct State {
         const char* stateName;
         int particleCount;
-        Particle particles*;
+        Particle* particles;
         int soundNameCount;
         const char** soundNames;
     };
