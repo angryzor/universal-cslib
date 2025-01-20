@@ -103,6 +103,9 @@ namespace ucsl::reflections {
 		field<T, "g">,
 		field<T, "r">
 	>>;
+
+	typedef Color<unsigned char> Color8;
+	typedef Color<float> Colorf;
 }
 
 namespace simplerfl {
@@ -121,4 +124,6 @@ namespace simplerfl {
 	template<> struct canonical<ucsl::objectids::ObjectIdV1> { using type = primitive<ucsl::objectids::ObjectIdV1>; };
 	template<> struct canonical<ucsl::objectids::ObjectIdV2> { using type = primitive<ucsl::objectids::ObjectIdV2>; };
 	template<typename T> struct canonical<ucsl::colors::Color<T>> { using type = ucsl::reflection::colors::Color<T>; };
+	template<> struct canonical<ucsl::colors::Color8> { using type = ucsl::reflection::colors::Color8; };
+	template<> struct canonical<ucsl::colors::Colorf> { using type = ucsl::reflection::colors::Colorf; };
 }
