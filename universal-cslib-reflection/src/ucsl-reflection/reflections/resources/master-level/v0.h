@@ -25,7 +25,7 @@ namespace ucsl::resources::master_level::v0::reflections {
 		field<unsigned int, "dependencyCount">,
 		field<dynamic_carray<ResourceData*, impl::LevelData, [](const LevelData& mlevel) -> size_t { return mlevel.resourceCount; }>*, "resources">,
 		field<dynamic_carray<DependencyData*, impl::LevelData, [](const LevelData& mlevel) -> size_t { return mlevel.dependencyCount; }>*, "dependencies">,
-		field<bool, "loadImmediately">,
+		field<bool, "isPublic">,
 		field<bool, "hasFiles">
 	>;
 

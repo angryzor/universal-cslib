@@ -20,7 +20,7 @@ namespace ucsl::resources::master_level::v0 {
 		unsigned int dependencyCount;
 		ResourceData** resources;
 		DependencyData** dependencies;
-		bool loadImmediately;
+		bool isPublic;
 		bool hasResources;
 	};
 
