@@ -57,6 +57,8 @@ namespace ucsl::rfl {
 			const unsigned long long flags{};
 
 		public:
+			RflClassEnumMember(int index, const char* englishName, const char* japaneseName, unsigned long long flags)
+				: index{ index }, englishName{ englishName }, japaneseName{ japaneseName }, flags{ flags } {}
 			int GetIndex() const { return index; }
 			const char* GetEnglishName() const { return englishName; }
 			const char* GetJapaneseName() const { return japaneseName; }
