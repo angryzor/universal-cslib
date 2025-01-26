@@ -116,6 +116,9 @@ namespace ucsl::rfl {
 				const void* value;
 
 			public:
+				Value(const char* name, Type type, const void* value)
+					: name{ name }, type{ type }, value{ value } {}
+
 				const char* GetName() const { return name; }
 				Type GetType() const { return type; }
 				const void* GetValue() const { return value; }

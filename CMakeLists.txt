@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(universal-cslib VERSION 1.0.30
+project(universal-cslib VERSION 1.0.31
                  DESCRIPTION "Universal CSLib"
                  LANGUAGES CXX)
 
