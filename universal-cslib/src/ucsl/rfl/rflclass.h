@@ -18,6 +18,8 @@ namespace ucsl::rfl {
 		const T* const items{};
 		const unsigned int count{};
 	public:
+		template<unsigned int ItemCount>
+		RflArray(const T(&items)[ItemCount]) : RflArray{ items, ItemCount } {}
 		RflArray(const T* items, unsigned int count) : items{ items }, count{ count } {}
 
 #ifndef EXPORTING_TYPES
@@ -33,6 +35,9 @@ namespace ucsl::rfl {
 			const RflClass* const type{};
 
 		public:
+			RflCustomAttribute(const char* name, const void* data, const RflClass* type)
+				: name{ name }, data{ data }, type{ type } {}
+
 			const char* GetName() const { return name; }
 			template<typename T> const T* GetData() const { return static_cast<const T*>(data); }
 			const RflClass* GetType() const { return type; }
@@ -42,6 +47,12 @@ namespace ucsl::rfl {
 			const RflArray<const RflCustomAttribute> items{};
 
 		public:
+			template<unsigned int ItemCount>
+			RflCustomAttributes(const RflCustomAttribute (&items)[ItemCount])
+				: RflCustomAttributes{ items, ItemCount } {}
+			RflCustomAttributes(const RflCustomAttribute* items, unsigned int itemCount)
+				: items{ items, itemCount } {}
+
 			const RflCustomAttribute* GetAttribute(const char* name) const {
 				auto s = items.GetItems();
 				auto res = std::find_if(s.begin(), s.end(), [name](auto& attr) { return attr.GetName() == name || !strcmp(attr.GetName(), name); });
@@ -57,8 +68,9 @@ namespace ucsl::rfl {
 			const unsigned long long flags{};
 
 		public:
-			RflClassEnumMember(int index, const char* englishName, const char* japaneseName, unsigned long long flags)
+			RflClassEnumMember(int index, const char* englishName, const char* japaneseName, unsigned long long flags = 0ull)
 				: index{ index }, englishName{ englishName }, japaneseName{ japaneseName }, flags{ flags } {}
+
 			int GetIndex() const { return index; }
 			const char* GetEnglishName() const { return englishName; }
 			const char* GetJapaneseName() const { return japaneseName; }
@@ -70,6 +82,12 @@ namespace ucsl::rfl {
 			const RflArray<const RflClassEnumMember> values{};
 
 		public:
+			template<unsigned int ValueCount>
+			RflClassEnum(const char* name, const RflClassEnumMember (&values)[ValueCount])
+				: RflClassEnum{ name, values, ValueCount } {}
+			RflClassEnum(const char* name, const RflClassEnumMember* values, unsigned int valueCount)
+				: name{ name }, values{ values, valueCount } {}
+
 			const char* GetName() const { return name; }
 #ifndef EXPORTING_TYPES
 			std::span<const RflClassEnumMember> GetValues() const { return values.GetItems(); }
