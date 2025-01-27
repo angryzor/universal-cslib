@@ -18,7 +18,7 @@ namespace ucsl::resources::converse_project::v4 {
 
     struct Color {
         const char* name;
-        ucsl::colors::Color<char> color; // RGBA
+        ucsl::colors::Color8RGBA color;
         long long unk0;
     };
 

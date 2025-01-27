@@ -78,8 +78,7 @@ namespace ucsl::reflection::game_interfaces::standalone {
 			};
 
 			static constexpr bool supports_old_array = true;
-			static constexpr bool supports_object_id_v1 = true;
-			static constexpr bool supports_object_id_v2 = true;
+			template<typename T> static constexpr bool supports_primitive = true;
 		};
 
 		class RflClassEnumMember {
