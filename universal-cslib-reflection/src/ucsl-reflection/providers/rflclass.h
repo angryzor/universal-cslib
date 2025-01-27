@@ -24,27 +24,27 @@ namespace ucsl::reflection::providers {
 			constexpr static TypeKind kind = TypeKind::PRIMITIVE;
 			template<typename F>
 			auto visit(F f) {
-				if constexpr (GameInterface::RflSystem::TypeSet::supports_primitive<objectids::ObjectIdV1>)
+				if constexpr (GameInterface::RflSystem::TypeSet::template supports_primitive<objectids::ObjectIdV1>)
 					if (type == MemberType::OBJECT_ID_V1)
 						return f(PrimitiveData<objectids::ObjectIdV1>{});
 
-				if constexpr (GameInterface::RflSystem::TypeSet::supports_primitive<objectids::ObjectIdV2>)
+				if constexpr (GameInterface::RflSystem::TypeSet::template supports_primitive<objectids::ObjectIdV2>)
 					if (type == MemberType::OBJECT_ID_V2)
 						return f(PrimitiveData<objectids::ObjectIdV2>{});
 
-				if constexpr (GameInterface::RflSystem::TypeSet::supports_primitive<colors::Color8RGBA>)
+				if constexpr (GameInterface::RflSystem::TypeSet::template supports_primitive<colors::Color8RGBA>)
 					if (type == MemberType::COLOR_BYTE_RGBA)
 						return f(PrimitiveData<colors::Color8RGBA>{});
 
-				if constexpr (GameInterface::RflSystem::TypeSet::supports_primitive<colors::ColorfRGBA>)
+				if constexpr (GameInterface::RflSystem::TypeSet::template supports_primitive<colors::ColorfRGBA>)
 					if (type == MemberType::COLOR_FLOAT_RGBA)
 						return f(PrimitiveData<colors::ColorfRGBA>{});
 
-				if constexpr (GameInterface::RflSystem::TypeSet::supports_primitive<colors::Color8ABGR>)
+				if constexpr (GameInterface::RflSystem::TypeSet::template supports_primitive<colors::Color8ABGR>)
 					if (type == MemberType::COLOR_BYTE_ABGR)
 						return f(PrimitiveData<colors::Color8ABGR>{});
 
-				if constexpr (GameInterface::RflSystem::TypeSet::supports_primitive<colors::ColorfABGR>)
+				if constexpr (GameInterface::RflSystem::TypeSet::template supports_primitive<colors::ColorfABGR>)
 					if (type == MemberType::COLOR_FLOAT_ABGR)
 						return f(PrimitiveData<colors::ColorfABGR>{});
 
