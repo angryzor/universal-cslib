@@ -19,11 +19,11 @@ namespace ucsl::colors {
 		Color() {}
 		Color(T r, T g, T b, T a) : r{ r }, g{ g }, b{ b }, a{ a } {}
 
-		inline bool operator==(const Color<T>& other) const {
+		inline bool operator==(const Color<T, ChannelOrder::RGBA>& other) const {
 			return r == other.r && g == other.g && b == other.b && a == other.a;
 		}
 
-		inline bool operator!=(const Color<T>& other) const {
+		inline bool operator!=(const Color<T, ChannelOrder::RGBA>& other) const {
 			return !operator==(other);
 		}
 	};
@@ -38,11 +38,11 @@ namespace ucsl::colors {
 		Color() {}
 		Color(T r, T g, T b, T a) : r{ r }, g{ g }, b{ b }, a{ a } {}
 
-		inline bool operator==(const Color<T>& other) const {
+		inline bool operator==(const Color<T, ChannelOrder::ABGR>& other) const {
 			return r == other.r && g == other.g && b == other.b && a == other.a;
 		}
 
-		inline bool operator!=(const Color<T>& other) const {
+		inline bool operator!=(const Color<T, ChannelOrder::ABGR>& other) const {
 			return !operator==(other);
 		}
 	};
