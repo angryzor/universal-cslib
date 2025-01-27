@@ -394,15 +394,15 @@ namespace ucsl::rfl {
 				{ MemberType::STRING, "string", sizeof(strings::VariableString), alignof(strings::VariableString) },
 				{ MemberType::OBJECT_ID_V1, "csetobjectid", sizeof(objectids::ObjectIdV1), alignof(objectids::ObjectIdV1) },
 				{ MemberType::POSITION, "position", sizeof(math::Position), alignof(math::Position) },
-				{ MemberType::COLOR_BYTE_RGBA, "color8", sizeof(colors::ColorRGBA8), alignof(colors::ColorRGBA8) },
-				{ MemberType::COLOR_FLOAT_RGBA, "colorf", sizeof(colors::ColorRGBAf), alignof(colors::ColorRGBAf) },
+				{ MemberType::COLOR_BYTE_RGBA, "color8", sizeof(colors::Color8RGBA), alignof(colors::Color8RGBA) },
+				{ MemberType::COLOR_FLOAT_RGBA, "colorf", sizeof(colors::ColorfRGBA), alignof(colors::ColorfRGBA) },
 			};
 
 			static constexpr bool supports_old_array = true;
 			template<typename T> static constexpr bool supports_primitive = true;
 			template<> static constexpr bool supports_primitive<objectids::ObjectIdV2> = false
-			template<> static constexpr bool supports_primitive<colors::ColorABGR8> = false;
-			template<> static constexpr bool supports_primitive<colors::ColorABGRf> = false;
+			template<> static constexpr bool supports_primitive<colors::Color8ABGR> = false;
+			template<> static constexpr bool supports_primitive<colors::ColorfABGR> = false;
 		};
 
 		struct rangers {
@@ -466,15 +466,15 @@ namespace ucsl::rfl {
 				{ MemberType::STRING, "string", sizeof(strings::VariableString), alignof(strings::VariableString) },
 				{ MemberType::OBJECT_ID_V2, "csetobjectid", sizeof(objectids::ObjectIdV2), alignof(objectids::ObjectIdV2) },
 				{ MemberType::POSITION, "position", sizeof(math::Position), alignof(math::Position) },
-				{ MemberType::COLOR_BYTE_ABGR, "color8", sizeof(colors::ColorABGR8), alignof(colors::ColorABGR8) },
-				{ MemberType::COLOR_FLOAT_ABGR, "colorf", sizeof(colors::ColorABGRf), alignof(colors::ColorABGRf) },
+				{ MemberType::COLOR_BYTE_ABGR, "color8", sizeof(colors::Color8ABGR), alignof(colors::Color8ABGR) },
+				{ MemberType::COLOR_FLOAT_ABGR, "colorf", sizeof(colors::ColorfABGR), alignof(colors::ColorfABGR) },
 			};
 
 			static constexpr bool supports_old_array = false;
 			template<typename T> static constexpr bool supports_primitive = true;
 			template<> static constexpr bool supports_primitive<objectids::ObjectIdV1> = false
-			template<> static constexpr bool supports_primitive<colors::ColorRGBA8> = false;
-			template<> static constexpr bool supports_primitive<colors::ColorRGBAf> = false;
+			template<> static constexpr bool supports_primitive<colors::Color8RGBA> = false;
+			template<> static constexpr bool supports_primitive<colors::ColorfRGBA> = false;
 		};
 	}
 
