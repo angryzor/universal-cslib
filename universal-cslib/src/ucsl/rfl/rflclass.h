@@ -400,7 +400,7 @@ namespace ucsl::rfl {
 
 			static constexpr bool supports_old_array = true;
 			template<typename T> static constexpr bool supports_primitive = true;
-			template<> static constexpr bool supports_primitive<objectids::ObjectIdV2> = false
+			template<> static constexpr bool supports_primitive<objectids::ObjectIdV2> = false;
 			template<> static constexpr bool supports_primitive<colors::Color8ABGR> = false;
 			template<> static constexpr bool supports_primitive<colors::ColorfABGR> = false;
 		};
@@ -472,7 +472,7 @@ namespace ucsl::rfl {
 
 			static constexpr bool supports_old_array = false;
 			template<typename T> static constexpr bool supports_primitive = true;
-			template<> static constexpr bool supports_primitive<objectids::ObjectIdV1> = false
+			template<> static constexpr bool supports_primitive<objectids::ObjectIdV1> = false;
 			template<> static constexpr bool supports_primitive<colors::Color8RGBA> = false;
 			template<> static constexpr bool supports_primitive<colors::ColorfRGBA> = false;
 		};
