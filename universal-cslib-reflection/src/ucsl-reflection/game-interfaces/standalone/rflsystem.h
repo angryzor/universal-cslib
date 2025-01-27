@@ -39,8 +39,10 @@ namespace ucsl::reflection::game_interfaces::standalone {
 				OBJECT_ID_V1,
 				OBJECT_ID_V2,
 				POSITION,
-				COLOR_BYTE,
-				COLOR_FLOAT,
+				COLOR_BYTE_RGBA,
+				COLOR_FLOAT_RGBA,
+				COLOR_BYTE_ABGR,
+				COLOR_FLOAT_ABGR,
 			};
 
 			inline static const ucsl::rfl::type_sets::Metadata<MemberType> metadata[] = {
@@ -73,8 +75,10 @@ namespace ucsl::reflection::game_interfaces::standalone {
 				{ MemberType::OBJECT_ID_V1, "csetobjectidv1", sizeof(objectids::ObjectIdV1), alignof(objectids::ObjectIdV1) },
 				{ MemberType::OBJECT_ID_V2, "csetobjectidv2", sizeof(objectids::ObjectIdV2), alignof(objectids::ObjectIdV2) },
 				{ MemberType::POSITION, "position", sizeof(math::Position), alignof(math::Position) },
-				{ MemberType::COLOR_BYTE, "color8", sizeof(colors::Color8), alignof(colors::Color8) },
-				{ MemberType::COLOR_FLOAT, "colorf", sizeof(colors::Colorf), alignof(colors::Colorf) },
+				{ MemberType::COLOR_BYTE_RGBA, "color8rgba", sizeof(colors::Color8RGBA), alignof(colors::Color8RGBA) },
+				{ MemberType::COLOR_FLOAT_RGBA, "colorfrgba", sizeof(colors::ColorfRGBA), alignof(colors::ColorfRGBA) },
+				{ MemberType::COLOR_BYTE_ABGR, "color8abgr", sizeof(colors::Color8ABGR), alignof(colors::Color8ABGR) },
+				{ MemberType::COLOR_FLOAT_ABGR, "colorfabgr", sizeof(colors::ColorfABGR), alignof(colors::ColorfABGR) },
 			};
 
 			static constexpr bool supports_old_array = true;
