@@ -396,8 +396,7 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<Color, "vertexColorBottomLeft">,
 		field<Color, "vertexColorTopRight">,
 		field<Color, "vertexColorBottomRight">,
-		field<short, "cropIndex0">,
-		field<short, "cropIndex1">
+		field<short, "cropIndex0">
 	>;
 
 	using SRS_SLICECAST = structure<impl::SRS_SLICECAST, "SRS_SLICECAST", void,
@@ -414,7 +413,6 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<short, "horizontalFixedCount">,
 		field<short, "verticalFixedCount">,
 		field<short, "cropRef0Count">,
-		field<short, "cropRef1Count">,
 		field<dynamic_carray<SRS_CROPREF, impl::SRS_SLICECAST, [](const impl::SRS_SLICECAST& imageCast) -> size_t { return imageCast.cropRef0Count; }>*, "cropRefs0">,
 		field<unsigned int, "effectType">,
 		field<SRS_EFFECT_PTR<impl::SRS_SLICECAST>, "effectData">,
