@@ -94,7 +94,7 @@ namespace ucsl::resources::aism::v0 {
         const char* name;
         const char* type;
         int superState;
-        int initialChildState;
+        int entryChildState;
         TriggerData* triggers;
         unsigned int triggerCount;
         ReactionData* reactions;

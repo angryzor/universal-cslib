@@ -16,8 +16,8 @@ namespace ucsl::resources::master_level::v0 {
 
 	struct LevelData {
 		const char* name;
-		unsigned int resourceCount;
-		unsigned int dependencyCount;
+		int resourceCount;
+		int dependencyCount;
 		ResourceData** resources;
 		DependencyData** dependencies;
 		bool isPublic;
@@ -27,7 +27,7 @@ namespace ucsl::resources::master_level::v0 {
 	struct MasterLevelData {
 		unsigned int magic;
 		unsigned int version;
-		unsigned int levelCount;
+		int levelCount;
 		LevelData** levels;
 	};
 };

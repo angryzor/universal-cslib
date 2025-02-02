@@ -278,7 +278,7 @@ namespace ucsl::resources::swif::v6::reflections {
 
 	using SRS_FONT = structure<impl::SRS_FONT, "SRS_FONT", void,
 		field<const char*, "name">,
-		field<int, "id">,
+		field<unsigned int, "id">,
 		field<unsigned int, "unk1">,
 		field<short, "unk2">,
 		field<unsigned short, "characterCount">,
@@ -423,7 +423,7 @@ namespace ucsl::resources::swif::v6::reflections {
 
 	using SRS_REFERENCECAST = structure<impl::SRS_REFERENCECAST, "SRS_REFERENCECAST", void,
 		field<void*, "layer">,
-		field<int, "flags">,
+		field<unsigned int, "flags">,
 		field<unsigned int, "animationId">,
 		field<unsigned int, "animationFrame">,
 		field<int, "unk2">
@@ -446,7 +446,7 @@ namespace ucsl::resources::swif::v6::reflections {
 
 	using SRS_CASTNODE = structure<impl::SRS_CASTNODE, "SRS_CASTNODE", void,
 		field<const char*, "name">,
-		field<int, "id">,
+		field<unsigned int, "id">,
 		field<unsigned int, "flags">,
 		field<SRS_CAST_PTR, "data">,
 		field<short, "childIndex">,
@@ -462,8 +462,8 @@ namespace ucsl::resources::swif::v6::reflections {
 
 	using SRS_LAYER = structure<impl::SRS_LAYER, "SRS_LAYER", void,
 		field<const char*, "name">,
-		field<int, "id">,
-		field<int, "flags">,
+		field<unsigned int, "id">,
+		field<unsigned int, "flags">,
 		field<int, "castCount">,
 		field<dynamic_carray<SRS_CASTNODE, impl::SRS_LAYER, [](const impl::SRS_LAYER& layer) -> size_t { return layer.castCount; }>*, "casts">,
 		field<SRS_TRS_PTR, "transforms">,
@@ -476,7 +476,7 @@ namespace ucsl::resources::swif::v6::reflections {
 	// Cameras
 	using SRS_CAMERA = structure<impl::SRS_CAMERA, "SRS_CAMERA", void,
 		field<const char*, "name">,
-		field<int, "id">,
+		field<unsigned int, "id">,
 		field<Vector3, "position">,
 		field<Vector3, "target">,
 		field<bool, "isOrthogonal">,
@@ -490,8 +490,8 @@ namespace ucsl::resources::swif::v6::reflections {
 	// Scenes
 	using SRS_SCENE = structure<impl::SRS_SCENE, "SRS_SCENE", void,
 		field<const char*, "name">,
-		field<int, "id">,
-		field<int, "flags">,
+		field<unsigned int, "id">,
+		field<unsigned int, "flags">,
 		field<bool, "loaded">,
 		field<int, "layerCount">,
 		field<dynamic_carray<SRS_LAYER, impl::SRS_SCENE, [](const impl::SRS_SCENE& scene) -> size_t { return scene.layerCount; }>*, "layers">,

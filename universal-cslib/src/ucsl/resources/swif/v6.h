@@ -276,7 +276,7 @@ namespace ucsl::resources::swif::v6 {
 
     struct SRS_FONT {
         const char* name{};
-        int id{};
+        unsigned int id{};
         unsigned int unk1{};
         short unk2{};
         unsigned short characterCount{};
@@ -340,17 +340,35 @@ namespace ucsl::resources::swif::v6 {
     };
 
     // Effects
-    enum EEffectType : unsigned int {
-        NONE = 0,
-        BLUR = 1,
-        REFLECT = 2,
+    enum class EEffectType : unsigned int {
+        NONE,
+        BLUR,
+        REFLECT,
     };
 
-    enum EBlendMode : unsigned int {
+    enum class ERenderMode : unsigned int {
+        UNK0,
+        OVERRIDE,
+        UNK1,
+        UNK2,
+    };
+
+    enum class ECropBlendMode : unsigned int {
+        CROP0,
+        CROP1,
+        MODULATE,
+        CROP0_RGB_CROP1_A,
+        CROP0_RGBA_CROP1_A,
+        COLOR,
+    };
+
+    enum class EBlendMode : unsigned int {
         DEFAULT,
         ADD,
-        MODE2,
-        MODE3,
+        SUBTRACT,
+        MULTIPLY,
+        DEFAULT_NO_ALPHA,
+        OVERRIDE,
     };
 
     struct SRS_EFFECT {};
@@ -368,15 +386,15 @@ namespace ucsl::resources::swif::v6 {
             return static_cast<EBlendMode>(flags & 0xF);
         }
 
-        inline void SetBlendMode(EBlendMode type) {
+        inline void SetBlendMode(EBlendMode mode) {
             flags = (flags & ~0xF) | (static_cast<unsigned int>(type) & 0xF);
         }
 
-        inline bool Hides() const {
+        inline bool GetHideFlag() const {
             return flags & 0x1000;
         }
 
-        inline void SetHides(bool type) {
+        inline void SetHideFlag(bool type) {
             if (type)
                 flags |= 0x1000;
             else
@@ -401,15 +419,15 @@ namespace ucsl::resources::swif::v6 {
             return static_cast<EBlendMode>(flags & 0xF);
         }
 
-        inline void SetBlendMode(EBlendMode type) {
+        inline void SetBlendMode(EBlendMode mode) {
             flags = (flags & ~0xF) | (static_cast<unsigned int>(type) & 0xF);
         }
 
-        inline bool Hides() const {
+        inline bool GetHideFlag() const {
             return flags & 0x1000;
         }
 
-        inline void SetHides(bool type) {
+        inline void SetHideFlag(bool type) {
             if (type)
                 flags |= 0x1000;
             else
@@ -472,36 +490,40 @@ namespace ucsl::resources::swif::v6 {
             effectType = (effectType & ~0xF) | static_cast<unsigned int>(type & 0xF);
         }
 
-        inline EPivotType GetPivotType() const {
-            return static_cast<EPivotType>((flags >> 19) & 0xF);
+        // 0xF
+        inline EBlendMode GetBlendMode() const {
+            return static_cast<EBlendMode>(flags & 0xF);
         }
 
-        inline void SetPivotType(EPivotType pivotType) {
-            flags = (flags & ~(0xF << 19)) | ((static_cast<unsigned int>(pivotType) & 0xF) << 19);
+        inline void SetBlendMode(EBlendMode mode) {
+            flags = (flags & ~0xF) | (static_cast<unsigned int>(type) & 0xF);
         }
 
-        inline bool GetMaterialColorFlag() const {
+        // 0x10
+        inline bool GetMirrorHorizontallyFlag() const {
             return flags & 0x10;
         }
 
-        inline void SetMaterialColorFlag(bool enabled) {
+        inline void SetMirrorHorizontallyFlag(bool enabled) {
             if (enabled)
                 flags |= 0x10;
             else
                 flags &= ~0x10;
         }
 
-        inline bool GetIlluminationColorFlag() const {
+        // 0x20
+        inline bool GetMirrorVerticallyFlag() const {
             return flags & 0x20;
         }
 
-        inline void SetIlluminationColorFlag(bool enabled) {
+        inline void SetMirrorVerticallyFlag(bool enabled) {
             if (enabled)
                 flags |= 0x20;
             else
                 flags &= ~0x20;
         }
 
+        // 0xC0
         inline EOrientation GetOrientation() const {
             return static_cast<EOrientation>((flags >> 6) & 0x3);
         }
@@ -510,26 +532,67 @@ namespace ucsl::resources::swif::v6 {
             flags = (flags & ~(0x3 << 6)) | ((static_cast<unsigned int>(orientation) & 0x3) << 6);
         }
 
-        inline bool GetDisableTextureFlag() const {
+        // 0x100
+        inline bool GetTextFlag() const {
             return flags & 0x100;
         }
 
-        inline void SetDisableTextureFlag(bool enabled) {
+        inline void SetTextFlag(bool enabled) {
             if (enabled)
                 flags |= 0x100;
             else
                 flags &= ~0x100;
         }
 
-        inline bool GetUseCropSurface0Flag() const {
-            return flags & 0x20000;
+        // 0x600
+        inline ERenderMode GetRenderMode() const {
+            return static_cast<ERenderMode>((flags >> 9) & 0x3);
         }
 
-        inline void SetUseCropSurface0Flag(bool enabled) {
+        inline void SetRenderMode(ERenderMode mode) {
+            flags = (flags & ~(0x3 << 9)) | ((static_cast<unsigned int>(mode) & 0x3) << 9);
+        }
+        
+        // 0x1800
+        inline ECropBlendMode GetCropBlendMode() const {
+            return static_cast<ECropBlendMode>((flags >> 11) & 0x3);
+        }
+
+        inline void SetCropBlendMode(ECropBlendMode mode) {
+            flags = (flags & ~(0x3 << 11)) | ((static_cast<unsigned int>(mode) & 0x3) << 11);
+        }
+
+        // 0x2000
+        inline bool GetUnkFlag1() const {
+            return flags & 0x2000;
+        }
+
+        inline void SetUnkFlag1(bool enabled) {
             if (enabled)
-                flags |= 0x20000;
+                flags |= 0x2000;
             else
-                flags &= ~0x20000;
+                flags &= ~0x2000;
+        }
+
+        // 0x780000
+        inline EPivotType GetPivotType() const {
+            return static_cast<EPivotType>((flags >> 19) & 0xF);
+        }
+
+        inline void SetPivotType(EPivotType pivotType) {
+            flags = (flags & ~(0xF << 19)) | ((static_cast<unsigned int>(pivotType) & 0xF) << 19);
+        }
+
+        // 0x20000000
+        inline bool GetUnkFlag2() const {
+            return flags & 0x20000000;
+        }
+
+        inline void SetUnkFlag2(bool enabled) {
+            if (enabled)
+                flags |= 0x20000000;
+            else
+                flags &= ~0x20000000;
         }
     };
 
@@ -543,7 +606,6 @@ namespace ucsl::resources::swif::v6 {
         Color vertexColorTopRight{};
         Color vertexColorBottomRight{};
         short cropIndex0{};
-        short cropIndex1{};
     };
 
     struct SRS_SLICECAST {
@@ -560,7 +622,6 @@ namespace ucsl::resources::swif::v6 {
         short horizontalFixedCount{};
         short verticalFixedCount{};
         short cropRef0Count{};
-        short cropRef1Count{};
         SRS_CROPREF* cropRefs0{};
         unsigned int effectType{};
         SRS_EFFECT_PTR effectData{};
@@ -574,14 +635,40 @@ namespace ucsl::resources::swif::v6 {
             effectType = (effectType & ~0xF) | static_cast<unsigned int>(type & 0xF);
         }
 
-        inline EPivotType GetPivotType() const {
-            return static_cast<EPivotType>((flags >> 19) & 0xF);
+        // 0xF
+        inline EBlendMode GetBlendMode() const {
+            return static_cast<EBlendMode>(flags & 0xF);
         }
 
-        inline void SetPivotType(EPivotType pivotType) {
-            flags = (flags & ~(0xF << 19)) | ((static_cast<unsigned int>(pivotType) & 0xF) << 19);
+        inline void SetBlendMode(EBlendMode mode) {
+            flags = (flags & ~0xF) | (static_cast<unsigned int>(type) & 0xF);
         }
 
+        // 0x10
+        inline bool GetMirrorHorizontallyFlag() const {
+            return flags & 0x10;
+        }
+
+        inline void SetMirrorHorizontallyFlag(bool enabled) {
+            if (enabled)
+                flags |= 0x10;
+            else
+                flags &= ~0x10;
+        }
+
+        // 0x20
+        inline bool GetMirrorVerticallyFlag() const {
+            return flags & 0x20;
+        }
+
+        inline void SetMirrorVerticallyFlag(bool enabled) {
+            if (enabled)
+                flags |= 0x20;
+            else
+                flags &= ~0x20;
+        }
+
+        // 0xC0
         inline EOrientation GetOrientation() const {
             return static_cast<EOrientation>((flags >> 6) & 0x3);
         }
@@ -590,36 +677,98 @@ namespace ucsl::resources::swif::v6 {
             flags = (flags & ~(0x3 << 6)) | ((static_cast<unsigned int>(orientation) & 0x3) << 6);
         }
 
-        inline bool GetMaterialColorFlag() const {
-            return flags & 0x10;
+        // 0x100
+        inline bool GetTextFlag() const {
+            return flags & 0x100;
         }
 
-        inline void SetMaterialColorFlag(bool enabled) {
+        inline void SetTextFlag(bool enabled) {
             if (enabled)
-                flags |= 0x10;
+                flags |= 0x100;
             else
-                flags &= ~0x10;
+                flags &= ~0x100;
         }
 
-        inline bool GetIlluminationColorFlag() const {
-            return flags & 0x20;
+        // 0x600
+        inline ERenderMode GetRenderMode() const {
+            return static_cast<ERenderMode>((flags >> 9) & 0x3);
         }
 
-        inline void SetIlluminationColorFlag(bool enabled) {
+        inline void SetRenderMode(ERenderMode mode) {
+            flags = (flags & ~(0x3 << 9)) | ((static_cast<unsigned int>(mode) & 0x3) << 9);
+        }
+        
+        // 0x1800
+        inline ECropBlendMode GetCropBlendMode() const {
+            return static_cast<ECropBlendMode>((flags >> 11) & 0x3);
+        }
+
+        inline void SetCropBlendMode(ECropBlendMode mode) {
+            flags = (flags & ~(0x3 << 11)) | ((static_cast<unsigned int>(mode) & 0x3) << 11);
+        }
+
+        // 0x2000
+        inline bool GetUnkFlag1() const {
+            return flags & 0x2000;
+        }
+
+        inline void SetUnkFlag1(bool enabled) {
             if (enabled)
-                flags |= 0x20;
+                flags |= 0x2000;
             else
-                flags &= ~0x20;
+                flags &= ~0x2000;
+        }
+
+        // 0x780000
+        inline EPivotType GetPivotType() const {
+            return static_cast<EPivotType>((flags >> 19) & 0xF);
+        }
+
+        inline void SetPivotType(EPivotType pivotType) {
+            flags = (flags & ~(0xF << 19)) | ((static_cast<unsigned int>(pivotType) & 0xF) << 19);
+        }
+
+        // 0x20000000
+        inline bool GetUnkFlag2() const {
+            return flags & 0x20000000;
+        }
+
+        inline void SetUnkFlag2(bool enabled) {
+            if (enabled)
+                flags |= 0x20000000;
+            else
+                flags &= ~0x20000000;
         }
     };
 
     struct SRS_LAYER;
     struct SRS_REFERENCECAST {
         SRS_LAYER* layer{};
-        int flags{};
+        unsigned int flags{};
         unsigned int animationId{};
         unsigned int animationFrame{};
         int unk2{};
+
+        // 0x2
+        inline bool GetBlendEnabledFlag() const {
+            return flags & 0x2;
+        }
+
+        inline void SetBlendEnabledFlag(bool enabled) {
+            if (enabled)
+                flags |= 0x2;
+            else
+                flags &= ~0x2;
+        }
+
+        // 0x3C
+        inline EBlendMode GetBlendMode() const {
+            return static_cast<EBlendMode>(flags & (0xF >> 2));
+        }
+
+        inline void SetBlendMode(EBlendMode mode) {
+            flags = (flags & ~(0xF << 2)) | ((static_cast<unsigned int>(type) & 0xF) << 2);
+        }
     };
 
     union SRS_CAST_PTR {
@@ -627,6 +776,19 @@ namespace ucsl::resources::swif::v6 {
         SRS_IMAGECAST* image;
         SRS_SLICECAST* slice;
         SRS_REFERENCECAST* reference;
+    };
+
+    enum class ESliceConstraint {
+        CENTER,
+        UNK1,
+        UNK2,
+        UNK3,
+        UNK4,
+        UNK5,
+        UNK6,
+        UNK7,
+        UNK8,
+        UNK9,
     };
 
     struct SRS_CASTNODE {
@@ -638,19 +800,137 @@ namespace ucsl::resources::swif::v6 {
         };
 
         const char* name{};
-        int id{};
+        unsigned int id{};
         unsigned int flags{};
         SRS_CAST_PTR data{};
         short childIndex{ -1 };
         short siblingIndex{ -1 };
         SRS_USERDATA* userData{};
 
+        // 0xF
         inline Type GetType() const {
             return static_cast<Type>(flags & 0xF);
         }
 
         inline void SetType(Type type) {
             flags = (flags & ~0xF) | (static_cast<unsigned int>(type) & 0xF);
+        }
+
+        // 0x20
+        inline bool GetInheritMaterialColorFlag() const {
+            return flags & 0x20;
+        }
+
+        inline void SetInheritMaterialColorFlag(bool enabled) {
+            if (enabled)
+                flags |= 0x20;
+            else
+                flags &= ~0x20;
+        }
+
+        // 0x40
+        inline bool GetInheritDisplayFlag() const {
+            return flags & 0x40;
+        }
+
+        inline void SetInheritDisplayFlag(bool enabled) {
+            if (enabled)
+                flags |= 0x40;
+            else
+                flags &= ~0x40;
+        }
+
+        // 0x80
+        inline bool GetInheritIlluminationColorFlag() const {
+            return flags & 0x80;
+        }
+
+        inline void SetInheritIlluminationColorFlag(bool enabled) {
+            if (enabled)
+                flags |= 0x80;
+            else
+                flags &= ~0x80;
+        }
+
+        // 0x1000
+        inline bool GetHideFlag() const {
+            return flags & 0x1000;
+        }
+
+        inline void SetHideFlag(bool enabled) {
+            if (enabled)
+                flags |= 0x1000;
+            else
+                flags &= ~0x1000;
+        }
+
+        // 0x4000
+        inline bool GetInheritCropIndex0Flag() const {
+            return flags & 0x4000;
+        }
+
+        inline void SetInheritCropIndex0Flag(bool enabled) {
+            if (enabled)
+                flags |= 0x4000;
+            else
+                flags &= ~0x4000;
+        }
+
+        // 0x8000
+        inline bool GetInheritCropIndex1Flag() const {
+            return flags & 0x8000;
+        }
+
+        inline void SetInheritCropIndex1Flag(bool enabled) {
+            if (enabled)
+                flags |= 0x8000;
+            else
+                flags &= ~0x8000;
+        }
+
+        // 0x10000
+        inline bool GetInheritTranslationFlag() const {
+            return flags & 0x10000;
+        }
+
+        inline void SetInheritTranslationFlag(bool enabled) {
+            if (enabled)
+                flags |= 0x10000;
+            else
+                flags &= ~0x10000;
+        }
+
+        // 0x20000
+        inline bool GetInheritRotationFlag() const {
+            return flags & 0x20000;
+        }
+
+        inline void SetInheritRotationFlag(bool enabled) {
+            if (enabled)
+                flags |= 0x20000;
+            else
+                flags &= ~0x20000;
+        }
+
+        // 0x40000
+        inline bool GetInheritScaleFlag() const {
+            return flags & 0x40000;
+        }
+
+        inline void SetInheritScaleFlag(bool enabled) {
+            if (enabled)
+                flags |= 0x40000;
+            else
+                flags &= ~0x40000;
+        }
+
+        // 0x780000
+        inline ESliceConstraint GetSliceConstraint() const {
+            return static_cast<ESliceConstraint>((flags >> 19) & 0xF);
+        }
+
+        inline void SetSliceConstraint(ESliceConstraint pivotType) {
+            flags = (flags & ~(0xF << 19)) | ((static_cast<unsigned int>(pivotType) & 0xF) << 19);
         }
     };
 
@@ -662,8 +942,8 @@ namespace ucsl::resources::swif::v6 {
 
     struct SRS_LAYER {
         const char* name{};
-        int id{};
-        int flags{};
+        unsigned int id{};
+        unsigned int flags{};
         int castCount{};
         SRS_CASTNODE* casts{};
         SRS_TRS_PTR transforms{};
@@ -682,12 +962,23 @@ namespace ucsl::resources::swif::v6 {
             else
                 flags &= ~0x1;
         }
+
+        inline bool GetHideFlag() const {
+            return flags & 0x100;
+        }
+
+        inline void SetHideFlag(bool enabled) {
+            if (enabled)
+                flags |= 0x100;
+            else
+                flags &= ~0x100;
+        }
     };
 
     // Cameras
     struct SRS_CAMERA {
         const char* name{};
-        int id{};
+        unsigned int id{};
         Vector3 position{};
         Vector3 target{};
         bool isOrthogonal{};
@@ -701,8 +992,8 @@ namespace ucsl::resources::swif::v6 {
     // Scenes
     struct SRS_SCENE {
         const char* name{};
-        int id{};
-        int flags{};
+        unsigned int id{};
+        unsigned int flags{};
         bool loaded{};
         int layerCount{};
         SRS_LAYER* layers{};
@@ -712,6 +1003,17 @@ namespace ucsl::resources::swif::v6 {
         Color backgroundColor{};
         Vector2 resolution{};
         SRS_USERDATA* userData{};
+
+        inline bool GetHideFlag() const {
+            return flags & 0x1;
+        }
+
+        inline void SetHideFlag(bool enabled) {
+            if (enabled)
+                flags |= 0x1;
+            else
+                flags &= ~0x1;
+        }
     };
 
     // Projects
