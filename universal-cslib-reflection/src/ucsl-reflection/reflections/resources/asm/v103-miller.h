@@ -1,14 +1,14 @@
 #pragma once
-#include <ucsl/math.h>
+#include <ucsl/resources/asm/v103-miller.h>
 #include <simple-reflection/simple-reflection.h>
 #include <ucsl-reflection/operators.h>
 #include <ucsl-reflection/reflections/basic-types.h>
 
-namespace ucsl::resources::animation_state_machine::v103::reflections {
+namespace ucsl::resources::animation_state_machine::v103_miller::reflections {
 	using namespace simplerfl;
 	using namespace ucsl::reflection;
 
-	namespace impl = ::ucsl::resources::animation_state_machine::v103;
+	namespace impl = ::ucsl::resources::animation_state_machine::v103_miller;
 
 	using ClipDataAnimationSettings = structure<impl::ClipData::AnimationSettings, "ClipDataAnimationSettings", void,
 		field<const char*, "resourceName">,
@@ -204,23 +204,23 @@ namespace ucsl::resources::animation_state_machine::v103::reflections {
 }
 
 namespace simplerfl {
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::ClipData::AnimationSettings> { using type = ucsl::resources::animation_state_machine::v103::reflections::ClipDataAnimationSettings; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::ClipData> { using type = ucsl::resources::animation_state_machine::v103::reflections::ClipData; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TransitionType> { using type = ucsl::resources::animation_state_machine::v103::reflections::TransitionType; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TransitionEasingType> { using type = ucsl::resources::animation_state_machine::v103::reflections::TransitionEasingType; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TransitionData::TransitionInfo> { using type = ucsl::resources::animation_state_machine::v103::reflections::TransitionDataTransitionInfo; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TransitionData> { using type = ucsl::resources::animation_state_machine::v103::reflections::TransitionData; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::StateType> { using type = ucsl::resources::animation_state_machine::v103::reflections::StateType; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::StateData> { using type = ucsl::resources::animation_state_machine::v103::reflections::StateData; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::BlendNodeType> { using type = ucsl::resources::animation_state_machine::v103::reflections::BlendNodeType; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::BlendNodeData> { using type = ucsl::resources::animation_state_machine::v103::reflections::BlendNodeData; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TransitionArrayData> { using type = ucsl::resources::animation_state_machine::v103::reflections::TransitionArrayData; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::EventData> { using type = ucsl::resources::animation_state_machine::v103::reflections::EventData; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::LayerData> { using type = ucsl::resources::animation_state_machine::v103::reflections::LayerData; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::BlendMaskData> { using type = ucsl::resources::animation_state_machine::v103::reflections::BlendMaskData; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TriggerType> { using type = ucsl::resources::animation_state_machine::v103::reflections::TriggerType; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::TriggerData> { using type = ucsl::resources::animation_state_machine::v103::reflections::TriggerData; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::BlendSpaceData::Triangle> { using type = ucsl::resources::animation_state_machine::v103::reflections::BlendSpaceDataTriangle; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::BlendSpaceData> { using type = ucsl::resources::animation_state_machine::v103::reflections::BlendSpaceData; };
-	template<> struct canonical<ucsl::resources::animation_state_machine::v103::AsmData> { using type = ucsl::resources::animation_state_machine::v103::reflections::AsmData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::ClipData::AnimationSettings> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::ClipDataAnimationSettings; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::ClipData> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::ClipData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::TransitionType> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::TransitionType; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::TransitionEasingType> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::TransitionEasingType; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::TransitionData::TransitionInfo> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::TransitionDataTransitionInfo; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::TransitionData> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::TransitionData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::StateType> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::StateType; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::StateData> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::StateData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::BlendNodeType> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::BlendNodeType; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::BlendNodeData> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::BlendNodeData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::TransitionArrayData> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::TransitionArrayData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::EventData> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::EventData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::LayerData> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::LayerData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::BlendMaskData> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::BlendMaskData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::TriggerType> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::TriggerType; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::TriggerData> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::TriggerData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::BlendSpaceData::Triangle> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::BlendSpaceDataTriangle; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::BlendSpaceData> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::BlendSpaceData; };
+	template<> struct canonical<ucsl::resources::animation_state_machine::v103_miller::AsmData> { using type = ucsl::resources::animation_state_machine::v103_miller::reflections::AsmData; };
 }

@@ -17,9 +17,9 @@ namespace ucsl::resources::svcol::v1 {
 		const char* name;
 		unsigned char priority;
 		Shape type;
+		float depth;
 		float width;
 		float height;
-		float depth;
 		math::Position position;
 		math::Rotation rotation;
 		math::Position aabbMin;

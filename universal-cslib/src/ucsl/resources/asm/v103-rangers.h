@@ -2,7 +2,7 @@
 #include <ucsl/bitset.h>
 #include <ucsl/math.h>
 
-namespace ucsl::resources::animation_state_machine::v103 {
+namespace ucsl::resources::animation_state_machine::v103_rangers {
 	struct ClipData {
 		struct AnimationSettings {
 			enum class Flag : unsigned char {
@@ -89,7 +89,6 @@ namespace ucsl::resources::animation_state_machine::v103 {
 		TransitionData stateEndTransition;
 		unsigned short flagIndexCount;
 		short flagIndexOffset;
-		float pbaBlendFactor;
 	};
 
 	enum class BlendNodeType : unsigned char {
