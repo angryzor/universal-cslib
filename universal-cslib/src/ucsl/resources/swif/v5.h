@@ -251,7 +251,7 @@ namespace ucsl::resources::swif::v5 {
 
     // Textures
     struct SRS_TEXTURE {
-        const char* name{};
+        const char* filename{};
         unsigned int id{};
         unsigned short width{};
         unsigned short height{};

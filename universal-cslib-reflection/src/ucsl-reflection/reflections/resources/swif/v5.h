@@ -251,7 +251,7 @@ namespace ucsl::resources::swif::v5::reflections {
 
 	// Textures
 	using SRS_TEXTURE = structure<impl::SRS_TEXTURE, "SRS_TEXTURE", void,
-		field<const char*, "name">,
+		field<const char*, "filename">,
 		field<unsigned int, "id">,
 		field<unsigned short, "width">,
 		field<unsigned short, "height">,
