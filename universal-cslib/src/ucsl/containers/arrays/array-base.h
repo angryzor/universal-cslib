@@ -32,9 +32,9 @@ namespace ucsl::containers::arrays {
 		S length{};
 		S capacity_and_flags{ DONT_DEALLOCATE_FLAG };
 
+	public:
 		ArrayAllocatorSystem::allocator_type* get_allocator() const { return ArrayAllocatorSystem::get_allocator(*this); }
 
-	public:
 		using value_type = T;
 		using reference = T&;
 		using const_reference = const T&;

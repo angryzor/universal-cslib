@@ -9,7 +9,7 @@ namespace ucsl::resources::master_level::v0 {
 	};
 
 	struct ResourceData {
-		const char* name;
+		const char* path;
 		const char* resourceType;
 		unsigned long long unk1;
 	};

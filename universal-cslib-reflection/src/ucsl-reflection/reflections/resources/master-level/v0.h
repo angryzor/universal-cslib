@@ -14,7 +14,7 @@ namespace ucsl::resources::master_level::v0::reflections {
 	>;
 
 	using ResourceData = structure<impl::ResourceData, "ResourceData", void,
-		field<const char*, "name">,
+		field<const char*, "path">,
 		field<const char*, "resourceType">,
 		field<unsigned long long, "unk1">
 	>;
