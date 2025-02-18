@@ -58,10 +58,10 @@ namespace ucsl::containers::arrays {
 		ArrayBase() {}
 		ArrayBase(size_type capacity) { reserve(capacity); }
 		ArrayBase(const ArrayBase<T, S, ArrayAllocatorSystem>& other) : ArrayBase<T, S, ArrayAllocatorSystem>{ other.capacity() } { insert(cbegin(), other.cbegin(), other.cend()); }
-		ArrayBase(ArrayBase<T, S, ArrayAllocatorSystem>&& other) : buffer{ other.buffer }, length{ other.length }, capacity{ other.capacity } {
+		ArrayBase(ArrayBase<T, S, ArrayAllocatorSystem>&& other) : buffer{ other.buffer }, length{ other.length }, capacity_and_flags{ other.capacity_and_flags } {
 			other.buffer = nullptr;
 			other.length = 0;
-			other.capacity = DONT_DEALLOCATE_FLAG;
+			other.capacity_and_flags = DONT_DEALLOCATE_FLAG;
 		}
 		~ArrayBase() {
 			auto* allocator = get_allocator();
