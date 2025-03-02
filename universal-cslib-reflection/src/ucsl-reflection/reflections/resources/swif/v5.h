@@ -175,7 +175,7 @@ namespace ucsl::resources::swif::v5::reflections {
 	using SRS_TRACK = structure<impl::SRS_TRACK, "SRS_TRACK", void,
 		field<ECurveType, "trackType">,
 		field<unsigned short, "keyCount">,
-		field<unsigned short, "flags">,
+		field<unsigned int, "flags">,
 		field<unsigned int, "firstFrame">,
 		field<unsigned int, "lastFrame">,
 		field<SRS_KEYFRAME_PTR, "keyFrames">

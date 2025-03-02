@@ -92,14 +92,14 @@ namespace ucsl::resources::swif::v5 {
         IlluminationColorA,
     };
 
-    enum class EInterpolationType : unsigned short {
+    enum class EInterpolationType : unsigned int {
         CONSTANT,
         LINEAR,
         HERMITE,
         INDIVIDUAL,
     };
 
-    enum class ETrackDataType : unsigned short {
+    enum class ETrackDataType : unsigned int {
         UNKNOWN,
         FLOAT,
         INDEX,
@@ -111,6 +111,11 @@ namespace ucsl::resources::swif::v5 {
         UNK_FLOAT,
         UNK_DOUBLE, // Types say double, but used for what? Won't interpolate linearly.
         UNK_CHAR, // Char? doubt
+    };
+
+    enum class ETrackRepeatType : unsigned int {
+        ONCE,
+        REPEAT,
     };
 
     // User data
@@ -197,7 +202,7 @@ namespace ucsl::resources::swif::v5 {
     struct SRS_TRACK {
         ECurveType trackType{};
         unsigned short keyCount{};
-        unsigned short flags{};
+        unsigned int flags{};
         unsigned int firstFrame{};
         unsigned int lastFrame{};
         SRS_KEYFRAME_PTR keyFrames{};
@@ -216,6 +221,14 @@ namespace ucsl::resources::swif::v5 {
 
         inline void SetDataType(ETrackDataType type) {
             flags = (flags & ~(0xF << 4)) | ((static_cast<unsigned int>(type) & 0xF) << 4);
+        }
+
+        inline ETrackRepeatType GetRepeatType() const {
+            return static_cast<ETrackRepeatType>((flags >> 8) & 0x3);
+        }
+
+        inline void SetRepeatType(ETrackRepeatType type) {
+            flags = (flags & ~(0x3 << 8)) | ((static_cast<unsigned int>(type) & 0x3) << 8);
         }
     };
 
