@@ -2,21 +2,31 @@
 #include <ucsl/bitset.h>
 #include <ucsl/math.h>
 
-namespace ucsl::resources::pcmodel::v2 {
-	struct ModelInstanceData {
+namespace ucsl::resources::pointcloud::v2 {
+	enum class RotationOrder : unsigned int {
+		NONE,
+		XYZ,
+		YZX,
+		ZXY,
+		XZY,
+		YXZ,
+		ZYX,
+	};
+
+	struct InstanceData {
 		const char* name;
 		const char* resourceName;
 		ucsl::math::Position position;
 		ucsl::math::Position rotation;
-		unsigned int unk1;
+		RotationOrder rotationOrder;
 		ucsl::math::Position scale;
 		unsigned int unk2;
 	};
 
-	struct PointCloudModelData {
+	struct PointcloudData {
 		unsigned int magic;
 		unsigned int version;
-		ModelInstanceData* instances;
-		size_t instanceCount;
+		InstanceData* instances;
+		unsigned int instanceCount;
 	};
 }
