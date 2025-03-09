@@ -26,7 +26,7 @@ namespace ucsl::resources::converse_project::v4::reflections {
 
     using Color = structure<impl::Color, "Color", void,
         field<const char*, "name">,
-        field<Color8, "color">,
+        field<Color8RGBA, "color">,
         field<long long, "unk0">
     >;
 

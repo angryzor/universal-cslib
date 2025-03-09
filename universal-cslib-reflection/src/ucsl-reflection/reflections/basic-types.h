@@ -97,15 +97,31 @@ namespace ucsl::reflections {
 	>;
 
 	template<typename T>
-	using Color = aligned<4, structure<colors::Color<T>, "Color", void,
+	using Color = aligned<4, structure<colors::Color<T, ucsl::colors::ChannelOrder::RGBA>, "Color", void,
+		field<T, "r">,
+		field<T, "g">,
+		field<T, "b">,
+		field<T, "a">
+	>>;
+
+	template<typename T>
+	using Color = aligned<4, structure<colors::Color<T, ucsl::colors::ChannelOrder::ABGR>, "Color", void,
 		field<T, "a">,
 		field<T, "b">,
 		field<T, "g">,
 		field<T, "r">
 	>>;
 
-	typedef Color<unsigned char> Color8;
-	typedef Color<float> Colorf;
+	template<ChannelOrder order>
+	using Color8 = Color<unsigned char, order>;
+
+	template<ChannelOrder order>
+	using Colorf = Color<float, order>;
+
+	typedef Color8<ChannelOrder::RGBA> Color8RGBA;
+	typedef Colorf<ChannelOrder::RGBA> ColorfRGBA;
+	typedef Color8<ChannelOrder::ABGR> Color8ABGR;
+	typedef Colorf<ChannelOrder::ABGR> ColorfABGR;
 }
 
 namespace simplerfl {
@@ -123,7 +139,8 @@ namespace simplerfl {
 	template<> struct canonical<ucsl::strings::VariableString> { using type = primitive<ucsl::strings::VariableString>; };
 	template<> struct canonical<ucsl::objectids::ObjectIdV1> { using type = primitive<ucsl::objectids::ObjectIdV1>; };
 	template<> struct canonical<ucsl::objectids::ObjectIdV2> { using type = primitive<ucsl::objectids::ObjectIdV2>; };
-	template<typename T> struct canonical<ucsl::colors::Color<T>> { using type = ucsl::reflection::colors::Color<T>; };
-	template<> struct canonical<ucsl::colors::Color8> { using type = ucsl::reflection::colors::Color8; };
-	template<> struct canonical<ucsl::colors::Colorf> { using type = ucsl::reflection::colors::Colorf; };
+	template<typename T> struct canonical<ucsl::colors::Color<T, ucsl::colors::ChannelOrder::RGBA>> { using type = ucsl::reflection::colors::Color<T, ucsl::colors::ChannelOrder::RGBA>; };
+	template<typename T> struct canonical<ucsl::colors::Color<T, ucsl::colors::ChannelOrder::ABGR>> { using type = ucsl::reflection::colors::Color<T, ucsl::colors::ChannelOrder::ABGR>; };
+	template<ucsl::colors::ChannelOrder order> struct canonical<ucsl::colors::Color8, order> { using type = ucsl::reflection::colors::Color8<order>; };
+	template<ucsl::colors::ChannelOrder order> struct canonical<ucsl::colors::Colorf, order> { using type = ucsl::reflection::colors::Colorf<order>; };
 }
