@@ -19,8 +19,8 @@ namespace ucsl::resources::scfnt::v1000 {
         unsigned int version;
         const char* fontName;
         Character* chars;
-        int charCount;
-        long long ttfDataSize;
+        unsigned int charCount;
+        unsigned long long ttfDataSize;
         // char ttfData[ttfDataSize];
     };
 }

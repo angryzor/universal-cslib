@@ -95,6 +95,33 @@ namespace ucsl::reflections {
 		field<unsigned long long, "groupId">,
 		field<unsigned long long, "objectId">
 	>;
+
+	template<typename T>
+	using Color = aligned<4, structure<colors::Color<T, ucsl::colors::ChannelOrder::RGBA>, "Color", void,
+		field<T, "r">,
+		field<T, "g">,
+		field<T, "b">,
+		field<T, "a">
+	>>;
+
+	template<typename T>
+	using Color = aligned<4, structure<colors::Color<T, ucsl::colors::ChannelOrder::ABGR>, "Color", void,
+		field<T, "a">,
+		field<T, "b">,
+		field<T, "g">,
+		field<T, "r">
+	>>;
+
+	template<ucsl::colors::ChannelOrder order>
+	using Color8 = Color<unsigned char, order>;
+
+	template<ucsl::colors::ChannelOrder order>
+	using Colorf = Color<float, order>;
+
+	typedef Color8<ChannelOrder::RGBA> Color8RGBA;
+	typedef Colorf<ChannelOrder::RGBA> ColorfRGBA;
+	typedef Color8<ChannelOrder::ABGR> Color8ABGR;
+	typedef Colorf<ChannelOrder::ABGR> ColorfABGR;
 }
 
 namespace simplerfl {
@@ -112,4 +139,8 @@ namespace simplerfl {
 	template<> struct canonical<ucsl::strings::VariableString> { using type = primitive<ucsl::strings::VariableString>; };
 	template<> struct canonical<ucsl::objectids::ObjectIdV1> { using type = primitive<ucsl::objectids::ObjectIdV1>; };
 	template<> struct canonical<ucsl::objectids::ObjectIdV2> { using type = primitive<ucsl::objectids::ObjectIdV2>; };
+	template<typename T> struct canonical<ucsl::colors::Color<T, ucsl::colors::ChannelOrder::RGBA>> { using type = ucsl::reflection::colors::Color<T, ucsl::colors::ChannelOrder::RGBA>; };
+	template<typename T> struct canonical<ucsl::colors::Color<T, ucsl::colors::ChannelOrder::ABGR>> { using type = ucsl::reflection::colors::Color<T, ucsl::colors::ChannelOrder::ABGR>; };
+	template<ucsl::colors::ChannelOrder order> struct canonical<ucsl::colors::Color8, order> { using type = ucsl::reflection::colors::Color8<order>; };
+	template<ucsl::colors::ChannelOrder order> struct canonical<ucsl::colors::Colorf, order> { using type = ucsl::reflection::colors::Colorf<order>; };
 }
