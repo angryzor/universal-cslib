@@ -12,6 +12,13 @@ namespace ucsl::resources::converse_project::v4::reflections {
 
     namespace impl = ::ucsl::resources::converse_project::v4;
 
+    using Color8 = structure<impl::Color8, "Color8", void,
+        field<unsigned char, "r">,
+        field<unsigned char, "g">,
+        field<unsigned char, "b">,
+        field<unsigned char, "a">,
+    >;
+
     using Language = structure<impl::Language, "Language", void,
         field<const char*, "name">,
         field<const char*, "shortName">,
@@ -26,7 +33,7 @@ namespace ucsl::resources::converse_project::v4::reflections {
 
     using Color = structure<impl::Color, "Color", void,
         field<const char*, "name">,
-        field<Color8RGBA, "color">,
+        field<Color8, "color">,
         field<long long, "unk0">
     >;
 
@@ -92,6 +99,7 @@ namespace ucsl::resources::converse_project::v4::reflections {
 }
 
 namespace simplerfl {
+    template<> struct canonical<ucsl::resources::converse_project::v4::Color8> { using type = ucsl::resources::converse_project::v4::reflections::Color8; };
     template<> struct canonical<ucsl::resources::converse_project::v4::Language> { using type = ucsl::resources::converse_project::v4::reflections::Language; };
     template<> struct canonical<ucsl::resources::converse_project::v4::LanguageInfo> { using type = ucsl::resources::converse_project::v4::reflections::LanguageInfo; };
     template<> struct canonical<ucsl::resources::converse_project::v4::Color> { using type = ucsl::resources::converse_project::v4::reflections::Color; };
