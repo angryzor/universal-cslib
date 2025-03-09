@@ -24,16 +24,16 @@ namespace ucsl::resources::effdb::v100 {
 
     struct State {
         const char* stateName;
-        int particleCount;
+        unsigned int particleCount;
         Particle* particles;
-        int soundNameCount;
+        unsigned int soundNameCount;
         const char** soundNames;
     };
 
     struct EffdbData{
         unsigned int magic;
         unsigned int version;
-        int stateCount;
+        unsigned int stateCount;
         State* states;
     };
 }

@@ -12,7 +12,7 @@ namespace ucsl::resources::converse_project::v4 {
     };
 
     struct LanguageInfo {
-        int languageCount;
+        unsigned int languageCount;
         Language** languages;
     };
 
@@ -23,7 +23,7 @@ namespace ucsl::resources::converse_project::v4 {
     };
 
     struct ColorInfo {
-        int colorCount;
+        unsigned int colorCount;
         Color** colors;
     };
 
@@ -66,7 +66,7 @@ namespace ucsl::resources::converse_project::v4 {
     template<typename T>
     struct LanguageItem {
         const char* langName;
-        int itemCount;
+        unsigned int itemCount;
         T** items;
     };
 

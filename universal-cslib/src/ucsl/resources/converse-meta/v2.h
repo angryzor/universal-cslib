@@ -23,14 +23,14 @@ namespace ucsl::resources::converse_meta::v2 {
     };
 
     struct IconInfo {
-        int iconCount;
+        unsigned int iconCount;
         Icon** icons;
-        int resourceCount;
+        unsigned int resourceCount;
         const char** resourceNames;
     };
 
     struct TypeFace {
-        int parentCount;
+        unsigned int parentCount;
         const char** parents;
         const char* name0;
         const char* name1;
@@ -41,7 +41,7 @@ namespace ucsl::resources::converse_meta::v2 {
     };
 
     struct TypeFaceInfo {
-        int typeFaceCount;
+        unsigned int typeFaceCount;
         TypeFace** typeFaces;
     };
 

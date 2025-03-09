@@ -10,7 +10,7 @@ namespace ucsl::resources::converse_text::v6 {
     };
 
     struct Attributes {
-        int attributeAmount;
+        unsigned int attributeAmount;
         AttributeEntry* attributes;
     };
 
@@ -56,14 +56,14 @@ namespace ucsl::resources::converse_text::v6 {
         const char* key;
         FontLayout* fontLayout;
         wchar_t* text;
-        int textLength;
+        unsigned int textLength;
         Attributes* attributes;
     };
 
     struct CnvrsTextData {
         unsigned char version;
         char unk0;
-        short entryAmount;
+        unsigned short entryAmount;
         Entry* entries;
         const char* languageName;
     };

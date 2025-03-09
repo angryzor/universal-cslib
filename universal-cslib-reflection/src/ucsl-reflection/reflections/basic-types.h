@@ -112,10 +112,10 @@ namespace ucsl::reflections {
 		field<T, "r">
 	>>;
 
-	template<ChannelOrder order>
+	template<ucsl::colors::ChannelOrder order>
 	using Color8 = Color<unsigned char, order>;
 
-	template<ChannelOrder order>
+	template<ucsl::colors::ChannelOrder order>
 	using Colorf = Color<float, order>;
 
 	typedef Color8<ChannelOrder::RGBA> Color8RGBA;

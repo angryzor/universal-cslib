@@ -19,7 +19,7 @@ namespace ucsl::resources::scfnt::v1000::reflections {
 
     using Character = structure<impl::Character, "Character", void,
         field<wchar_t, "character">,
-        field<short, "subCharCount">,
+        field<unsigned short, "subCharCount">,
         field<dynamic_carray<SubCharacter, impl::Character, [](const impl::Character& parent) -> size_t { return parent.subCharCount; }>*, "subChars">
     >;
 
@@ -28,8 +28,8 @@ namespace ucsl::resources::scfnt::v1000::reflections {
         field<unsigned int, "version">,
         field<const char*, "fontName">,
         field<dynamic_carray<Character, impl::ScfntData, [](const impl::ScfntData& parent) -> size_t { return parent.charCount; }>*, "chars">
-        field<int, "charCount">,
-        field<long long, "ttfDataSize">,
+        field<unsigned int, "charCount">,
+        field<unsigned long long, "ttfDataSize">,
         field<dynamic_carray<char, impl::ScfntData, [](const impl::ScfntData& parent) -> size_t { return parent.ttfDataSize; }>, "ttfData">
     >;
 }

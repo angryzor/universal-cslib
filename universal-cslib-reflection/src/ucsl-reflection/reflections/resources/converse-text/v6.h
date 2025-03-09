@@ -19,7 +19,7 @@ namespace ucsl::resources::converse_text::v6::reflections {
     >;
 
     using Attributes = structure<impl::Attributes, "Attributes", void,
-        field<int, "attributeAmount">,
+        field<unsigned int, "attributeAmount">,
         field<dynamic_carray<AttributeEntry, impl::Attributes, [](const impl::Attributes& parent) -> size_t { return parent.attributeAmount; }>*, "attributes">
     >;
 
@@ -65,14 +65,14 @@ namespace ucsl::resources::converse_text::v6::reflections {
         field<const char*, "key">,
         field<FontLayout*, "fontLayout">,
         field<dynamic_carray<wchar_t, impl::Entry, [](const impl::Entry& parent) -> size_t { return parent.textLength; }>*, "text">,
-        field<int, "textLength">,
+        field<unsigned int, "textLength">,
         field<Attributes*, "attributes">
     >;
 
     using CnvrsTextData = structure<impl::CnvrsTextData, "CnvrsTextData", void,
         field<unsigned char, "version">,
         field<char, "unk0">,
-        field<short, "entryAmount">,
+        field<unsigned short, "entryAmount">,
         field<dynamic_carray<Entry, impl::CnvrsTextData, [](const impl::CnvrsTextData& parent) -> size_t { return parent.entryAmount; }>*, "entries">,
         field<const char*, "languageName">
     >;

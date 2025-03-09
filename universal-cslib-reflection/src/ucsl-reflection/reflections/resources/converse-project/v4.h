@@ -31,7 +31,7 @@ namespace ucsl::resources::converse_project::v4::reflections {
     >;
 
     using ColorInfo = structure<impl::ColorInfo, "ColorInfo", void,
-        field<int, "colorCount">,
+        field<unsigned int, "colorCount">,
         field<dynamic_carray<Color*, impl::ColorInfo, [](const impl::ColorInfo& parent) -> size_t { return parent.colorCount; }>*, "colors">
     >;
 
@@ -74,12 +74,12 @@ namespace ucsl::resources::converse_project::v4::reflections {
     template<typename T>
     using LanguageItem = structure<impl::LanguageItem<T>, "LanguageItem", void,
         field<const char*, "langName">,
-        field<int, "itemCount">,
+        field<unsigned int, "itemCount">,
         field<dynamic_carray<T*, impl::LanguageItem<T>, [](const impl::LanguageItem<T>& parent) -> size_t { return parent.itemCount; }>*, "items">
     >;
 
     using LanguageSettings = structure<impl::LanguageSettings, "LanguageSettings", void,
-        field<int, "count">,
+        field<unsigned int, "count">,
         field<dynamic_carray<LanguageItem<Font>*, impl::LanguageSettings, [](const impl::LanguageSettings& parent) -> size_t { return parent.count; }>*, "fonts">,
         field<dynamic_carray<LanguageItem<Layout>*, impl::LanguageSettings, [](const impl::LanguageSettings& parent) -> size_t { return parent.count; }>*, "layouts">
     >;

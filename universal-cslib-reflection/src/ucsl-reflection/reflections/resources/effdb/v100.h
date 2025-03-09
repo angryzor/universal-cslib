@@ -24,16 +24,16 @@ namespace ucsl::resources::effdb::v100::reflections {
 
     using State = structure<impl::State, "State", void,
         field<const char*, "stateName">,
-        field<int, "particleCount">,
+        field<unsigned int, "particleCount">,
         field<dynamic_carray<Particle, impl::State, [](const impl::State& parent) -> size_t { return parent.particleCount; }>*, "particles">,
-        field<int, "soundNameCount">,
+        field<unsigned int, "soundNameCount">,
         field<dynamic_carray<const char*, impl::State, [](const impl::State& parent) -> size_t { return parent.soundNameCount; }>*, "soundNames">,
     >;
 
     using EffdbData = structure<impl::EffdbData, "EffdbData", void,
         field<unsigned int, "magic">,
         field<unsigned int, "version">,
-        field<int, "stateCount">,
+        field<unsigned int, "stateCount">,
         field<dynamic_carray<State, impl::EffdbData, [](const impl::EffdbData& parent) -> size_t { return parent.stateCount; }>*, "states">
     >;
 }
