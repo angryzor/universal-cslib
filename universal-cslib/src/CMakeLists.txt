@@ -41,4 +41,5 @@ target_sources(universal-cslib
         "ucsl/resources/terrain-material/v1.h"
         "ucsl/resources/vertex-animation-texture/v1-miller.h"
         "ucsl/resources/vertex-animation-texture/v1-rangers.h"
+        "ucsl/resources/vibration/v21.h"
 )
