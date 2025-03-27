@@ -25,6 +25,7 @@ namespace ucsl::resources::vibration::v21 {
         const char* name;
         char unk0;
         unsigned char dataCount;
+        bool looping;
         VibrationData* datas;
         Sound* sound;
         void* unk1;
