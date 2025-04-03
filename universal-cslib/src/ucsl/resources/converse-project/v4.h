@@ -4,6 +4,10 @@
 // reversed from files
 
 namespace ucsl::resources::converse_project::v4 {
+    struct Color8 {
+        unsigned char r, g, b, a;
+    };
+
     struct Language {
         const char* name;
         const char* shortName;
@@ -12,18 +16,18 @@ namespace ucsl::resources::converse_project::v4 {
     };
 
     struct LanguageInfo {
-        int languageCount;
+        unsigned int languageCount;
         Language** languages;
     };
 
     struct Color {
         const char* name;
-        ucsl::colors::Color8RGBA color;
+        Color8 color;
         long long unk0;
     };
 
     struct ColorInfo {
-        int colorCount;
+        unsigned int colorCount;
         Color** colors;
     };
 
@@ -66,7 +70,7 @@ namespace ucsl::resources::converse_project::v4 {
     template<typename T>
     struct LanguageItem {
         const char* langName;
-        int itemCount;
+        unsigned int itemCount;
         T** items;
     };
 

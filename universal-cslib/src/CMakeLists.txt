@@ -15,6 +15,7 @@ target_sources(universal-cslib
         "ucsl/rfl/ranges.h"
         "ucsl/resources/asm/v103-rangers.h"
         "ucsl/resources/asm/v103-miller.h"
+        "ucsl/resources/converse-text/v6.h"
         "ucsl/resources/converse-meta/v2.h"
         "ucsl/resources/converse-project/v4.h"
         "ucsl/resources/density-setting/v11.h"
@@ -40,4 +41,5 @@ target_sources(universal-cslib
         "ucsl/resources/terrain-material/v1.h"
         "ucsl/resources/vertex-animation-texture/v1-miller.h"
         "ucsl/resources/vertex-animation-texture/v1-rangers.h"
+        "ucsl/resources/vibration/v21.h"
 )
