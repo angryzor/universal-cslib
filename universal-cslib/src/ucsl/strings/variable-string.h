@@ -20,6 +20,17 @@ namespace ucsl::strings {
 			return reinterpret_cast<size_t>(allocatorAndFlags) & DEALLOCATE_FLAG;
 		}
 
+		void init(const char* initstr, memory::IAllocator* allocator) {
+			if (initstr) {
+				buffer = StrDup(initstr, allocator);
+				allocatorAndFlags = reinterpret_cast<memory::IAllocator*>(reinterpret_cast<size_t>(allocator) | DEALLOCATE_FLAG);
+			}
+			else {
+				buffer = nullptr;
+				allocatorAndFlags = allocator;
+			}
+		}
+
 		void assign(memory::IAllocator* allocator, const char* str, int size) {
 			if (buffer != nullptr && buffer == str)
 				return;
@@ -45,14 +56,7 @@ namespace ucsl::strings {
 		VariableString(memory::IAllocator* allocator) : allocatorAndFlags{ allocator } {}
 
 		VariableString(const char* initstr, memory::IAllocator* allocator) {
-			if (initstr) {
-				buffer = StrDup(initstr, allocator);
-				allocatorAndFlags = reinterpret_cast<memory::IAllocator*>(reinterpret_cast<size_t>(allocator) | DEALLOCATE_FLAG);
-			}
-			else {
-				buffer = nullptr;
-				allocatorAndFlags = allocator;
-			}
+			init(initstr, allocator);
 		}
 
 		VariableString(const char* str, int size, memory::IAllocator* allocator) {
@@ -65,7 +69,7 @@ namespace ucsl::strings {
 				return;
 			}
 			else {
-				VariableString(other.buffer, other.GetAllocator());
+				init(other.buffer, other.GetAllocator());
 			}
 		}
 
@@ -96,6 +100,8 @@ namespace ucsl::strings {
 			allocatorAndFlags = other.allocatorAndFlags;
 			other.allocatorAndFlags = other.GetAllocator();
 			other.buffer = nullptr;
+
+			return *this;
 		}
 
 		void SetDataUserFree(memory::IAllocator* allocator, const char* str) {

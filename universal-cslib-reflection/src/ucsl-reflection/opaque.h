@@ -12,7 +12,7 @@ namespace ucsl::reflection {
 		template<template<typename, typename> typename A2>
 		class RflArray : public A<opaque_obj, typename GameInterface::AllocatorSystem> {
 		public:
-			void change_allocator(ucsl::memory::IAllocator* new_allocator, const typename GameInterface::RflSystem::RflClassMember* member) {
+			void change_allocator(GameInterface::AllocatorSystem::allocator_type* new_allocator, const typename GameInterface::RflSystem::RflClassMember* member) {
 				if (!new_allocator || this->allocator == new_allocator)
 					return;
 
@@ -181,7 +181,8 @@ namespace ucsl::reflection {
 		template<typename T> OpaqueRflArray(A<T, typename GameInterface::AllocatorSystem>& underlying, const typename GameInterface::RflSystem::RflClassMember* member) : underlying{ static_cast<RflArray<A>&>(underlying) }, member{ member } {}
 		template<typename T> OpaqueRflArray(const OpaqueRflArray<A, GameInterface>& other, const typename GameInterface::RflSystem::RflClassMember* member) : underlying{ other.underlying }, member{ other.member } {}
 
-		void change_allocator(ucsl::memory::IAllocator* new_allocator) { underlying.change_allocator(new_allocator, member); }
+		GameInterface::AllocatorSystem::allocator_type* get_allocator() const { return underlying.get_allocator(); }
+		void change_allocator(GameInterface::AllocatorSystem::allocator_type* new_allocator) { underlying.change_allocator(new_allocator, member); }
 		void reserve(size_t len) { underlying.reserve(len, member); }
 
 		template<typename... Args> void emplace_back(Args&&... args) { underlying.emplace_back(member, std::forward<Args>(args)...); }
@@ -287,7 +288,8 @@ namespace ucsl::reflection {
 		OpaqueArray(A& underlying) : underlying{ underlying } {}
 		OpaqueArray(const OpaqueArray<A, GameInterface>& other) : underlying{ other.underlying } {}
 
-		void change_allocator(ucsl::memory::IAllocator* new_allocator) { underlying.change_allocator(new_allocator); }
+		GameInterface::AllocatorSystem::allocator_type* get_allocator() const { return underlying.get_allocator(); }
+		void change_allocator(GameInterface::AllocatorSystem::allocator_type* new_allocator) { underlying.change_allocator(new_allocator); }
 		void reserve(size_t len) { underlying.reserve(len); }
 
 		template<typename... Args> void emplace_back(Args&&... args) { underlying.emplace_back(std::forward<Args>(args)...); }

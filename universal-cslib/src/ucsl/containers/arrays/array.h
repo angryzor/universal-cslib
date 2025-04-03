@@ -15,6 +15,8 @@ namespace ucsl::containers::arrays {
 	template<typename T, typename AllocatorSystem>
 	class Array : public ArrayBase<T, size_t, ArrayArrayAllocatorSystem<T, AllocatorSystem>> {
 		friend struct ArrayArrayAllocatorSystem<T, AllocatorSystem>;
+
+	protected:
 		AllocatorSystem::allocator_type* allocator{};
 
 	public:
