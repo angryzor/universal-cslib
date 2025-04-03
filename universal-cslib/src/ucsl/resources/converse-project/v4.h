@@ -4,6 +4,10 @@
 // reversed from files
 
 namespace ucsl::resources::converse_project::v4 {
+    struct Color8 {
+        unsigned char r, g, b, a;
+    };
+
     struct Language {
         const char* name;
         const char* shortName;
@@ -18,7 +22,7 @@ namespace ucsl::resources::converse_project::v4 {
 
     struct Color {
         const char* name;
-        ucsl::colors::Color8RGBA color;
+        Color8 color;
         long long unk0;
     };
 
