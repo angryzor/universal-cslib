@@ -17,29 +17,29 @@ namespace ucsl::resources::effdb::v100::reflections {
         field<unsigned char, "flags">,
         field<const char*, "particleName">,
         field<const char*, "boneName">,
-        field<Vector3, "position">,
-        field<Quaternion, "rotation">,
-        field<Vector3, "scale">
+        field<math::Vector3, "position">,
+        field<math::Quaternion, "rotation">,
+        field<math::Vector3, "scale">
     >;
 
-    using State = structure<impl::State, "State", void,
-        field<const char*, "stateName">,
+    using Binding = structure<impl::Binding, "Binding", void,
+        field<const char*, "clipName">,
         field<unsigned int, "particleCount">,
-        field<dynamic_carray<Particle, impl::State, [](const impl::State& parent) -> size_t { return parent.particleCount; }>*, "particles">,
+        field<dynamic_carray<Particle, impl::Binding, [](const impl::Binding& parent) -> size_t { return parent.particleCount; }>*, "particles">,
         field<unsigned int, "soundNameCount">,
-        field<dynamic_carray<const char*, impl::State, [](const impl::State& parent) -> size_t { return parent.soundNameCount; }>*, "soundNames">,
+        field<dynamic_carray<const char*, impl::Binding, [](const impl::Binding& parent) -> size_t { return parent.soundNameCount; }>*, "soundNames">
     >;
 
     using EffdbData = structure<impl::EffdbData, "EffdbData", void,
         field<unsigned int, "magic">,
         field<unsigned int, "version">,
-        field<unsigned int, "stateCount">,
-        field<dynamic_carray<State, impl::EffdbData, [](const impl::EffdbData& parent) -> size_t { return parent.stateCount; }>*, "states">
+        field<unsigned int, "bindingCount">,
+        field<dynamic_carray<Binding, impl::EffdbData, [](const impl::EffdbData& parent) -> size_t { return parent.bindingCount; }>*, "bindings">
     >;
 }
 
 namespace simplerfl {
     template<> struct canonical<ucsl::resources::effdb::v100::Particle> { using type = ucsl::resources::effdb::v100::reflections::Particle; };
-    template<> struct canonical<ucsl::resources::effdb::v100::State> { using type = ucsl::resources::effdb::v100::reflections::State; };
+    template<> struct canonical<ucsl::resources::effdb::v100::Binding> { using type = ucsl::resources::effdb::v100::reflections::Binding; };
     template<> struct canonical<ucsl::resources::effdb::v100::EffdbData> { using type = ucsl::resources::effdb::v100::reflections::EffdbData; };
 }

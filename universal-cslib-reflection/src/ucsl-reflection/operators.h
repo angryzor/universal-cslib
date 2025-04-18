@@ -8,6 +8,11 @@ namespace ucsl::reflection {
         using type = simplerfl::resolve_decl_t<Type>;
     };
 
+    static constexpr unsigned long long MOD_WEAK = 0x5745414b30303030;
+    template<typename Type> struct weak : simplerfl::mod<MOD_WEAK> {
+        using type = simplerfl::resolve_decl_t<Type>;
+    };
+
     //static constexpr unsigned long long MOD_PRIORITY = 0x5052494f52495459;
     //template<char value, typename Type> struct priority : simplerfl::mod<MOD_PRIORITY> {
     //    using type = simplerfl::resolve_decl_t<Type>;
@@ -82,6 +87,7 @@ namespace ucsl::reflection {
     //template<typename Parent, rflclass_resolver<Parent> resolver> struct is_erased<rflclass<Parent, resolver>> { static constexpr bool value = false; };
     //template<typename Type> struct is_erased<erased<Type>> { static constexpr bool value = true; };
     template<typename Type> static constexpr bool is_erased_v = simplerfl::has_modifier_v<MOD_ERASED, Type>;
+    template<typename Type> static constexpr bool is_weak_v = simplerfl::has_modifier_v<MOD_WEAK, Type>;
     //template<typename Type> struct get_priority { static constexpr char value = 0; };
     //template<char value, typename Type> struct get_priority<priority<value, Type>> { static constexpr char value = value; };
     //template<typename Type> static constexpr char get_priority_v = get_priority<Type>::value;

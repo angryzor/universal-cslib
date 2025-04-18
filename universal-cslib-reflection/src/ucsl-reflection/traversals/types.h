@@ -37,6 +37,7 @@ namespace ucsl::reflection::traversals {
 	struct PointerInfo {
 		A getTargetAlignment;
 		S getTargetSize;
+		bool isWeak{};
 	};
 
 	//template<typename A, typename S>

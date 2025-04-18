@@ -99,14 +99,14 @@ namespace ucsl::reflections {
 
 namespace simplerfl {
 	template<> struct canonical<ucsl::memory::IAllocator*> { using type = primitive<size_t>; };
-	template<> struct canonical<ucsl::math::Vector2> { using type = ucsl::reflections::Vector2; };
-	template<> struct canonical<ucsl::math::Vector3> { using type = ucsl::reflections::Vector3; };
-	template<> struct canonical<ucsl::math::Vector4> { using type = ucsl::reflections::Vector4; };
-	template<> struct canonical<ucsl::math::Quaternion> { using type = ucsl::reflections::Quaternion; };
-	template<> struct canonical<ucsl::math::Matrix34> { using type = ucsl::reflections::Matrix34; };
-	template<> struct canonical<ucsl::math::Matrix44> { using type = ucsl::reflections::Matrix44; };
-	template<> struct canonical<ucsl::math::Position> { using type = ucsl::reflections::Position; };
-	template<> struct canonical<ucsl::math::Rotation> { using type = ucsl::reflections::Rotation; };
+	template<> struct canonical<ucsl::math::Vector2> { using type = primitive<ucsl::math::Vector2>; };
+	template<> struct canonical<ucsl::math::Vector3> { using type = primitive<ucsl::math::Vector3>; };
+	template<> struct canonical<ucsl::math::Vector4> { using type = primitive<ucsl::math::Vector4>; };
+	template<> struct canonical<ucsl::math::Quaternion> { using type = primitive<ucsl::math::Quaternion>; };
+	template<> struct canonical<ucsl::math::Matrix34> { using type = primitive<ucsl::math::Matrix34>; };
+	template<> struct canonical<ucsl::math::Matrix44> { using type = primitive<ucsl::math::Matrix44>; };
+	template<> struct canonical<ucsl::math::Position> { using type = primitive<ucsl::math::Position>; };
+	template<> struct canonical<ucsl::math::Rotation> { using type = primitive<ucsl::math::Rotation>; };
 	template<typename T, typename AllocatorSystem> struct canonical<ucsl::containers::arrays::Array<T, AllocatorSystem>> { using type = ucsl::reflection::array<T, AllocatorSystem>; };
 	template<typename T, typename AllocatorSystem> struct canonical<ucsl::containers::arrays::TArray<T, AllocatorSystem>> { using type = ucsl::reflection::tarray<T, AllocatorSystem>; };
 	template<> struct canonical<ucsl::strings::VariableString> { using type = primitive<ucsl::strings::VariableString>; };

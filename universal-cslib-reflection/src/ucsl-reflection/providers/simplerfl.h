@@ -311,6 +311,7 @@ namespace ucsl::reflection::providers {
 			constexpr static size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) { return dynamic_align_of<T>(parent, root); }
 
 			constexpr static bool is_erased() { return ucsl::reflection::is_erased_v<T>; }
+			constexpr static bool is_weak() { return ucsl::reflection::is_weak_v<T>; }
 
 			template<typename F>
 			constexpr static auto visit(const opaque_obj& parent, const opaque_obj& root, F f) {

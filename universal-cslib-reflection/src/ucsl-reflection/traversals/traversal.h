@@ -73,7 +73,7 @@ namespace ucsl::reflection::traversals {
 		}
 
 		template<typename Pointer>
-		typename Algorithm::result_type process_pointer(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Pointer refl) {
+		typename Algorithm::result_type process_pointer(Spread<S, opaque_obj&>... objs, Spread<S, opaque_obj&>... parents, Pointer refl, bool isWeak) {
 			auto target = refl.get_target_type();
 
 			return algorithm.visit_pointer(
@@ -81,6 +81,7 @@ namespace ucsl::reflection::traversals {
 				PointerInfo{
 					.getTargetAlignment = [&parents, lroots = std::get<S>(roots), target]() { return target.get_alignment(parents, *lroots); },
 					.getTargetSize = [&parents, lroots = std::get<S>(roots), &objs, target]() { return target.get_size(parents, *lroots, *(Spread<S, opaque_obj*&>)objs); },
+					.isWeak = isWeak,
 				}...,
 				[&, target](Spread<S, opaque_obj&>...targets) { return process_type(targets..., parents..., target); }
 			);
@@ -166,7 +167,7 @@ namespace ucsl::reflection::traversals {
 					else if constexpr (decltype(r)::kind == providers::TypeKind::FLAGS) return process_flags(objs..., refl.is_erased(), r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::ARRAY) return process_array(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::TARRAY) return process_tarray(objs..., parents..., r);
-					else if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) return process_pointer(objs..., parents..., r);
+					else if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) return process_pointer(objs..., parents..., r, refl.is_weak());
 					//else if constexpr (decltype(r)::kind == providers::TypeKind::OFFSET) return process_offset(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) return process_carray(objs..., parents..., r);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return process_union(objs..., parents..., r);

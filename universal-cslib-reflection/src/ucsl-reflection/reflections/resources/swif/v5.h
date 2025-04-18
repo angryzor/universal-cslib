@@ -419,7 +419,7 @@ namespace ucsl::resources::swif::v5::reflections {
 	>;
 
 	using SRS_REFERENCECAST = structure<impl::SRS_REFERENCECAST, "SRS_REFERENCECAST", void,
-		field<void*, "layer">,
+		field<weak<deferred<impl::SRS_LAYER>*>, "layer">,
 		field<unsigned int, "flags">,
 		field<unsigned int, "animationId">,
 		field<unsigned int, "animationFrame">,

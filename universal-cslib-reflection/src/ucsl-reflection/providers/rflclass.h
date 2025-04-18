@@ -182,6 +182,7 @@ namespace ucsl::reflection::providers {
 			const GameInterface::RflSystem::RflClassMember* member;
 
 			bool is_erased() const { return false; }
+			bool is_weak() const { return false; }
 
 			size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& self) const { return member->GetSubTypeSize(); }
 			size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) const { return member->GetSubTypeAlignment(); }
@@ -200,6 +201,7 @@ namespace ucsl::reflection::providers {
 			bool allowCArray;
 
 			bool is_erased() const { return false; }
+			bool is_weak() const { return false; }
 
 			size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& self) const {
 				if (allowCArray) return member->GetSize();
@@ -232,6 +234,7 @@ namespace ucsl::reflection::providers {
 			const GameInterface::RflSystem::RflClass* rflClass;
 
 			bool is_erased() const { return false; }
+			bool is_weak() const { return false; }
 
 			size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& self) const { return rflClass->GetSize(); }
 			size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) const { return rflClass->GetAlignment(); }

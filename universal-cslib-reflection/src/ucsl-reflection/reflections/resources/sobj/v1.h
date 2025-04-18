@@ -45,8 +45,8 @@ namespace ucsl::resources::sobj::v1::reflections {
 
 	template<typename AllocatorSystem>
 	using SetObjectData = structure<impl::SetObjectData<AllocatorSystem>, "SetObjectData", void,
-		field<unsigned int, "magic">,
-		field<unsigned int, "version">,
+		field<constant<unsigned int, 0x534F424A>, "magic">,
+		field<constant<unsigned int, 1>, "version">,
 		field<unsigned int, "objectTypeCount">,
 		field<dynamic_carray<ObjectTypeData, impl::SetObjectData<AllocatorSystem>, [](const impl::SetObjectData<AllocatorSystem>& parent) -> size_t { return parent.objectTypeCount; }>*, "objectTypes">,
 		field<size_t, "bvh">,

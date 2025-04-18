@@ -22,8 +22,8 @@ namespace ucsl::resources::effdb::v100 {
         ucsl::math::Vector3 scale;
     };
 
-    struct State {
-        const char* stateName;
+    struct Binding {
+        const char* clipName;
         unsigned int particleCount;
         Particle* particles;
         unsigned int soundNameCount;
@@ -33,7 +33,7 @@ namespace ucsl::resources::effdb::v100 {
     struct EffdbData{
         unsigned int magic;
         unsigned int version;
-        unsigned int stateCount;
-        State* states;
+        unsigned int bindingCount;
+        Binding* bindings;
     };
 }
