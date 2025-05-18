@@ -49,7 +49,7 @@ namespace ucsl::resources::sobj::v1::reflections {
 		field<constant<unsigned int, 1>, "version">,
 		field<unsigned int, "objectTypeCount">,
 		field<dynamic_carray<ObjectTypeData, impl::SetObjectData<AllocatorSystem>, [](const impl::SetObjectData<AllocatorSystem>& parent) -> size_t { return parent.objectTypeCount; }>*, "objectTypes">,
-		field<size_t, "bvh">,
+		field<int, "bvh">,
 		field<dynamic_carray<ObjectData<AllocatorSystem>*, impl::SetObjectData<AllocatorSystem>, [](const impl::SetObjectData<AllocatorSystem>& parent) -> size_t { return parent.objectCount; }>*, "objects">,
 		field<unsigned int, "objectCount">,
 		field<unsigned int, "bvhNodeCount">,

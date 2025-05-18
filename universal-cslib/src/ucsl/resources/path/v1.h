@@ -10,14 +10,14 @@ namespace ucsl::resources::path::v1 {
 		float distance;
 		unsigned int unk2;
 		ucsl::math::Position position;
-		ucsl::math::Position up;
-		ucsl::math::Position forward;
+		ucsl::math::Position normal;
+		ucsl::math::Position tangent;
 		float unk3;
 	};
 
 	struct PathData {
 		const char* name;
-		unsigned int unk1;
+		unsigned int id;
 		unsigned int unk2;
 		float unk3;
 		unsigned int nodeCount;
@@ -33,16 +33,16 @@ namespace ucsl::resources::path::v1 {
 		PathIdData* pathIds;
 		unsigned int pathCount;
 		PathData* paths;
-		PathData* paths2;
-		unsigned int pathSet1Size;
-		PathData** pathSet1;
-		unsigned int pathSet2Size;
-		PathData** pathSet2;
-		unsigned int pathSet3Size;
-		PathData** pathSet3;
-		unsigned int pathSet4Size;
-		PathData** pathSet4;
-		unsigned int pathSet5Size;
-		PathData** pathSet5;
+		PathData* stageGuidePath;
+		unsigned int objPathSize;
+		PathData** objPaths;
+		unsigned int qsPathSize;
+		PathData** qsPaths;
+		unsigned int svPathSize;
+		PathData** svPaths;
+		unsigned int grPathSize;
+		PathData** grPaths;
+		unsigned int unkPathSize;
+		PathData** unkPaths;
 	};
 }

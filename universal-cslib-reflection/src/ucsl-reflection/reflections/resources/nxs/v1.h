@@ -10,16 +10,21 @@ namespace ucsl::resources::nxs::v1::reflections {
 
 	namespace impl = ucsl::resources::nxs::v1;
 
+	using MaterialData = structure<impl::MaterialData, "MaterialData", void,
+		field<unsigned int, "unk1">,
+		field<unsigned int, "flags">
+	>;
+
 	using NXSData = structure<impl::NXSData, "NXSData", void,
 		field<unsigned int, "magic">,
 		field<unsigned int, "version">,
-		field<unsigned int, "vertexCount">,
-		field<unsigned int, "triangleCount">,
-		field<size_t, "unk2Count">,
+		field<unsigned int, "mesh1VertexCount">,
+		field<unsigned int, "mesh1TriangleCount">,
+		field<size_t, "materialCount">,
 		field<size_t, "mesh1Size">,
 		field<size_t, "mesh2Size">,
 		field<size_t, "mesh3Size">,
-		field<dynamic_carray<size_t, impl::NXSData, [](const impl::NXSData& parent) -> size_t { return parent.unk2Count; }>*, "unk2">,
+		field<dynamic_carray<MaterialData, impl::NXSData, [](const impl::NXSData& parent) -> size_t { return parent.materialCount; }>*, "materials">,
 		field<dynamic_carray<uint8_t, impl::NXSData, [](const impl::NXSData& parent) -> size_t { return parent.mesh1Size; }>*, "mesh1">,
 		field<dynamic_carray<uint8_t, impl::NXSData, [](const impl::NXSData& parent) -> size_t { return parent.mesh2Size; }>*, "mesh2">,
 		field<dynamic_carray<uint8_t, impl::NXSData, [](const impl::NXSData& parent) -> size_t { return parent.mesh3Size; }>*, "mesh3">

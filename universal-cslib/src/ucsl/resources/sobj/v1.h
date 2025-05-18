@@ -33,7 +33,7 @@ namespace ucsl::resources::sobj::v1 {
 		unsigned int version;
 		unsigned int objectTypeCount;
 		ObjectTypeData* objectTypes;
-		size_t bvh;
+		int bvh;
 		ObjectData<AllocatorSystem>** objects;
 		unsigned int objectCount;
 		unsigned int bvhNodeCount;

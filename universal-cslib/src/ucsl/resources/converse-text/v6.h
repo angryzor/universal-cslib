@@ -31,7 +31,7 @@ namespace ucsl::resources::converse_text::v6 {
     struct Font {
         const char* idName;
         const char* fontName;
-        float* unk0;
+        float* defaultSize;
         float* unk1;
         float* unk2;
         int* unk3;

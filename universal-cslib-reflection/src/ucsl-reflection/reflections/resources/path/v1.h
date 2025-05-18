@@ -19,14 +19,14 @@ namespace ucsl::resources::path::v1::reflections {
 		field<float, "distance">,
 		field<unsigned int, "unk2">,
 		field<ucsl::math::Position, "position">,
-		field<ucsl::math::Position, "up">,
-		field<ucsl::math::Position, "forward">,
+		field<ucsl::math::Position, "normal">,
+		field<ucsl::math::Position, "tangent">,
 		field<float, "unk3">
 	>;
 
 	using PathData = structure<impl::PathData, "PathData", void,
 		field<const char*, "name">,
-		field<unsigned int, "unk1">,
+		field<unsigned int, "id">,
 		field<unsigned int, "unk2">,
 		field<float, "unk3">,
 		field<unsigned int, "nodeCount">,
@@ -42,17 +42,17 @@ namespace ucsl::resources::path::v1::reflections {
 		field<dynamic_carray<PathIdData, impl::PathsData, [](const impl::PathsData& parent) -> size_t { return parent.pathIdCount; }>*, "pathIds">,
 		field<unsigned int, "pathCount">,
 		field<dynamic_carray<PathData, impl::PathsData, [](const impl::PathsData& parent) -> size_t { return parent.pathCount; }>*, "paths">,
-		field<void*, "paths2">,
-		field<unsigned int, "pathSet1Size">,
-		field<dynamic_carray<void*, impl::PathsData, [](const impl::PathsData& parent) -> size_t { return parent.pathSet1Size; }>*, "pathSet1">,
-		field<unsigned int, "pathSet2Size">,
-		field<dynamic_carray<void*, impl::PathsData, [](const impl::PathsData& parent) -> size_t { return parent.pathSet2Size; }>*, "pathSet2">,
-		field<unsigned int, "pathSet3Size">,
-		field<dynamic_carray<void*, impl::PathsData, [](const impl::PathsData& parent) -> size_t { return parent.pathSet3Size; }>*, "pathSet3">,
-		field<unsigned int, "pathSet4Size">,
-		field<dynamic_carray<void*, impl::PathsData, [](const impl::PathsData& parent) -> size_t { return parent.pathSet4Size; }>*, "pathSet4">,
-		field<unsigned int, "pathSet5Size">,
-		field<dynamic_carray<void*, impl::PathsData, [](const impl::PathsData& parent) -> size_t { return parent.pathSet5Size; }>*, "pathSet5">
+		field<weak<PathData*>, "stageGuidePath">,
+		field<unsigned int, "objPathSize">,
+		field<dynamic_carray<weak<PathData*>, impl::PathsData, [](const impl::PathsData& parent) -> size_t { return parent.objPathSize; }>*, "objPaths">,
+		field<unsigned int, "qsPathSize">,
+		field<dynamic_carray<weak<PathData*>, impl::PathsData, [](const impl::PathsData& parent) -> size_t { return parent.qsPathSize; }>*, "qsPaths">,
+		field<unsigned int, "svPathSize">,
+		field<dynamic_carray<weak<PathData*>, impl::PathsData, [](const impl::PathsData& parent) -> size_t { return parent.svPathSize; }>*, "svPaths">,
+		field<unsigned int, "grPathSize">,
+		field<dynamic_carray<weak<PathData*>, impl::PathsData, [](const impl::PathsData& parent) -> size_t { return parent.grPathSize; }>*, "grPaths">,
+		field<unsigned int, "unkPathSize">,
+		field<dynamic_carray<weak<PathData*>, impl::PathsData, [](const impl::PathsData& parent) -> size_t { return parent.unkPathSize; }>*, "unkPaths">
 	>;
 }
 

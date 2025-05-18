@@ -1,10 +1,15 @@
 #pragma once
 
 namespace ucsl::resources::probe::v2 {
+    enum class Shape {
+        SPHERE,
+        AABB,
+    };
+
     struct ProbeData {
-        math::Matrix34 matrix;
+        float matrix[16];
         math::Position extents;
-        float unk1;
+        float radius;
         const char* textureName;
         unsigned int type1;
         void* texture; // needle::Texture loaded at runtime
