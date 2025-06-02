@@ -28,6 +28,7 @@ target_sources(universal-cslib-reflection
         "ucsl-reflection/reflections/resources/okern/v1.h"
         "ucsl-reflection/reflections/resources/path/v1.h"
         "ucsl-reflection/reflections/resources/path/v200.h"
+        "ucsl-reflection/reflections/resources/pba/v1.h"
         "ucsl-reflection/reflections/resources/pointcloud/v2.h"
         "ucsl-reflection/reflections/resources/rfl/v1.h"
         "ucsl-reflection/reflections/resources/rfl/v2.h"

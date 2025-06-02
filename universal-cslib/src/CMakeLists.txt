@@ -31,6 +31,7 @@ target_sources(universal-cslib
         "ucsl/resources/okern/v1.h"
         "ucsl/resources/path/v1.h"
         "ucsl/resources/path/v200.h"
+        "ucsl/resources/pba/v1.h"
         "ucsl/resources/pcmodel/v2.h"
         "ucsl/resources/rfl/v1.h"
         "ucsl/resources/rfl/v2.h"
