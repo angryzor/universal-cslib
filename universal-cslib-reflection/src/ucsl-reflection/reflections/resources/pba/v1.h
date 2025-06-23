@@ -12,10 +12,22 @@ namespace ucsl::resources::pba::v1::reflections {
 
 	namespace impl = ucsl::resources::pba::v1;
 
+    using RigidBodyType = enumeration<impl::RigidBody::Type, "Type", unsigned char,
+        option<"DYNAMIC">,
+        option<"STATIC">
+    >;
+
+    using RigidBodyShape = enumeration<impl::RigidBody::Shape, "Shape", unsigned char,
+        option<"SPHERE">,
+        option<"BOX">
+    >;
+
     using RigidBody = structure<impl::RigidBody, "RigidBody", void,
         field<const char*, "boneName">,
-        field<bool, "isStaticObject">,
-        field<bool, "isShapeBox">,
+        field<RigidBodyType, "type">,
+        field<RigidBodyShape, "shape">,
+        field<uint8_t, "unk1">,
+        field<char, "group">,
         field<float, "shapeRadius">,
         field<float, "shapeHeight">,
         field<float, "shapeDepth">,
@@ -45,11 +57,11 @@ namespace ucsl::resources::pba::v1::reflections {
 
     using Constraint = structure<impl::Constraint, "Constraint", void,
         field<const char*, "boneName">,
-        field<char, "unk0">,
+        field<bool, "disableCollisionsBetweenLinkedBodies">,
         field<char, "unk1">,
-        field<unsigned short, "iterationCount">,
-        field<short, "localParentBoneIndex">,
-        field<short, "localBoneIndex">,
+        field<unsigned short, "overrideSolverIterationCount">,
+        field<short, "parentRigidBodyIndex">,
+        field<short, "childRigidBodyIndex">,
         field<short, "skeletonParentBoneIndex">,
         field<Limit[3], "angularLimits">,
         field<Limit[3], "linearLimits">,
@@ -62,14 +74,14 @@ namespace ucsl::resources::pba::v1::reflections {
     using Node = structure<impl::Node, "Node", void,
         field<const char*, "boneName">,
         field<float, "mass">,
-        field<short, "unk0">,
+        field<short, "rigidBodyIndex">,
         field<bool, "isPinned">,
-        field<short, "childId">,
-        field<short, "parentId">,
-        field<short, "unk1">,
-        field<short, "unk2">,
-        field<short, "siblingLeftId">,
-        field<short, "siblingRightId">
+        field<short, "positiveXSiblingIndex">,
+        field<short, "negativeXSiblingIndex">,
+        field<short, "positiveYSiblingIndex">,
+        field<short, "negativeYSiblingIndex">,
+        field<short, "positiveZSiblingIndex">,
+        field<short, "negativeZSiblingIndex">
     >;
 
     using Link = structure<impl::Link, "Link", void,
@@ -80,19 +92,19 @@ namespace ucsl::resources::pba::v1::reflections {
 
     using SoftBody = structure<impl::SoftBody, "SoftBody", void,
         field<const char*, "name">,
-        field<float, "scale">,
+        field<float, "margin">,
         field<float, "dampingCoeff">,
         field<float, "dragCoeff">,
         field<float, "liftCoeff">,
         field<float, "dynamicFrictionCoeff">,
         field<float, "poseMatchingCoeff">,
-        field<float, "rigidContactCoeff">,
+        field<float, "rigidContactsHardness">,
         field<float, "kineticContactsHardness">,
         field<float, "softContactsHardness">,
         field<float, "anchorsHardness">,
-        field<char, "positionIterationCount">,
+        field<char, "positionSolverIterationCount">,
         field<char, "unk0">,
-        field<short, "unk1">,
+        field<short, "group">,
         field<unsigned int, "nodeCount">,
         field<unsigned int, "linkCount">,
         field<dynamic_carray<Node, impl::SoftBody, [](const impl::SoftBody& parent) -> size_t { return parent.nodeCount; }>*, "nodes">,

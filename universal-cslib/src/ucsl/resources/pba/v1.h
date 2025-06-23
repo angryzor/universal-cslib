@@ -4,9 +4,21 @@
 
 namespace ucsl::resources::pba::v1 {
     struct RigidBody {
+        enum class Type : unsigned char {
+            DYNAMIC,
+            STATIC,
+        };
+
+        enum class Shape : unsigned char {
+            SPHERE, // capsule if it has height
+            BOX,
+        };
+
         const char* boneName;
-        bool isStaticObject;
-        bool isShapeBox;
+        Type type;
+        Shape shape;
+        uint8_t unk1;
+        char group;
         float shapeRadius;
         float shapeHeight;
         float shapeDepth;
@@ -36,11 +48,11 @@ namespace ucsl::resources::pba::v1 {
 
     struct Constraint {
         const char* boneName;
-        char unk0;
+        bool disableCollisionsBetweenLinkedBodies;
         char unk1;
-        unsigned short iterationCount;
-        short localParentBoneIndex;
-        short localBoneIndex;
+        unsigned short overrideSolverIterationCount;
+        short parentRigidBodyIndex;
+        short childRigidBodyIndex;
         short skeletonParentBoneIndex;
         Limit angularLimits[3];
         Limit linearLimits[3];
@@ -53,14 +65,14 @@ namespace ucsl::resources::pba::v1 {
     struct Node {
         const char* boneName;
         float mass;
-        short unk0;
+        short rigidBodyIndex;
         bool isPinned;
-        short childId;
-        short parentId;
-        short unk1;
-        short unk2;
-        short siblingLeftId;
-        short siblingRightId;
+        short positiveXSiblingIndex;
+        short negativeXSiblingIndex;
+        short positiveYSiblingIndex;
+        short negativeYSiblingIndex;
+        short positiveZSiblingIndex;
+        short negativeZSiblingIndex;
     };
 
     struct Link {
@@ -71,19 +83,19 @@ namespace ucsl::resources::pba::v1 {
 
     struct SoftBody {
         const char* name;
-        float scale;
+        float margin;
         float dampingCoeff;
         float dragCoeff;
         float liftCoeff;
         float dynamicFrictionCoeff;
         float poseMatchingCoeff;
-        float rigidContactCoeff;
+        float rigidContactsHardness;
         float kineticContactsHardness;
         float softContactsHardness;
         float anchorsHardness;
-        char positionIterationCount;
+        unsigned char positionSolverIterationCount;
         char unk0;
-        short unk1;
+        char group;
         unsigned int nodeCount;
         unsigned int linkCount;
         Node* nodes;
