@@ -26,9 +26,12 @@ namespace ucsl::resources::vibration::v21 {
         char unk0;
         unsigned char dataCount;
         bool looping;
+        char unk1;
+        char unk2;
+        char unk3;
         VibrationData* datas;
         Sound* sound;
-        void* unk1;
+        void* unk4;
     };
 
     struct VibData {
