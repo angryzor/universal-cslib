@@ -120,11 +120,19 @@ namespace ucsl::resources::scene::v106{
 			UNKNOWN2
 		};
 
+		union Value{
+            bool b;
+            float f;
+            double d;
+        	int i;
+            const char* s;
+        };
+
 		const char* nodeName;
 		const char* parameterName;
 		const char* nodeName1;
 		Type type;
-		long long value;
+		Value value;
 	};
 
 	struct SceneControl {

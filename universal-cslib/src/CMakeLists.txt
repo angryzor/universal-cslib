@@ -23,6 +23,7 @@ target_sources(universal-cslib
         "ucsl/resources/effdb/v1.h"
         "ucsl/resources/fxcol/v1.h"
         "ucsl/resources/kd-tree/v1.h"
+        "ucsl/resources/light/v2.h"
         "ucsl/resources/map/v1.h"
         "ucsl/resources/master-level/v0.h"
         "ucsl/resources/material/v0.h"
