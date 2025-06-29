@@ -9,28 +9,29 @@ namespace ucsl::resources::vibration::v21 {
         char unk1;
     };
 
-    struct VibrationNode {
-        float position[2];
+    struct VibrationKeyframe {
+        float time;
+        float intensity;
         int flags;
         float unk1[2]; // maybe related to curve
         float unk2[2]; // maybe related to curve
     };
 
-    struct VibrationData {
-        char id;
-        unsigned int nodeCount;
-        VibrationNode* nodes;
+    struct VibrationMotor {
+        char motorId;
+        unsigned int keyframeCount;
+        VibrationKeyframe* keyframes;
     };
 
     struct Vibration {
         const char* name;
         char unk0;
-        unsigned char dataCount;
+        unsigned char motorCount;
         bool looping;
         bool unk1;
-        VibrationData* datas;
+        VibrationMotor* motors;
         Sound* sound;
-        void* unk4;
+        int64_t unk4;
     };
 
     struct VibData {
