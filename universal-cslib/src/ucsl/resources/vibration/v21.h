@@ -5,7 +5,8 @@
 namespace ucsl::resources::vibration::v21 {
     struct Sound { // unsure
         const char* name;
-        int soundChannelId;
+        char unk0; //soundChannelId?
+        char unk1;
     };
 
     struct VibrationNode {
@@ -16,7 +17,7 @@ namespace ucsl::resources::vibration::v21 {
     };
 
     struct VibrationData {
-        int id;
+        char id;
         unsigned int nodeCount;
         VibrationNode* nodes;
     };
@@ -26,9 +27,7 @@ namespace ucsl::resources::vibration::v21 {
         char unk0;
         unsigned char dataCount;
         bool looping;
-        char unk1;
-        char unk2;
-        char unk3;
+        bool unk1;
         VibrationData* datas;
         Sound* sound;
         void* unk4;
