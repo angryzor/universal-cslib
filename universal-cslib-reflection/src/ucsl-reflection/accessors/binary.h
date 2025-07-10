@@ -1,292 +1,301 @@
 #pragma once
-#include "types.h"
-#include <ucsl-reflection/util/memory.h>
+#include <ucsl/containers/arrays/array.h>
+#include <ucsl/containers/arrays/tarray.h>
 #include <ucsl-reflection/providers/types.h>
+#include <ucsl-reflection/util/memory.h>
+#include <ucsl-reflection/bound-reflection.h>
 
 namespace ucsl::reflection::accessors {
-	//class BinaryAccessor {
-	//	void* obj;
+	template<typename GameInterface>
+	struct binary {
+		struct opaque_value {};
 
-	//public:
-	//	inline BinaryAccessor(void* obj) : obj{ obj } {}
+		template<typename Refl>
+		void construct(Refl refl, void* ptr, size_t count = 1);
+		//{
+		//	for (size_t i = 0; i < count; i++) {
+		//		auto item_size = refl.get_size()
+		//		auto* item_ptr = 
 
-	//	BinaryAccessor get_field(const char* name, size_t offset) { return { util::addptr(obj, offset) }; }
-	//	BinaryAccessor get_item(size_t index, size_t itemSize) { return { util::addptr(obj, itemSize * index) }; }
-	//};
+		//		return refl.visit([&](auto r) {
+		//			if constexpr (decltype(r)::kind == providers::TypeKind::PRIMITIVE) return f(PrimitiveAccessor<decltype(r)>{ this->value, r });
+		//			else if constexpr (decltype(r)::kind == providers::TypeKind::ENUM) return f(EnumAccessor<decltype(r)>{ this->value, r });
+		//			//else if constexpr (decltype(r)::kind == providers::TypeKind::FLAGS) return f(flags(this->value, refl.is_erased(), r));
+		//			else if constexpr (decltype(r)::kind == providers::TypeKind::ARRAY) return f(ArrayAccessor<ucsl::containers::arrays::Array, decltype(r)>{ this->value, r });
+		//			else if constexpr (decltype(r)::kind == providers::TypeKind::TARRAY) return f(ArrayAccessor<ucsl::containers::arrays::TArray, decltype(r)>{ this->value, r });
+		//			else if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) return f(PointerAccessor<decltype(r)>{ this->value, r });
+		//			else if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) return f(CArrayAccessor<decltype(r)>{ this->value, r });
+		//			//else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return f(union(this->value, parent, r));
+		//			else if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) {
+		//				r.visit_fields([&](auto f) {
+		//					construct(f.get_type(), util::addptr(ptr, field_refl.get_offset()));
+		//				});
+		//			}
+		//			else static_assert(false, "invalid type kind");
+		//		});
+		//	}
+		//}
 
-	struct opaque_obj {};
+		template<typename Refl>
+		void destroy(Refl refl, void* ptr, size_t count = 1);
 
-	template<typename GameInterface, typename Refl>
-	void construct(Refl refl, void* ptr, size_t count = 1);
+		template<typename Refl>
+		void copy(Refl refl, void* to, void* from, size_t count = 1);
 
-	template<typename GameInterface, typename Refl>
-	void destroy(Refl refl, void* ptr, size_t count = 1);
+		template<typename Refl>
+		void move(Refl refl, void* to, void* from, size_t count = 1);
 
-	template<typename Refl>
-	void copy(Refl refl, void* to, void* from, size_t count = 1);
+		template<template<typename, typename> typename A, typename Refl>
+		class RflArray : public A<opaque_value, typename GameInterface::AllocatorSystem> {
+		public:
+			void change_allocator(auto accessor, GameInterface::AllocatorSystem::allocator_type* new_allocator) {
+				if (!new_allocator || this->allocator == new_allocator)
+					return;
 
-	template<typename Refl>
-	void move(Refl refl, void* to, void* from, size_t count = 1);
+				if (this->is_deallocation_disabled() || !this->buffer) {
+					this->allocator = new_allocator;
+					return;
+				}
 
-	template<template<typename, typename> typename A, typename GameInterface, typename Refl>
-	class RflArray : public A<opaque_obj, typename GameInterface::AllocatorSystem> {
-	public:
-		void change_allocator(Refl refl, GameInterface::AllocatorSystem::allocator_type* new_allocator) {
-			if (!new_allocator || this->allocator == new_allocator)
-				return;
+				opaque_value* new_buffer = static_cast<opaque_value*>(new_allocator->Alloc(this->capacity() * accessor.refl.get_item_type().get_size(accessor), 16));
 
-			if (this->is_deallocation_disabled() || !this->buffer) {
+				move(accessor.refl, new_buffer, this->buffer, this->length);
+
+				if (this->allocator && !this->is_deallocation_disabled())
+					this->allocator->Free(this->buffer);
+
+				this->buffer = new_buffer;
 				this->allocator = new_allocator;
-				return;
 			}
 
-			opaque_obj* new_buffer = static_cast<opaque_obj*>(new_allocator->Alloc(this->capacity() * refl.get_size(), 16));
+			void reserve(auto accessor, size_t desired_cap) {
+				auto* allocator = this->get_allocator();
+				auto cap = this->capacity();
 
-			move(refl, new_buffer, this->buffer, this->length);
+				if (desired_cap <= cap)
+					return;
 
-			if (this->allocator && !this->is_deallocation_disabled())
-				this->allocator->Free(this->buffer);
+				auto newcap = std::max(2 * cap, desired_cap);
 
-			this->buffer = new_buffer;
-			this->allocator = new_allocator;
-		}
+				opaque_value* new_buffer = static_cast<opaque_value*>(allocator->Alloc(newcap * accessor.refl.get_item_type().get_size(accessor), 16));
 
-		void reserve(Refl refl, size_t desired_cap) {
-			auto* allocator = this->get_allocator();
-			auto cap = this->capacity();
+				if (this->buffer) {
+					move(accessor.refl, new_buffer, this->buffer, this->length);
 
-			if (desired_cap <= cap)
-				return;
+					if (!this->is_deallocation_disabled())
+						allocator->Free(this->buffer);
+				}
 
-			auto newcap = std::max(2 * cap, desired_cap);
-
-			opaque_obj* new_buffer = static_cast<opaque_obj*>(allocator->Alloc(newcap * refl.get_size(), 16));
-
-			if (this->buffer) {
-				move(refl, new_buffer, this->buffer, this->length);
-
-				if (!this->is_deallocation_disabled())
-					allocator->Free(this->buffer);
+				this->buffer = new_buffer;
+				this->capacity_and_flags = newcap;
 			}
 
-			this->buffer = new_buffer;
-			this->capacity_and_flags = newcap;
-		}
+			opaque_value& emplace_back(auto accessor) {
+				this->reserve(accessor.refl, this->length + 1);
 
-		template<typename... Args>
-		opaque_obj& emplace_back(Refl refl, Args&&... args) {
-			this->reserve(refl, this->length + 1);
+				opaque_value& loc = at(accessor, this->length);
 
-			opaque_obj& loc = at(this->length, refl);
+				construct(accessor.refl, &loc);
+				//if (member->GetSubType() == GameInterface::RflSystem::RflClassMember::Type::STRUCT)
+				//	GameInterface::RflTypeInfoRegistry::GetInstance()->ConstructObject(this->get_allocator(), &at(this->length, member), member->GetClass()->GetName());
+				//else
+				//	memset(&at(this->length, member), 0, member->GetSubTypeSize());
 
-			construct(refl, &loc);
-			//if (member->GetSubType() == GameInterface::RflSystem::RflClassMember::Type::STRUCT)
-			//	GameInterface::RflTypeInfoRegistry::GetInstance()->ConstructObject(this->get_allocator(), &at(this->length, member), member->GetClass()->GetName());
-			//else
-			//	memset(&at(this->length, member), 0, member->GetSubTypeSize());
+				this->length++;
 
-			this->length++;
+				return loc;
+			}
 
-			return loc;
-		}
+			void remove(auto accessor, size_t i) {
+				if (i >= this->length)
+					return;
 
-		void remove(Refl refl, size_t i) {
-			if (i >= this->length)
-				return;
-
-			//if (member->GetSubType() == GameInterface::RflSystem::RflClassMember::Type::STRUCT)
-			//	GameInterface::RflTypeInfoRegistry::GetInstance()->CleanupLoadedObject(&at(i, member), member->GetName());
-
-			destroy(refl, &at(refl, i));
-			move(refl, &at(refl, i), &at(refl, i + 1), this->length - i - 1);
-
-			this->length--;
-		}
-
-		void clear(Refl refl) {
-			if (this->empty())
-				return;
-
-			for (size_t i = 0; i < this->length; i++)
-				destroy(refl, &at(refl, i));
 				//if (member->GetSubType() == GameInterface::RflSystem::RflClassMember::Type::STRUCT)
 				//	GameInterface::RflTypeInfoRegistry::GetInstance()->CleanupLoadedObject(&at(i, member), member->GetName());
 
-			this->length = 0;
-		}
+				destroy(accessor.refl, &at(accessor, i));
+				move(accessor.refl, &at(accessor, i), &at(accessor, i + 1), this->length - i - 1);
 
-		opaque_obj& at(Refl refl, size_t i) {
-			return *util::addptr(this->buffer, refl.get_size() * i);
-		}
-	};
+				this->length--;
+			}
 
-	template<typename GameInterface>
-	struct binary {
-		template<typename Refl, typename ParentRefl, typename RootRefl, typename Parent, typename Root> class ValueBinaryAccessor;
+			void clear(auto accessor) {
+				if (this->empty())
+					return;
 
-		template<typename Refl, typename ParentRefl, typename RootRefl, typename Parent, typename Root>
+				for (size_t i = 0; i < this->length; i++)
+					destroy(accessor.refl, &at(accessor, i));
+					//if (member->GetSubType() == GameInterface::RflSystem::RflClassMember::Type::STRUCT)
+					//	GameInterface::RflTypeInfoRegistry::GetInstance()->CleanupLoadedObject(&at(i, member), member->GetName());
+
+				this->length = 0;
+			}
+
+			opaque_value& at(auto accessor, size_t i) {
+				return *util::addptr(this->buffer, accessor.refl.get_item_type().get_size(accessor) * i);
+			}
+		};
+
+		template<typename Refl, typename T = opaque_value>
 		class AccessorBase {
 		public:
+			T& value;
 			Refl refl;
-			std::optional<Parent> parent;
-			std::optional<Root> root;
 
-			inline AccessorBase(const Refl& refl, const std::optional<Parent>& parent, const std::optional<Root>& root) : refl{ refl }, parent{ parent }, root{ root } {}
+			template<typename U>
+			inline AccessorBase(U& value, const Refl& refl) : value{ (T&)value }, refl{ refl } {}
 		};
 
-		template<typename Refl, typename ParentRefl, typename RootRefl, typename Parent, typename Root, typename T = opaque_obj>
-		class BinaryAccessor : public AccessorBase<Refl, ParentRefl, RootRefl, Parent, Root> {
-		protected:
-			T& obj;
-		
-		public:
-			inline BinaryAccessor(void* obj, const Refl& refl = Refl{}, const std::optional<Parent>& parent = std::nullopt, const std::optional<Root>& root = std::nullopt) : AccessorBase<Refl, ParentRefl, RootRefl, Parent, Root>{ refl, parent, root }, obj{ *(T*)obj } {}
-		};
+		template<typename Refl>
+		class ValueAccessor;
 
-		template<typename Refl, typename ParentRefl, typename RootRefl, typename Parent, typename Root>
-		class PrimitiveDataBinaryAccessor : public BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root, typename Refl::repr> {
+		template<typename Refl>
+		class PrimitiveDataAccessor : public AccessorBase<Refl, typename Refl::repr> {
 		public:
-			using BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root, typename Refl::repr>::BinaryAccessor;
+			using AccessorBase<Refl, typename Refl::repr>::AccessorBase;
 			
-			PrimitiveDataBinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root>& operator=(typename Refl::repr v) {
-				//if constexpr (this->refl.is_erased())
-				//	this->obj = {};
-				//else {
-				//	if constexpr (this->refl.get_constant_value().has_value())
-				//		this->obj = this->refl.get_constant_value().value();
-				//	else
-						this->obj = v;
-				//}
+			PrimitiveDataAccessor<Refl>& operator=(typename Refl::repr v) {
+				if constexpr (std::is_fundamental_v<typename Refl::repr>)
+					this->value = this->refl.is_erased ? typename Refl::repr{} : this->refl.constant_value.has_value() ? this->refl.constant_value.value() : v;
+				else
+					this->value = this->refl.constant_value.has_value() ? this->refl.constant_value.value() : v;
 				return *this;
 			}
 
 			operator typename Refl::repr() const {
-				//if constexpr (this->refl.get_constant_value().has_value())
-				//	return this->refl.get_constant_value().value();
-				//else
-					return this->obj;
+				if constexpr (std::is_fundamental_v<typename Refl::repr>)
+					return this->refl.is_erased ? typename Refl::repr{} : this->refl.constant_value.has_value() ? this->refl.constant_value.value() : this->value;
+				else
+					return this->refl.constant_value.has_value() ? this->refl.constant_value.value() : this->value;
 			}
 		};
 
-		template<typename Refl, typename ParentRefl, typename RootRefl, typename Parent, typename Root>
-		class PrimitiveBinaryAccessor : public BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root> {
+		template<typename Refl>
+		class PrimitiveAccessor : public AccessorBase<Refl> {
 		public:
-			using BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root>::BinaryAccessor;
-
-			//template<typename T>
-			//inline T& as() {
-			//	return this->refl.visit([&](auto r){ return f(PrimitiveDataBinaryAccessor<decltype(r)::repr, ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root }); });
-			//}
-
-			//template<typename T>
-			//inline const T& as() const {
-			//	return (const T&)this->obj;
-			//}
+			using AccessorBase<Refl>::AccessorBase;
 
 			template<typename F>
 			inline auto visit(F f) {
-				return this->refl.visit([&](auto r){ return f(PrimitiveDataBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root }); });
+				return this->refl.visit([&](auto r){ return f(PrimitiveDataAccessor<decltype(r)>{ this->value, r }); });
 			}
 
 			template<typename F>
 			inline const auto visit(F f) const {
-				return this->refl.visit([&](auto r){ return f(PrimitiveDataBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root }); });
+				return this->refl.visit([&](auto r){ return f(PrimitiveDataAccessor<decltype(r)>{ this->value, r }); });
 			}
 		};
 
-		template<typename Refl, typename ParentRefl, typename RootRefl, typename Parent, typename Root>
-		class EnumBinaryAccessor : public PrimitiveBinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root> {
+		template<typename Refl>
+		class EnumAccessor : public AccessorBase<Refl> {
 		public:
-			using PrimitiveBinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root>::PrimitiveBinaryAccessor;
+			using AccessorBase<Refl>::AccessorBase;
+			
+			EnumAccessor<Refl>& operator=(long long v) {
+				this->refl.visit([&](auto r){
+					PrimitiveDataAccessor<decltype(r)> pd{ this->value, r };
+
+					pd = static_cast<typename decltype(r)::repr>(v);
+				});
+				return *this;
+			}
+
+			operator long long () const {
+				return this->refl.visit([&](auto r){
+					PrimitiveDataAccessor<decltype(r)> pd{ this->value, r };
+
+					return static_cast<long long>(pd);
+				});
+			}
 		};
 
-		template<typename Refl, typename ParentRefl, typename RootRefl, typename Parent, typename Root>
-		class StructureBinaryAccessor : public BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root> {
+		template<typename Refl>
+		class StructureAccessor : public AccessorBase<Refl> {
 		public:
-			using BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root>::BinaryAccessor;
+			using AccessorBase<Refl>::AccessorBase;
 
 			template<typename FieldRefl>
 			inline auto operator[](const FieldRefl& field_refl) {
-				auto type = field_refl.get_type();
+				auto type = field_refl.get_type(*this);
 
-				return ValueBinaryAccessor<decltype(type), Refl, RootRefl, StructureBinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root>, Root>{ util::addptr(&this->obj, field_refl.get_offset()), type, *this, this->root };
+				return ValueAccessor<decltype(type)>{ *util::addptr(&this->value, field_refl.get_offset()), type };
 			}
 
 			template<typename FieldRefl>
 			inline const auto operator[](const FieldRefl& field_refl) const {
-				auto type = field_refl.get_type();
+				auto type = field_refl.get_type(*this);
 
-				return ValueBinaryAccessor<decltype(type), Refl, RootRefl, StructureBinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root>, Root>{ util::addptr(&this->obj, field_refl.get_offset()), type, *this, this->root };
+				return ValueAccessor<decltype(type)>{ *util::addptr(&this->value, field_refl.get_offset()), type };
 			}
 
 			inline auto get_base() const {
 				auto base = this->refl.get_base();
 
-				return base.has_value() ? std::make_optional(StructureBinaryAccessor<std::remove_reference_t<decltype(base.value())>, ParentRefl, RootRefl, Parent, Root>{ &this->obj, base.value(), this->parent, this->root }) : std::nullopt;
+				return base.has_value() ? std::make_optional(StructureAccessor<std::remove_reference_t<decltype(base.value())>>{ this->value, base.value() }) : std::nullopt;
 			}
 		};
 
-		template<typename Refl, typename ParentRefl, typename RootRefl, typename Parent, typename Root>
-		class CArrayBinaryAccessor : public BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root> {
+		template<typename Refl>
+		class CArrayAccessor : public AccessorBase<Refl> {
 		public:
-			using BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root>::BinaryAccessor;
+			using AccessorBase<Refl>::AccessorBase;
 
 			inline size_t get_length() const {
-				return this->refl.get_length(this->parent.value());
+				return this->refl.get_length();
 			}
 
 			inline auto operator[](size_t idx) {
 				auto item_refl = this->refl.get_item_type();
 
-				assert(idx < this->refl.get_length(this->parent.value()));
+				assert(idx < this->refl.get_length());
 
-				return ValueBinaryAccessor<decltype(item_refl), ParentRefl, RootRefl, Parent, Root>{ util::addptr(&this->obj, idx * item_refl.get_size(this->parent, this->root, this)), item_refl, this->parent, this->root };
+				return ValueAccessor<decltype(item_refl)>{ *util::addptr(&this->value, idx * item_refl.get_size(*this)), item_refl };
 			}
 
 			inline const auto operator[](size_t idx) const {
 				auto item_refl = this->refl.get_item_type();
 
-				assert(idx < this->refl.get_length(this->parent.value()));
+				assert(idx < this->refl.get_length());
 
-				return ValueBinaryAccessor<decltype(item_refl), ParentRefl, RootRefl, Parent, Root>{ util::addptr(&this->obj, idx * item_refl.get_size(this->parent, this->root, this)), item_refl, this->parent, this->root };
+				return ValueAccessor<decltype(item_refl)>{ *util::addptr(&this->value, idx * item_refl.get_size(*this)), item_refl };
 			}
 		};
 
-		template<typename Refl, typename ParentRefl, typename RootRefl, typename Parent, typename Root>
-		class PointerBinaryAccessor : public BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root, opaque_obj*> {
+		template<typename Refl>
+		class PointerAccessor : public AccessorBase<Refl, opaque_value*> {
 		public:
-			using BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root, opaque_obj*>::BinaryAccessor;
+			using AccessorBase<Refl, opaque_value*>::AccessorBase;
 
 			inline void clear() {
-				this->obj = nullptr;
+				this->value = nullptr;
 			}
 
-			inline void set(const BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root>& other) {
-				this->obj = &other.obj;
+			inline void set(const AccessorBase<Refl>& other) {
+				this->value = &other.value;
 			}
 
 			inline auto get() {
 				auto target_type = this->refl.get_target_type();
 
-				return this->obj == nullptr ? std::nullopt : std::make_optional<ValueBinaryAccessor<decltype(target_type), ParentRefl, RootRefl, Parent, Root>>({ this->obj, target_type, this->parent, this->root });
+				return this->value == nullptr ? std::nullopt : std::make_optional<ValueAccessor<decltype(target_type)>>({ *this->value, target_type });
 			}
 
 			inline auto get() const {
 				auto target_type = this->refl.get_target_type();
 
-				return this->obj == nullptr ? std::nullopt : std::make_optional<const ValueBinaryAccessor<decltype(target_type), ParentRefl, RootRefl, Parent, Root>>({ this->obj, target_type, this->parent, this->root });
+				return this->value == nullptr ? std::nullopt : std::make_optional<const ValueAccessor<decltype(target_type)>>({ *this->value, target_type });
 			}
 		};
 
-		template<template<typename, typename> typename A, typename Refl, typename ParentRefl, typename RootRefl, typename Parent, typename Root>
-		class ArrayBinaryAccessor : public BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root, RflArray<A, GameInterface, Refl>> {
+		template<template<typename, typename> typename A, typename Refl>
+		class ArrayAccessor : public AccessorBase<Refl, RflArray<A, Refl>> {
 		public:
 			class iterator {
-				ArrayBinaryAccessor& accessor;
+				ArrayAccessor& accessor;
 				size_t idx{};
 
 			public:
-				iterator(ArrayBinaryAccessor& accessor, size_t idx) : accessor{ accessor }, idx{ idx } {}
+				iterator(ArrayAccessor& accessor, size_t idx) : accessor{ accessor }, idx{ idx } {}
 				iterator(const iterator& other) : accessor{ other.accessor }, idx{ other.idx } {}
 
 				iterator& operator++() {
@@ -321,11 +330,11 @@ namespace ucsl::reflection::accessors {
 			};
 
 			class const_iterator {
-				ArrayBinaryAccessor& accessor;
+				ArrayAccessor& accessor;
 				size_t idx{};
 
 			public:
-				const_iterator(ArrayBinaryAccessor& accessor, size_t idx) : accessor{ accessor }, idx{ idx } {}
+				const_iterator(ArrayAccessor& accessor, size_t idx) : accessor{ accessor }, idx{ idx } {}
 				const_iterator(const const_iterator& other) : accessor{ other.accessor }, idx{ other.idx } {}
 
 				const_iterator& operator++() {
@@ -361,20 +370,20 @@ namespace ucsl::reflection::accessors {
 
 			//template<typename T> OpaqueReflArray(A<T, typename GameInterface::AllocatorSystem>& underlying, Refl refl) : underlying{ static_cast<RflArray<A>&>(underlying) }, refl{ refl } {}
 			//template<typename T> OpaqueReflArray(const OpaqueReflArray<A, GameInterface, Refl>& other, Refl refl) : underlying{ other.underlying }, refl{ other.refl } {}
+			
+			using AccessorBase<Refl, RflArray<A, Refl>>::AccessorBase;
 
-			using BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root>::BinaryAccessor;
+			GameInterface::AllocatorSystem::allocator_type* get_allocator() const { return this->value.get_allocator(); }
+			void change_allocator(GameInterface::AllocatorSystem::allocator_type* new_allocator) { this->value.change_allocator(*this, new_allocator); }
+			void reserve(size_t len) { this->value.reserve(*this, len); }
 
-			GameInterface::AllocatorSystem::allocator_type* get_allocator() const { return this->obj.get_allocator(); }
-			void change_allocator(GameInterface::AllocatorSystem::allocator_type* new_allocator) { this->obj.change_allocator(this->refl, new_allocator); }
-			void reserve(size_t len) { this->obj.reserve(this->refl, len); }
+			auto emplace_back() {
+				auto item_type = this->refl.get_item_type();
 
-			template<typename... Args> auto emplace_back(Args&&... args) {
-				auto item_type = this->refl->get_item_type();
-
-				return ValueBinaryAccessor<decltype(item_type), ParentRefl, RootRefl, Parent, Root>{ this->obj.emplace_back(this->refl, std::forward<Args>(args)...), item_type, this->parent, this->root };
+				return ValueAccessor<decltype(item_type)>{ this->value.emplace_back(*this), item_type };
 			}
-			void remove(size_t i) { this->obj.remove(this->refl, i); }
-			void clear() { this->obj.clear(this->refl); }
+			void remove(size_t i) { this->value.remove(*this, i); }
+			void clear() { this->value.clear(*this); }
 
 			iterator begin() { return { *this, 0 }; }
 			const_iterator begin() const { return { *this, 0 }; }
@@ -384,95 +393,81 @@ namespace ucsl::reflection::accessors {
 			const_iterator cend() const { return { *this, size() }; }
 
 			auto operator[](size_t i) {
-				auto item_type = this->refl->get_item_type();
+				auto item_type = this->refl.get_item_type();
 
-				return ValueBinaryAccessor<decltype(item_type), ParentRefl, RootRefl, Parent, Root>{ this->obj.at(this->refl, i), item_type, this->parent, this->root };
+				return ValueAccessor<decltype(item_type)>{ this->value.at(*this, i), item_type };
 			}
 			const auto operator[](size_t i) const {
-				auto item_type = this->refl->get_item_type();
+				auto item_type = this->refl.get_item_type();
 
-				return ValueBinaryAccessor<decltype(item_type), ParentRefl, RootRefl, Parent, Root>{ this->obj.at(this->refl, i), item_type, this->parent, this->root };
+				return ValueAccessor<decltype(item_type)>{ this->value.at(*this, i), item_type };
 			}
 
-			size_t size() const { return this->obj.size(); }
-			size_t capacity() const { return this->obj.capacity(); }
+			size_t size() const { return this->value.size(); }
+			size_t capacity() const { return this->value.capacity(); }
 		};
 
-		template<typename Refl, typename ParentRefl, typename RootRefl, typename Parent, typename Root>
-		class ValueBinaryAccessor : public BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root> {
+		template<typename Refl>
+		class ValueAccessor : public AccessorBase<Refl> {
 		public:
-			using BinaryAccessor<Refl, ParentRefl, RootRefl, Parent, Root>::BinaryAccessor;
+			using AccessorBase<Refl>::AccessorBase;
 
 			const auto visit(auto f) const {
-				return this->refl.visit(this->parent, this->root, [&](auto r) {
-					if constexpr (decltype(r)::kind == providers::TypeKind::PRIMITIVE) return f(PrimitiveBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
-					else if constexpr (decltype(r)::kind == providers::TypeKind::ENUM) return f(EnumBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
-					//else if constexpr (decltype(r)::kind == providers::TypeKind::FLAGS) return f(flags(this->obj, refl.is_erased(), r));
-					else if constexpr (decltype(r)::kind == providers::TypeKind::ARRAY) return f(ArrayBinaryAccessor<ucsl::containers::arrays::Array, decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
-					else if constexpr (decltype(r)::kind == providers::TypeKind::TARRAY) return f(ArrayBinaryAccessor<ucsl::containers::arrays::TArray, decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
-					else if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) return f(PointerBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
-					else if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) return f(CArrayBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
-					//else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return f(union(this->obj, parent, r));
-					else if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) return f(StructureBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
+				return this->refl.visit([&](auto r) {
+					if constexpr (decltype(r)::kind == providers::TypeKind::PRIMITIVE) return f(PrimitiveAccessor<decltype(r)>{ this->value, r });
+					else if constexpr (decltype(r)::kind == providers::TypeKind::ENUM) return f(EnumAccessor<decltype(r)>{ this->value, r });
+					//else if constexpr (decltype(r)::kind == providers::TypeKind::FLAGS) return f(flags(this->value, refl.is_erased(), r));
+					else if constexpr (decltype(r)::kind == providers::TypeKind::ARRAY) return f(ArrayAccessor<ucsl::containers::arrays::Array, decltype(r)>{ this->value, r });
+					else if constexpr (decltype(r)::kind == providers::TypeKind::TARRAY) return f(ArrayAccessor<ucsl::containers::arrays::TArray, decltype(r)>{ this->value, r });
+					else if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) return f(PointerAccessor<decltype(r)>{ this->value, r });
+					else if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) return f(CArrayAccessor<decltype(r)>{ this->value, r });
+					//else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return f(union(this->value, parent, r));
+					else if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) return f(StructureAccessor<decltype(r)>{ this->value, r });
 					else static_assert(false, "invalid type kind");
 				});
 			}
 
 			auto visit(auto f) {
-				return this->refl.visit(this->parent, this->root, [&](auto r) {
-					if constexpr (decltype(r)::kind == providers::TypeKind::PRIMITIVE) return f(PrimitiveBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
-					else if constexpr (decltype(r)::kind == providers::TypeKind::ENUM) return f(EnumBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
-					//else if constexpr (decltype(r)::kind == providers::TypeKind::FLAGS) return f(flags(this->obj, refl.is_erased(), r));
-					else if constexpr (decltype(r)::kind == providers::TypeKind::ARRAY) return f(ArrayBinaryAccessor<ucsl::containers::arrays::Array, decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
-					else if constexpr (decltype(r)::kind == providers::TypeKind::TARRAY) return f(ArrayBinaryAccessor<ucsl::containers::arrays::TArray, decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
-					else if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) return f(PointerBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
-					else if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) return f(CArrayBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
-					//else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return f(union(this->obj, parent, r));
-					else if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) return f(StructureBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root });
+				return this->refl.visit([&](auto r) {
+					if constexpr (decltype(r)::kind == providers::TypeKind::PRIMITIVE) return f(PrimitiveAccessor<decltype(r)>{ this->value, r });
+					else if constexpr (decltype(r)::kind == providers::TypeKind::ENUM) return f(EnumAccessor<decltype(r)>{ this->value, r });
+					//else if constexpr (decltype(r)::kind == providers::TypeKind::FLAGS) return f(flags(this->value, refl.is_erased(), r));
+					else if constexpr (decltype(r)::kind == providers::TypeKind::ARRAY) return f(ArrayAccessor<ucsl::containers::arrays::Array, decltype(r)>{ this->value, r });
+					else if constexpr (decltype(r)::kind == providers::TypeKind::TARRAY) return f(ArrayAccessor<ucsl::containers::arrays::TArray, decltype(r)>{ this->value, r });
+					else if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) return f(PointerAccessor<decltype(r)>{ this->value, r });
+					else if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) return f(CArrayAccessor<decltype(r)>{ this->value, r });
+					//else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return f(union(this->value, parent, r));
+					else if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) return f(StructureAccessor<decltype(r)>{ this->value, r });
 					else static_assert(false, "invalid type kind");
 				});
 			}
 
 			auto as_primitive() {
-				return this->refl.visit(this->parent, this->root, [&](auto r) {
-					if constexpr (decltype(r)::kind == providers::TypeKind::PRIMITIVE) { return PrimitiveBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root }; } else static_assert(false, "not a primitive");
-				});
+				return this->refl.visit([&](auto r) { if constexpr (decltype(r)::kind == providers::TypeKind::PRIMITIVE) return PrimitiveAccessor<decltype(r)>{ this->value, r }; else static_assert(false, "not a primitive"); });
 			}
 
 			auto as_enum() {
-				return this->refl.visit(this->parent, this->root, [&](auto r) {
-					if constexpr (decltype(r)::kind == providers::TypeKind::ENUM) { return EnumBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root }; } else static_assert(false, "not an enum");
-				});
+				return this->refl.visit([&](auto r) { if constexpr (decltype(r)::kind == providers::TypeKind::ENUM) return EnumAccessor<decltype(r)>{ this->value, r }; else static_assert(false, "not an enum"); });
 			}
 
 			auto as_array() {
-				return this->refl.visit(this->parent, this->root, [&](auto r) {
-					if constexpr (decltype(r)::kind == providers::TypeKind::ARRAY) { return PrimitiveBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root }; } else static_assert(false, "not a array");
-				});
+				return this->refl.visit([&](auto r) { if constexpr (decltype(r)::kind == providers::TypeKind::ARRAY) return ArrayAccessor<ucsl::containers::arrays::Array, decltype(r)>{ this->value, r }; else static_assert(false, "not a array"); });
 			}
 
 			auto as_tarray() {
-				return this->refl.visit(this->parent, this->root, [&](auto r) {
-					if constexpr (decltype(r)::kind == providers::TypeKind::TARRAY) { return PrimitiveBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root }; } else static_assert(false, "not a tarray");
-				});
+				return this->refl.visit([&](auto r) { if constexpr (decltype(r)::kind == providers::TypeKind::TARRAY) return ArrayAccessor<ucsl::containers::arrays::TArray, decltype(r)>{ this->value, r }; else static_assert(false, "not a tarray"); });
 			}
 
 			auto as_carray() {
-				return this->refl.visit(this->parent, this->root, [&](auto r) {
-					if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) { return CArrayBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root }; } else static_assert(false, "not a carray");
-				});
+				return this->refl.visit([&](auto r) { if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) return CArrayAccessor<decltype(r)>{ this->value, r }; else static_assert(false, "not a carray"); });
 			}
 
 			auto as_pointer() {
-				return this->refl.visit(this->parent, this->root, [&](auto r) {
-					if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) { return PointerBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root }; } else static_assert(false, "not a pointer");
-				});
+				return this->refl.visit([&](auto r) { if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) return PointerAccessor<decltype(r)>{ this->value, r }; else static_assert(false, "not a pointer"); });
 			}
 
 			auto as_structure() {
-				return this->refl.visit(this->parent, this->root, [&](auto r) {
-					if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) { return StructureBinaryAccessor<decltype(r), ParentRefl, RootRefl, Parent, Root>{ &this->obj, r, this->parent, this->root }; } else static_assert(false, "not a structure");
-				});
+				return this->refl.visit([&](auto r) { if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) return StructureAccessor<decltype(r)>{ this->value, r }; else static_assert(false, "not a structure"); });
 			}
 		};
 	};

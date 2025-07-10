@@ -12,11 +12,13 @@ namespace ucsl::reflection::providers {
 		CARRAY,
 		UNION,
 		STRUCTURE,
+		TYPE,
 	};
 
 	template<typename R> struct PrimitiveData {
 		using repr = R;
 
+		bool is_erased{};
 		std::optional<R> constant_value{};
 		const ucsl::rfl::ranges::range_t<R>* range{};
 	};

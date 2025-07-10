@@ -107,9 +107,11 @@ namespace simplerfl {
 	template<> struct canonical<ucsl::math::Matrix44> { using type = primitive<ucsl::math::Matrix44>; };
 	template<> struct canonical<ucsl::math::Position> { using type = primitive<ucsl::math::Position>; };
 	template<> struct canonical<ucsl::math::Rotation> { using type = primitive<ucsl::math::Rotation>; };
-	//template<typename T, typename AllocatorSystem> struct canonical<ucsl::containers::arrays::Array<T, AllocatorSystem>> { using type = ucsl::reflection::array<T, AllocatorSystem>; };
-	//template<typename T, typename AllocatorSystem> struct canonical<ucsl::containers::arrays::TArray<T, AllocatorSystem>> { using type = ucsl::reflection::tarray<T, AllocatorSystem>; };
+	template<typename T, typename AllocatorSystem> struct canonical<ucsl::containers::arrays::Array<T, AllocatorSystem>> { using type = ucsl::reflection::array<T, AllocatorSystem>; };
+	template<typename T, typename AllocatorSystem> struct canonical<ucsl::containers::arrays::TArray<T, AllocatorSystem>> { using type = ucsl::reflection::tarray<T, AllocatorSystem>; };
 	template<> struct canonical<ucsl::strings::VariableString> { using type = primitive<ucsl::strings::VariableString>; };
 	template<> struct canonical<ucsl::objectids::ObjectIdV1> { using type = primitive<ucsl::objectids::ObjectIdV1>; };
 	template<> struct canonical<ucsl::objectids::ObjectIdV2> { using type = primitive<ucsl::objectids::ObjectIdV2>; };
+	template<ucsl::colors::ChannelOrder order> struct canonical<ucsl::colors::Color8<order>> { using type = primitive<ucsl::colors::Color8<order>>; };
+	template<ucsl::colors::ChannelOrder order> struct canonical<ucsl::colors::Colorf<order>> { using type = primitive<ucsl::colors::Colorf<order>>; };
 }

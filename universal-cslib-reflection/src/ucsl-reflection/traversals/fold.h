@@ -42,14 +42,14 @@ namespace ucsl::reflection::traversals {
 		//	});
 		//}
 
-		template<typename Refl, accessors::ArrayAccessor... Obj>
+		template<typename Refl, typename... Obj>
 		typename Algorithm::result_type process_array(Refl refl, Obj... objs) {
 			auto item = refl.get_item_type();
 
 			return algorithm.visit_array(objs..., [&, item](decltype(objs[0])&... items) { return process_type(item, items...); });
 		}
 
-		template<typename Refl, accessors::ArrayAccessor... Obj>
+		template<typename Refl, typename... Obj>
 		typename Algorithm::result_type process_tarray(Refl refl, Obj... objs) {
 			auto item = refl.get_item_type();
 
@@ -83,7 +83,7 @@ namespace ucsl::reflection::traversals {
 
 		template<typename Refl, typename... Obj>
 		typename Algorithm::result_type process_field(Refl refl, Obj... objs) {
-			return algorithm.visit_field(objs[refl]..., FieldInfo{ .name = refl.get_name(), .erased = false }, [&, refl](decltype(objs[refl])&... fields) { return process_type(refl.get_type(), fields...); });
+			return algorithm.visit_field(objs[refl]..., FieldInfo{ .name = refl.get_name(), .erased = false }, [&, refl](decltype(objs[refl])&... fields) { return process_type(refl.get_type(std::get<0>(std::tuple{ objs... })), fields...); });
 		}
 
 		template<typename Refl, typename... Obj>
@@ -115,7 +115,7 @@ namespace ucsl::reflection::traversals {
 		template<typename Refl, typename... Obj>
 		typename Algorithm::result_type process_type(Refl refl, Obj... objs) {
 			return algorithm.visit_type(objs..., [&, refl](Obj... objs) {
-				return refl.visit(std::get<0>(std::tuple{ objs... }).parent, std::get<0>(std::tuple{ objs... }).root, [&, refl](auto r) {
+				return refl.visit([&, refl](auto r) {
 					if constexpr (decltype(r)::kind == providers::TypeKind::PRIMITIVE) return process_primitive(r, objs.as_primitive()...);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::ENUM) return process_enum(r, objs.as_enum()...);
 					//else if constexpr (decltype(r)::kind == providers::TypeKind::FLAGS) return process_flags(r, objs.as_flags()...);

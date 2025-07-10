@@ -128,16 +128,14 @@ namespace ucsl::reflection::providers {
 		struct Primitive {
 			constexpr static TypeKind kind = TypeKind::PRIMITIVE;
 			template<typename F>
-			constexpr static auto visit(F f) { return f(PrimitiveData<typename T::repr>{}); }
-			constexpr static bool is_erased() { return erased; }
+			constexpr static auto visit(F f) { return f(PrimitiveData<typename T::repr>{ .is_erased = erased }); }
 		};
 
 		template<typename T, bool erased>
 		struct Constant {
 			constexpr static TypeKind kind = TypeKind::PRIMITIVE;
 			template<typename F>
-			constexpr static auto visit(F f) { return f(PrimitiveData<typename T::repr>{ .constant_value = T::value }); }
-			constexpr static bool is_erased() { return erased; }
+			constexpr static auto visit(F f) { return f(PrimitiveData<typename T::repr>{ .is_erased = erased, .constant_value = T::value }); }
 		};
 
 		template<typename T, bool erased>
@@ -145,8 +143,7 @@ namespace ucsl::reflection::providers {
 			constexpr static TypeKind kind = TypeKind::ENUM;
 			constexpr static auto get_options() { return get_enum_members(typename T::options{}); }
 			template<typename F>
-			constexpr static auto visit(F f) { return f(PrimitiveData<typename T::underlying>{}); }
-			constexpr static bool is_erased() { return erased; }
+			constexpr static auto visit(F f) { return f(PrimitiveData<typename T::underlying>{ .is_erased = erased }); }
 		};
 
 		//struct Flags {

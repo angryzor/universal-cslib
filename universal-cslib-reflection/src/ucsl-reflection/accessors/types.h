@@ -1,9 +1,27 @@
 #pragma once
 #include <ucsl-reflection/providers/simplerfl.h>
+#include <ucsl-reflection/bound-reflection.h>
 #include <ucsl-reflection/game-interfaces/standalone/game-interface.h>
 #include <more_concepts/sequence_containers.hpp>
 
 namespace ucsl::reflection::accessors {
+	namespace mocks {
+		struct Primitive {
+			static constexpr providers::TypeKind kind = providers::TypeKind::PRIMITIVE;
+		};
+
+		struct Type {
+			constexpr const auto visit(auto f) const { return f(Primitive{}); }
+			constexpr auto visit(auto f) { return f(Primitive{}); }
+		};
+		
+		struct Field {
+			constexpr const char* get_name() const { return "foo"; }
+			constexpr size_t get_offset() const { return 15; }
+			constexpr auto get_type(auto new_parent) const { return Type{}; }
+		};
+	}
+
 	template<typename T, typename R>
 	concept Accessor = requires (T t) {
 		{ t.refl } -> std::convertible_to<R>;
@@ -39,12 +57,12 @@ namespace ucsl::reflection::accessors {
 
 	template<typename T>
 	concept ReadOnlyStructureAccessor = requires (const T t) {
-		{ t[providers::simplerfl<game_interfaces::standalone::StandaloneGameInterface>::Field<simplerfl::field<simplerfl::primitive<int>, "foo">>{ 0 }] } -> ReadOnlyValueAccessor;
+		{ t[mocks::Field{}] } -> ReadOnlyValueAccessor;
 	};
 
 	template<typename T>
 	concept StructureAccessor = ReadOnlyStructureAccessor<T> && requires (T t) {
-		{ t[providers::simplerfl<game_interfaces::standalone::StandaloneGameInterface>::Field<simplerfl::field<simplerfl::primitive<int>, "foo">>{ 0 }] } -> ValueAccessor;
+		{ t[mocks::Field{}] } -> ValueAccessor;
 	};
 
 	template<typename T>
