@@ -22,7 +22,6 @@ target_sources(universal-cslib-reflection
         "ucsl-reflection/reflections/resources/map/v1.h"
         "ucsl-reflection/reflections/resources/master-level/v0.h"
         "ucsl-reflection/reflections/resources/material/v0.h"
-        "ucsl-reflection/reflections/resources/navmeshconfig/v1.h"
         "ucsl-reflection/reflections/resources/nxs/v1.h"
         "ucsl-reflection/reflections/resources/object-world/v3.h"
         "ucsl-reflection/reflections/resources/object-world/v2.h"
