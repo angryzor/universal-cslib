@@ -70,7 +70,7 @@ namespace ucsl::resources::animation_state_machine::v103_miller {
 		enum class Flag : unsigned char {
 			LOOPS,
 			UNK1,
-			DISABLE_PBA,
+			USE_PBA,
 			USE_PBA_BLEND_FACTOR,
 		};
 
