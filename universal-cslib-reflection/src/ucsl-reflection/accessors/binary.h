@@ -10,8 +10,8 @@ namespace ucsl::reflection::accessors {
 	struct binary {
 		struct opaque_value {};
 
-		template<typename Refl>
-		void construct(Refl refl, void* ptr, size_t count = 1);
+		//template<typename Refl>
+		//void construct(Refl refl, void* ptr, size_t count = 1);
 		//{
 		//	for (size_t i = 0; i < count; i++) {
 		//		auto item_size = refl.get_size()
