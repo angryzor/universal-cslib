@@ -27,7 +27,7 @@ namespace ucsl::resources::vibration::v21::reflections {
     using VibrationMotor = structure<impl::VibrationMotor, "VibrationMotor", void,
         field<char, "motorId">,
         field<unsigned int, "keyframeCount">,
-        field<dynamic_carray<VibrationKeyframe, impl::VibrationMotor, [](const impl::VibrationMotor& parent) -> size_t { return parent.keyframeCount }>*, "keyframes">
+        field<dynamic_carray<VibrationKeyframe, impl::VibrationMotor, [](const impl::VibrationMotor& parent) -> size_t { return parent.keyframeCount; }>*, "keyframes">
     >;
 
     using Vibration = structure<impl::Vibration, "Vibration", void,
