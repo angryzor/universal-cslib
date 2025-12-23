@@ -215,12 +215,12 @@ namespace ucsl::containers::arrays {
 			measurement m = measure(index, 1);
 			if (index == length) {
 				reserve(length + 1);
-				new (buffer + index) T{ std::forward<Args>(args)... };
+				new (buffer + index) T{ std::forward<Args...>(args)... };
 				length++;
 			}
 			else {
 				expand(index, 1, m);
-				T elem{ std::forward<Args>(args)... };
+				T elem{ std::forward<Args...>(args)... };
 				buffer[index] = std::move(elem);
 			}
 			return buffer + index;
@@ -247,7 +247,7 @@ namespace ucsl::containers::arrays {
 		template<typename... Args>
 		reference emplace_back(Args&&... args) {
 			reserve(length + 1);
-			new (end()) T{ std::forward<Args>(args...) };
+			new (end()) T{ std::forward<Args...>(args...) };
 			length++;
 			return back();
 		}

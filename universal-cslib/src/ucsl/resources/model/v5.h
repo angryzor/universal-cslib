@@ -1,8 +1,9 @@
 #pragma once
+#include <ucsl/math.h>
 
 namespace ucsl::resources::model::v5 {
     struct ReflectionInfo {
-        enum Format : unsigned int {
+        enum class Format : unsigned int {
             FLOAT1 = 0x2C83A4,
             FLOAT2 = 0x2C23A5,
             FLOAT3 = 0x2A23B9,
@@ -53,7 +54,7 @@ namespace ucsl::resources::model::v5 {
             INVALID = 0xFFFFFFFF
         };
 
-        enum Method : unsigned char {
+        enum class Method : unsigned char {
             NORMAL,
             PARTIAL_U,
             PARTIAL_V,
@@ -63,7 +64,7 @@ namespace ucsl::resources::model::v5 {
             LOOKUP_PRE_SAMPLED,
         };
 
-        enum Type : unsigned char {
+        enum class Type : unsigned char {
             POSITION,
             BLEND_WEIGHT,
             BLEND_INDICES,
