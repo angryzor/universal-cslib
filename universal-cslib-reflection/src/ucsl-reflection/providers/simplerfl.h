@@ -112,14 +112,6 @@ namespace ucsl::reflection::providers {
 
 			return std::array{ get_enum_member<Options>::call(counter)... };
 		}
-		
-
-		template<typename Self, typename Parent, typename Root>
-		struct InstanceDependentReflection {
-			Self self;
-			Parent parent;
-			Root root;
-		};
 
 		template<typename T>
 		struct Type;

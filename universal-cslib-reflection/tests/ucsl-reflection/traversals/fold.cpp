@@ -12,6 +12,8 @@ using namespace simplerfl;
 using namespace std;
 using namespace ucsl::reflection;
 
+using GI = ucsl::reflection::game_interfaces::standalone::StandaloneGameInterface;
+
 //struct Test1Repr {
 //	float foo;
 //	float baz;
