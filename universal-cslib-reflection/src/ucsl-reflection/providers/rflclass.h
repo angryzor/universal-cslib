@@ -13,7 +13,7 @@
 #include "types.h"
 
 namespace ucsl::reflection::providers {
-	template<typename GameInterface>
+	template<typename GameInterface, typename ObjectAccessor>
 	struct rflclass {
 		using MemberType = typename GameInterface::RflSystem::RflClassMember::Type;
 
@@ -71,6 +71,8 @@ namespace ucsl::reflection::providers {
 				default: assert(!"reflective operation assertion failed: unknown primitive type"); return f(PrimitiveData<bool>{});
 				}
 			}
+
+			constexpr static bool is_erased() { return false; }
 		};
 
 		struct SubType;
@@ -81,6 +83,7 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::POINTER;
 			SubType get_target_type() const { return { member }; }
+			constexpr static bool is_weak() { return false; }
 		};
 
 		struct Array {
@@ -88,7 +91,7 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::ARRAY;
 			SubType get_item_type() const { return { member }; }
-			constexpr auto get_accessor(opaque_obj& obj) const { return OpaqueRflArray<containers::arrays::Array, GameInterface>{ (containers::arrays::Array<opaque_obj, typename GameInterface::AllocatorSystem>&)obj, member }; }
+			//constexpr auto get_accessor(ObjectAccessor& obj) const { return OpaqueRflArray<containers::arrays::Array, GameInterface>{ (containers::arrays::Array<ObjectAccessor, typename GameInterface::AllocatorSystem>&)obj, member }; }
 		};
 
 		struct TArray {
@@ -96,7 +99,7 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::TARRAY;
 			SubType get_item_type() const { return { member }; }
-			constexpr auto get_accessor(opaque_obj& obj) const { return OpaqueRflArray<containers::arrays::TArray, GameInterface>{ (containers::arrays::TArray<opaque_obj, typename GameInterface::AllocatorSystem>&)obj, member }; }
+			//constexpr auto get_accessor(ObjectAccessor& obj) const { return OpaqueRflArray<containers::arrays::TArray, GameInterface>{ (containers::arrays::TArray<ObjectAccessor, typename GameInterface::AllocatorSystem>&)obj, member }; }
 		};
 
 		struct CArray {
@@ -104,7 +107,7 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::CARRAY;
 			Type get_item_type() const { return { member, false }; }
-			size_t get_length(opaque_obj& parent) const { return member->GetArrayLength(); }
+			size_t get_length(ObjectAccessor& parent) const { return member->GetArrayLength(); }
 		};
 
 		struct Enum {
@@ -162,8 +165,8 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			const char* get_name() const { return rflClass->GetName(); }
-			size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& self) const { return rflClass->GetSize(); }
-			size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) const { return rflClass->GetAlignment(); }
+			size_t get_size(const ObjectAccessor& parent, const ObjectAccessor& root, const ObjectAccessor& self) const { return rflClass->GetSize(); }
+			size_t get_alignment(const ObjectAccessor& parent, const ObjectAccessor& root) const { return rflClass->GetAlignment(); }
 
 			std::optional<Structure> get_base() const {
 				auto* parent = rflClass->GetParent();
@@ -172,7 +175,7 @@ namespace ucsl::reflection::providers {
 			}
 
 			template<typename F>
-			void visit_fields(const opaque_obj& obj, const opaque_obj& root, F f) const {
+			void visit_fields(const ObjectAccessor& obj, const ObjectAccessor& root, F f) const {
 				for (const auto& member : rflClass->GetMembers())
 					f(Field{ &member });
 			}
@@ -181,14 +184,11 @@ namespace ucsl::reflection::providers {
 		struct SubType {
 			const GameInterface::RflSystem::RflClassMember* member;
 
-			bool is_erased() const { return false; }
-			bool is_weak() const { return false; }
-
-			size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& self) const { return member->GetSubTypeSize(); }
-			size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) const { return member->GetSubTypeAlignment(); }
+			size_t get_size(const ObjectAccessor& parent, const ObjectAccessor& root, const ObjectAccessor& self) const { return member->GetSubTypeSize(); }
+			size_t get_alignment(const ObjectAccessor& parent, const ObjectAccessor& root) const { return member->GetSubTypeAlignment(); }
 
 			template<typename F>
-			auto visit(const opaque_obj& parent, const opaque_obj& root, F f) const {
+			auto visit(const ObjectAccessor& parent, const ObjectAccessor& root, F f) const {
 				switch (member->GetSubType()) {
 				case MemberType::STRUCT: return f(Structure{ member->GetClass() });
 				default: return f(Primitive{ member, member->GetSubType() });
@@ -200,17 +200,14 @@ namespace ucsl::reflection::providers {
 			const GameInterface::RflSystem::RflClassMember* member;
 			bool allowCArray;
 
-			bool is_erased() const { return false; }
-			bool is_weak() const { return false; }
-
-			size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& self) const {
+			size_t get_size(const ObjectAccessor& parent, const ObjectAccessor& root, const ObjectAccessor& self) const {
 				if (allowCArray) return member->GetSize();
 				else return member->GetSingleSize();
 			}
-			size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) const { return member->GetAlignment(); }
+			size_t get_alignment(const ObjectAccessor& parent, const ObjectAccessor& root) const { return member->GetAlignment(); }
 
 			template<typename F>
-			auto visit(const opaque_obj& parent, const opaque_obj& root, F f) const {
+			auto visit(const ObjectAccessor& parent, const ObjectAccessor& root, F f) const {
 				if (allowCArray && member->GetArrayLength() > 0)
 					return f(CArray{ member });
 
@@ -233,14 +230,11 @@ namespace ucsl::reflection::providers {
 		struct RootType {
 			const GameInterface::RflSystem::RflClass* rflClass;
 
-			bool is_erased() const { return false; }
-			bool is_weak() const { return false; }
-
-			size_t get_size(const opaque_obj& parent, const opaque_obj& root, const opaque_obj& self) const { return rflClass->GetSize(); }
-			size_t get_alignment(const opaque_obj& parent, const opaque_obj& root) const { return rflClass->GetAlignment(); }
+			size_t get_size(const ObjectAccessor& parent, const ObjectAccessor& root, const ObjectAccessor& self) const { return rflClass->GetSize(); }
+			size_t get_alignment(const ObjectAccessor& parent, const ObjectAccessor& root) const { return rflClass->GetAlignment(); }
 
 			template<typename F>
-			auto visit(const opaque_obj& parent, const opaque_obj& root, F f) const {
+			auto visit(const ObjectAccessor& parent, const ObjectAccessor& root, F f) const {
 				return f(Structure{ rflClass });
 			}
 		};

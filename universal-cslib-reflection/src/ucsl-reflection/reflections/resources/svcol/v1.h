@@ -33,7 +33,7 @@ namespace ucsl::resources::svcol::v1::reflections {
 		field<math::Position, "aabbMax">,
 		field<unsigned char, "skySectorId">,
 		field<unsigned int, "groundSectorFilterCount">,
-		field<dynamic_carray<SectorFilterData, impl::ShapeData, [](const impl::ShapeData& parent) -> size_t { return parent.groundSectorFilterCount; }>*, "groundSectorFilters">
+		field<dynamic_carray<SectorFilterData, field_resolver<size_t, "groundSectorFilterCount">>*, "groundSectorFilters">
 	>;
 
 	using KdTreeNodeType = enumeration<impl::KdTreeNodeType, "KdTreeNodeType", unsigned char,
@@ -59,7 +59,7 @@ namespace ucsl::resources::svcol::v1::reflections {
 		field<constant<unsigned int, 0x5356434F>, "magic">,
 		field<constant<unsigned int, 1>, "version">,
 		field<unsigned int, "shapeCount">,
-		field<dynamic_carray<ShapeData, impl::SvColData, [](const impl::SvColData& parent) -> size_t { return parent.shapeCount; }>*, "shapes"> // maybe todo: add reflections for KDtree data
+		field<dynamic_carray<ShapeData, field_resolver<size_t, "shapeCount">>*, "shapes"> // maybe todo: add reflections for KDtree data
 	>;
 }
 
