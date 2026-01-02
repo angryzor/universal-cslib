@@ -102,14 +102,16 @@ namespace ucsl::resources::model::v5::reflections {
 
 	using Mesh = structure<impl::Mesh, "Mesh", void,
 		field<const char*, "name">,
+		field<unsigned int, "indexCount">,
+		field<dynamic_carray<unsigned short, field_resolver<unsigned int, "indexCount">>*, "indices">,
 		field<unsigned int, "vertexCount">,
 		field<unsigned int, "vertexStride">,
-		field<unsigned int, "vertexData">,
+		field<dynamic_carray<unsigned char, selector_resolver<unsigned int, field_resolver<unsigned int, "vertexCount">, field_resolver<unsigned int, "vertexStride">>::impl<[](const unsigned int& vertexCount, const unsigned int& vertexStride) -> unsigned int { return vertexCount * vertexStride; }>>*, "vertexData" > ,
 		field<unsigned int, "reflectionInfo">,
 		field<unsigned int, "boneIndexCount">,
-		field<unsigned char*, "boneIndices">,
+		field<dynamic_carray<unsigned char, field_resolver<unsigned int, "boneIndexCount">>*, "boneIndices">,
 		field<unsigned int, "textureCount">,
-		field<dynamic_carray<Texture, field_resolver<unsigned int, "textureCount">>*, "textures">
+		field<dynamic_carray<Texture*, field_resolver<unsigned int, "textureCount">>*, "textures">
 	>;
 
 	using MeshGroup = structure<impl::MeshGroup, "MeshGroup", void,
@@ -117,8 +119,8 @@ namespace ucsl::resources::model::v5::reflections {
 		field<dynamic_carray<Mesh*, field_resolver<unsigned int, "opaqueMeshCount">>*, "opaqueMeshes">,
 		field<unsigned int, "transparentMeshCount">,
 		field<dynamic_carray<Mesh*, field_resolver<unsigned int, "transparentMeshCount">>*, "transparentMeshes">,
-		field<unsigned int, "punchMeshCount">,
-		field<dynamic_carray<Mesh*, field_resolver<unsigned int, "punchMeshCount">>*, "punchMeshes">,
+		field<unsigned int, "punchthroughMeshCount">,
+		field<dynamic_carray<Mesh*, field_resolver<unsigned int, "punchthroughMeshCount">>*, "punchthroughMeshes">,
 		field<unsigned int, "customMeshTypeCount">,
 		field<unsigned int, "customMeshTypeNames">,//dynamic_carray<const char*, field_resolver<unsigned int, "customMeshTypeCount">>*, "customMeshTypeNames">,
 		field<unsigned int, "customMeshTypeMeshCounts">,//dynamic_carray<unsigned int, field_resolver<unsigned int, "customMeshTypeCount">>*, "customMeshTypeMeshCounts">,

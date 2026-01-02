@@ -13,6 +13,8 @@ namespace ucsl::reflection::providers {
 
 	template<typename GameInterface, typename AddrType = size_t>
 	struct simplerfl {
+		struct NullAccessor {};
+
 		template<typename T>
 		struct dynamic_size_of_struct;
 		template<typename Repr, strlit name, typename Base, typename... Fields>
@@ -36,13 +38,13 @@ namespace ucsl::reflection::providers {
 		struct dynamic_align_of_struct;
 		template<typename Repr, strlit name, typename Base, typename... Fields>
 		struct dynamic_align_of_struct<structure<Repr, name, Base, Fields...>> {
-			static size_t get(const opaque_obj& root) {
+			static size_t get(const auto& root) {
 				size_t maxAlign{};
 
 				if constexpr (!std::is_same_v<Base, void>)
 					maxAlign = std::max(maxAlign, dynamic_align_of_struct<Base>::get(root));
 
-				((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type>(*(const auto*)nullptr, root))), ...);
+				((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type>(NullAccessor{}, root))), ...);
 
 				return maxAlign;
 			}
@@ -66,6 +68,12 @@ namespace ucsl::reflection::providers {
 				return dynamic_size_of_struct<desugar_t<T>>::get(parent, root, self);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER)
 				return sizeof(AddrType);
+			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE) {
+				if constexpr (std::is_same_v<typename desugar_t<T>::repr, const char*>)
+					return sizeof(AddrType);
+				else
+					return sizeof(typename desugar_t<T>::repr);
+			}
 			else
 				return size_of_v<T>;
 		}
@@ -90,6 +98,12 @@ namespace ucsl::reflection::providers {
 				return dynamic_align_of_struct<desugar_t<T>>::get(root);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER)
 				return alignof(AddrType);
+			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE) {
+				if constexpr (std::is_same_v<typename desugar_t<T>::repr, const char*>)
+					return alignof(AddrType);
+				else
+					return alignof(typename desugar_t<T>::repr);
+			}
 			else
 				return align_of_v<T>;
 		}
@@ -251,16 +265,33 @@ namespace ucsl::reflection::providers {
 			}
 
 			template<strlit field_name>
-			constexpr static auto get_field() {
-				using F = find_field_t<field_name, T>;
-
-				return Field<F>{ offset_of_v<F, T> };
+			constexpr static auto get_field(const auto& obj, const auto& root) {
+				return _get_field<field_name>(obj, root, Fields{});
 			}
 
 			template<typename F>
 			constexpr static void visit_fields(F f) { _visit_fields(f, Fields{}); }
 
 		private:
+			template<strlit field_name, typename... Fields>
+			constexpr static auto _get_field(const auto& obj, const auto& root, std::tuple<Fields...>) {
+				using F = find_field_t<field_name, T>;
+
+				size_t offset{};
+				size_t thisOffset{};
+
+				if constexpr (!std::is_same_v<Base, primitive<void>>)
+					offset = dynamic_size_of_struct<Base>::get(*(const opaque_obj*)nullptr, root, obj);
+
+				((
+					offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type>(obj, root)),
+					offset += dynamic_size_of<typename Fields::type>(obj, root, Field<Fields>{ offset }),
+					!std::is_same_v<F, Fields>
+				) && ...);
+
+				return Field<F>{ thisOffset };
+			}
+
 			template<typename F, typename... Fields>
 			constexpr static void _visit_fields(F f, std::tuple<Fields...>) {
 				size_t offset{};
@@ -347,14 +378,25 @@ namespace ucsl::reflection::providers {
 		};
 
 		template<typename Resolver, typename Parent>
-		static size_t resolve_field_resolver(const Parent& parent_) {
+		static typename Resolver::result resolve_field_resolver(const Parent& parent_) {
 			Parent& parent = const_cast<Parent&>(parent_);
-			return parent[parent.refl.get_field<Resolver::field>()].visit([](const auto v) { return v.visit([](auto v) -> size_t { return v; }); });
+			return parent[parent.refl.get_field<Resolver::field>()].visit([](const auto v) { return v.visit([](auto v) -> typename Resolver::result { return v; }); });
+		}
+
+		template<typename Resolver, typename Parent, typename... Sources>
+		static typename Resolver::result _resolve_selector_resolver(const Parent& parent_, std::tuple<Sources...>) {
+			return Resolver::function(resolve<Sources, Parent>(parent_)...);
+		}
+
+		template<typename Resolver, typename Parent>
+		static typename Resolver::result resolve_selector_resolver(const Parent& parent_) {
+			return _resolve_selector_resolver<Resolver, Parent>(parent_, typename Resolver::sources{});
 		}
 		
 		template<typename Resolver, typename Parent>
 		static size_t resolve(const Parent& parent) {
 			if constexpr (Resolver::resolver_type == RESOLVER_TYPE_FIELD) return resolve_field_resolver<Resolver, Parent>(parent);
+			if constexpr (Resolver::resolver_type == RESOLVER_TYPE_SELECTOR) return resolve_selector_resolver<Resolver, Parent>(parent);
 			else static_assert("invalid resolver type");
 		} 
 

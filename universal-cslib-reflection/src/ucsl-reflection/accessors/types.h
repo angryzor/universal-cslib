@@ -1,6 +1,6 @@
 #pragma once
 #include <ucsl-reflection/providers/simplerfl.h>
-#include <ucsl-reflection/bound-reflection.h>
+//#include <ucsl-reflection/bound-reflection.h>
 #include <ucsl-reflection/game-interfaces/standalone/game-interface.h>
 #include <more_concepts/sequence_containers.hpp>
 

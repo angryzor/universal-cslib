@@ -96,6 +96,8 @@ namespace ucsl::resources::model::v5 {
 
     struct Mesh {
         const char* name;
+        unsigned int indexCount;
+        unsigned short* indices;
         unsigned int vertexCount;
         unsigned int vertexStride;
         unsigned char* vertexData;
@@ -103,7 +105,7 @@ namespace ucsl::resources::model::v5 {
         unsigned int boneIndexCount;
         unsigned char* boneIndices;
         unsigned int textureCount;
-        Texture* textures;
+        Texture** textures;
     };
 
     struct MeshGroup {
@@ -111,8 +113,8 @@ namespace ucsl::resources::model::v5 {
         Mesh** opaqueMeshes;
         unsigned int transparentMeshCount;
         Mesh** transparentMeshes;
-        unsigned int punchMeshCount;
-        Mesh** punchMeshes;
+        unsigned int punchthroughMeshCount;
+        Mesh** punchthroughMeshes;
         unsigned int customMeshTypeCount;
         const char** customMeshTypeNames;
         unsigned int* customMeshTypeMeshCounts;
