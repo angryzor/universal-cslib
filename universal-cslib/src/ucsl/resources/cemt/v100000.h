@@ -208,7 +208,7 @@ namespace ucsl::resources::cemt::v100000 {
 			UNK1, //0x02
 			UNK2, //0x04
 			UNK3, //0x08
-			UNK4, //0x10
+			USE_SECOND_TEXCOORD_SET, //0x10
 			UNK5, //0x20
 			UNK6, //0x40
 			UNK7, //0x80
@@ -222,6 +222,18 @@ namespace ucsl::resources::cemt::v100000 {
 			SCALE_V //0x8000
 		};
 
+		struct TexcoordSet {
+			float uvScaleX;
+			float uvScaleY;
+			float uvRotation;
+			float uvOffsetX;
+			float uvOffsetY;
+			int unk15;
+			Collection<Unk1Data>* unk16;
+			int64_t unk17;
+			Collection<Unk1Data>* unk18;
+		};
+
 		char name[128];
 		int flags0;
 		csl::ut::Bitset<UVFlags> flags1;
@@ -229,8 +241,10 @@ namespace ucsl::resources::cemt::v100000 {
 		char unk1;
 		char unk2;
 		char unk3;
-		short unk4;
-		short unk5;
+		char unk4;
+		char unk4b;
+		char unk5;
+		char unk5b;
 		short unk6;
 		short unk7;
 		int unk8;
@@ -243,18 +257,7 @@ namespace ucsl::resources::cemt::v100000 {
 		float unk12;
 		float unk13;
 		float unk14;
-		float uvTilingX;
-		float uvTilingY;
-		float uvRotation;
-		float uvOffsetX;
-		float uvOffsetY;
-		int unk15;
-		Collection<Unk1Data>* unk16;
-		int64_t unk17;
-		Collection<Unk1Data>* unk18;
-		float unk19;
-		float unk20;
-		char unk21[40];
+		TexcoordSet texcoordSets[2];
 		void* texture;
 		int64_t unk22;
 	};
@@ -347,7 +350,7 @@ namespace ucsl::resources::cemt::v100000 {
 		ChildEffect childEffects[16];
 		ModifierParam modifiers[8];
 		AnimationParam* modifierAnimations[5][8];
-		unsigned int flags3; // 0x01 = has childeffects, 0x1000 = use -1 or fps variables
+		unsigned int flags3; // 0x01 = has childeffects, 0x1000 = use -1 or fps variables, 0x2000 = init field
 		char gap7b[0x4];
 		AnimationParam* unkAnim7bc;
 		char gap7bb[0x38];
