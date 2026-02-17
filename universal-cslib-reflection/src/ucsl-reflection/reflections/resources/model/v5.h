@@ -142,17 +142,25 @@ namespace ucsl::resources::model::v5::reflections {
 		field<const char*, "name">
 	>;
 
-	using ContextsData = structure<impl::ContextsData, "ContextsData", void,
+	using ModelContexts = structure<impl::ModelContexts, "ModelContexts", void,
 		field<unsigned int, "meshGroupCount">,
 		field<dynamic_carray<MeshGroup*, field_resolver<unsigned int, "meshGroupCount">>*, "meshGroups">,
 		field<unsigned int, "morphModelCount">,
 		field<unsigned int, "morphModels">,
 		field<unsigned int, "nodeCount">,
-		field<unsigned int, "nodes">,//dynamic_carray<Node, impl::ContextsData, [](const impl::ContextsData& parent) -> size_t { return parent.nodeCount; }>*, "nodes">,
-		field<unsigned int, "nodeTransforms">//dynamic_carray<ucsl::math::Matrix34, impl::ContextsData, [](const impl::ContextsData& parent) -> size_t { return parent.nodeCount; }>*, "nodeTransforms">
+		field<dynamic_carray<Node*, field_resolver<unsigned int, "nodeCount">>*, "nodes">,
+		field<unsigned int, "nodeTransforms">,//dynamic_carray<ucsl::math::Matrix34, impl::ModelContexts, [](const impl::ModelContexts& parent) -> size_t { return parent.nodeCount; }>*, "nodeTransforms">
+		field<unsigned int, "aabb">
+	>;
+
+	using TerrainModelContexts = structure<impl::TerrainModelContexts, "TerrainModelContexts", void,
+		field<unsigned int, "meshGroupCount">,
+		field<dynamic_carray<MeshGroup*, field_resolver<unsigned int, "meshGroupCount">>*, "meshGroups">,
+		field<const char*, "name">,
+		field<unsigned int, "aabb">
 	>;
 }
 
 namespace simplerfl {
-	template<> struct canonical<ucsl::resources::model::v5::ContextsData> { using type = ucsl::resources::model::v5::reflections::ContextsData; };
+	template<> struct canonical<ucsl::resources::model::v5::ModelContexts> { using type = ucsl::resources::model::v5::reflections::ModelContexts; };
 }

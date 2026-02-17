@@ -380,7 +380,7 @@ namespace ucsl::reflection::providers {
 		template<typename Resolver, typename Parent>
 		static typename Resolver::result resolve_field_resolver(const Parent& parent_) {
 			Parent& parent = const_cast<Parent&>(parent_);
-			return parent[parent.refl.get_field<Resolver::field>()].visit([](const auto v) { return v.visit([](auto v) -> typename Resolver::result { return v; }); });
+			return parent[parent.refl.get_field<Resolver::field>(parent)].visit([](const auto v) { return v.visit([](auto v) -> typename Resolver::result { return v; }); });
 		}
 
 		template<typename Resolver, typename Parent, typename... Sources>

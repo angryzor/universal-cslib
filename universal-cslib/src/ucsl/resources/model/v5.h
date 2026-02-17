@@ -136,7 +136,7 @@ namespace ucsl::resources::model::v5 {
         const char* name;
     };
 
-	struct ContextsData {
+	struct ModelContexts {
         unsigned int meshGroupCount;
         MeshGroup** meshGroups;
         unsigned int morphModelCount;
@@ -144,5 +144,13 @@ namespace ucsl::resources::model::v5 {
         unsigned int nodeCount;
         Node* nodes;
         ucsl::math::Matrix34* nodeTransforms;
+        void* aabb;
 	};
+    
+    struct TerrainModelContexts {
+        unsigned int meshGroupCount;
+        MeshGroup** meshGroups;
+        const char* name;
+        void* aabb;
+    };
 }
