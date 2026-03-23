@@ -2,14 +2,9 @@
 
 namespace ucsl::resources::cemt::v100000 {
 	template<typename T>
-	struct Collection {
-		uint64_t gap1;
-		uint16_t gap2;
-		unsigned short count;
-		// followed by array of T*
+	struct PtrData {
+		T* ptr;
 	};
-
-	struct Unk1Data {};
 
 	struct Unk2Data {};
 
@@ -76,9 +71,14 @@ namespace ucsl::resources::cemt::v100000 {
 		float unk2;
 		float unk3;
 		float unk4;
-		AnimationParam* unkAnim;
+		PtrData<AnimationParam> unkAnim;
 		char name[128];
 		void* param; // EffectParam
+	};
+
+	struct ChildEffect2 {
+		unsigned int unk1;
+		char name[128];
 	};
 
 	struct ModifierParam {
@@ -208,54 +208,69 @@ namespace ucsl::resources::cemt::v100000 {
 			UNK1, //0x02
 			UNK2, //0x04
 			UNK3, //0x08
-			UNK4, //0x10
+			ENABLE_SECONDARY_SCROLL, //0x10
 			UNK5, //0x20
-			UNK6, //0x40
+			USE_RANDOM_UNK0, //0x40
 			UNK7, //0x80
 			UNK8, //0x100
 			SCROLL_U, //0x200
 			SCROLL_V, //0x400
 			UNK11, //0x800
-			UNK12, //0x1000
+			UNK12, //0x1000 - tested at 0x140FF4598 in frontiers 1.42
 			UNK13, //0x2000
 			SCALE_U, //0x4000
 			SCALE_V //0x8000
 		};
 
+		struct ScrollColorParam {
+			float scrollColorX;
+			float scrollColorY;
+			float scrollStartJitterX;
+			float scrollStartJitterY;
+		};
+
+		struct ScrollUVParam {
+			float tilingX;
+			float tilingY;
+			float rotation;
+			float offsetX;
+			float offsetY;
+			int unk15;
+			PtrData<AnimationParam> tilingAnimation;
+			PtrData<AnimationParam> rotationAnimation;
+			PtrData<AnimationParam> offsetAnimation;
+		};
+
+		enum class ScrollDirectionFlag : unsigned char {
+			INVERT_X,
+			INVERT_Y,
+		};
+
+		enum class ScrollDirectionRandomizationFlag : unsigned char {
+			RANDOMIZE_X,
+			RANDOMIZE_Y,
+		};
+
 		char name[128];
 		int flags0;
 		csl::ut::Bitset<UVFlags> flags1;
-		char unk0;
-		char unk1;
-		char unk2;
-		char unk3;
-		short unk4;
-		short unk5;
-		short unk6;
-		short unk7;
-		int unk8;
-		AnimationParam* unkAnim;
-		float scrollColorX;
-		float scrollColorY;
-		float scrollColorRandomX;
-		float scrollColorRandomY;
-		float unk11;
-		float unk12;
-		float unk13;
-		float unk14;
-		float uvTilingX;
-		float uvTilingY;
-		float uvRotation;
-		float uvOffsetX;
-		float uvOffsetY;
-		int unk15;
-		Collection<Unk1Data>* unk16;
-		int64_t unk17;
-		Collection<Unk1Data>* unk18;
-		float unk19;
-		float unk20;
-		char unk21[40];
-		void* texture;
+		unsigned char unk0; // unk452434 on the live element
+		unsigned char patternAnimXSteps;
+		unsigned char patternAnimYSteps;
+		unsigned char unk3;
+		unsigned char unk0RandomRangeStart;
+		unsigned char unk0RandomRangeEnd;
+		unsigned char unk5;
+		unsigned char unk5a;
+		char unk6;
+		char unk6a;
+		ucsl::bits::Bitset<ScrollDirectionFlag> scrollDirectionFlags;
+		ucsl::bits::Bitset<ScrollDirectionRandomizationFlag> scrollDirectionRandomizationFlags;
+		unsigned char unk9;
+		PtrData<AnimationParam> unkAnim;
+		ScrollColorParam scrollColorParams[2];
+		ScrollUVParam uvParams[2];
+		float uvScale[2];
 		int64_t unk22;
 	};
 
@@ -279,8 +294,8 @@ namespace ucsl::resources::cemt::v100000 {
 		float unk6;
 		float unk8;
 		char gap3[0x8];
-		AnimationParam* colorAnimation;
-		AnimationParam* alphaAnimation;
+		PtrData<AnimationParam> colorAnimation;
+		PtrData<AnimationParam> alphaAnimation;
 		void* unk4;
 		void* unk7;
 		void* unk5;
@@ -305,11 +320,111 @@ namespace ucsl::resources::cemt::v100000 {
 	};
 
 	struct ElementParam {
+		enum class UnkChildEffectsFlag : unsigned int {
+			BASIC_CHILD_EFFECTS,
+			ANIMATED_CHILD_EFFECTS,
+		};
+
+		struct BasicUnkChildEffectsParam {
+			enum class Flag : unsigned char {
+				USE_NEGATIVE_ONE_UNK1864,
+			};
+
+			unsigned char childEffectCount;
+			ucsl::bits::Bitset<Flag> flags;
+			ChildEffect2 childEffects[16];
+		};
+
+		struct AnimatedChildEffectsParam {
+			uint32_t gap9;
+			math::Position unk20;
+			math::Position unk21;
+			PtrData<AnimationParam> unk20Animation;
+			PtrData<AnimationParam> unk21Animation;
+			uint32_t gap9a;
+			math::Position unk22;
+			math::Position unk23;
+			PtrData<AnimationParam> unk22Animation;
+			PtrData<AnimationParam> unk23Animation;
+			uint64_t gap10;
+			unsigned char childEffectCount;
+			ChildEffect2 childEffects[16];
+		};
+
+		union UnkChildEffectsParam {
+			BasicUnkChildEffectsParam basic;
+			AnimatedChildEffectsParam animated;
+		};
+
+		enum class ParticleType : unsigned char {
+			UNK0,
+			UNK1,
+			UNK2,
+			UNK3,
+			UNK4,
+			UNK5_CPU,
+			HISTORICAL_STRIPE,
+			POINT_LIGHT,
+		};
+
+		struct Unk0ParticleParam {
+			unsigned int unk0;
+			float unk1;
+		};
+
+		struct Unk1ParticleParam {
+			unsigned int unk0;
+			float unk1;
+		};
+
+		struct Unk2ParticleParam {
+			char pad[8];
+			unsigned int unk0;
+			float unk1;
+		};
+
+		struct Unk3ParticleParam {
+			char pad[8];
+			unsigned int unk0;
+			float unk1;
+		};
+
+		struct Unk4ParticleParam {
+			char pad[12];
+			unsigned int unk0;
+			float unk1;
+		};
+
+		struct Unk5ParticleParam {
+			char pad[0x20];
+		};
+
+		struct HistoricalStripeParticleParam {
+			char pad[0x20];
+		};
+
+		struct PointLightParticleParam {
+			char pad[0x20];
+		};
+
+		union ParticleParam {
+			Unk0ParticleParam unk0;
+			Unk1ParticleParam unk1;
+			Unk2ParticleParam unk2;
+			Unk3ParticleParam unk3;
+			Unk4ParticleParam unk4;
+			Unk5ParticleParam unk5;
+			HistoricalStripeParticleParam historicalStripe;
+			PointLightParticleParam pointLight;
+		};
+
 		float initialRotation[6];
 		unsigned int unk18a0;
 		char gap6aa2[24];
-		unsigned int unkFlags34;
-		char gap6aa2b[4];
+		unsigned int unkVec2Flags;
+		unsigned char unkVec2OffsetXRandomFlags;
+		unsigned char unkVec2OffsetYRandomFlags;
+		unsigned char unkVec2OffsetZRandomFlags;
 		float angularVelocity[6];
 		unsigned int unk18a01;
 		float sizeX;
@@ -329,27 +444,26 @@ namespace ucsl::resources::cemt::v100000 {
 		Table tables[2];
 		float fps;
 		float fpsJitter;
-		AnimationParam* unkAnim18a6;
-		AnimationParam* unkAnim18a1;
-		char gap6aa[0x14];
-		bool unk18a;
-		char gap6b[0x81];
+		PtrData<AnimationParam> unkVec2Anim;
+		PtrData<AnimationParam> scaleAnimation;
+		PtrData<AnimationParam> sizeAnimation;
+		char gap6aa[0xC];
+		bool useModel;
+		unsigned char modelSetting1;
+		char gap6b[128];
 		char modelName[128];
-		char gap7a0[0x100];
-		unsigned short particleTypeOrSomething; // if 2 or 3 it loads particleInfo1, if 4 it loads particleInfo1, particleInfo2, particleInfo3, see 0x140FDC9B8 in rangers 1.42
-		unsigned int particleInfo1;
-		unsigned int particleInfo2; // changes how the element is rotated in regards to a modifier
-		unsigned char unk18a3;
-		unsigned char particleInfo3;
-		char gap7[0x16];
+		char skeletonName[128];
+		char nodeAnimName[128];
+		ParticleType particleType;
+		ParticleParam particleParam;
 		TextureParam textures[4];
 		unsigned int textureCount;
 		ChildEffect childEffects[16];
 		ModifierParam modifiers[8];
-		AnimationParam* modifierAnimations[5][8];
-		unsigned int flags3; // 0x01 = has childeffects, 0x1000 = use -1 or fps variables
+		PtrData<AnimationParam> modifierAnimations[5][8];
+		unsigned int fieldFlags; // 0x01 = has childeffects, 0x4 = use simple unkVec2 update (only x multiplier, no anim), 0x8 = use emitter global time for unkVec2 update, 0x1000 = use -1 or fps variables
 		char gap7b[0x4];
-		AnimationParam* unkAnim7bc;
+		PtrData<AnimationParam> unkAnim7bc;
 		char gap7bb[0x38];
 		unsigned int flags4; // 0x1 = is gpu rendering?
 		char vectorFieldName[128];
@@ -361,28 +475,82 @@ namespace ucsl::resources::cemt::v100000 {
 		char gap7c[0x18];
 		void* gpuElementParamTexture;
 		void* gpuOtherTexture;
-		unsigned int flags2;
-		uint32_t gap8;
-		uint8_t unkCount;
-		uint8_t unk19;
-		char gap9[2];
+		ucsl::bits::Bitset<UnkChildEffectsFlag> unkChildEffectFlags;
+		UnkChildEffectsParam childEffectsParam;
+		//unsigned char unkCount;
+		//unsigned char childElementAnimationFlags;
 
-		char gap10[0x8AC];
+		//math::Position unk20;
+		//math::Position unk21;
+		//PtrData<AnimationParam> unk20Animation;
+		//PtrData<AnimationParam> unk21Animation;
+		//uint32_t gap9a;
+		//math::Position unk22;
+		//math::Position unk23;
+		//PtrData<AnimationParam> unk22Animation;
+		//PtrData<AnimationParam> unk23Animation;
+		//
+		//uint64_t gap10;
+		//unsigned char childEffect2Count;
+		//ChildEffect2 childEffect2s[16];
 	};
 
 	struct EmitterParam {
-		enum class Shape : unsigned int {
-			POINT,
-			SPHERE,
-			DISC,
-			CYLINDER,
-			LINE,
-			TORUS,
-			CUBE,
-			FIXED = 8
+		struct EmissionParam {
+			enum class Shape : unsigned int {
+				POINT,
+				SPHERE,
+				DISC,
+				CYLINDER,
+				LINE,
+				TORUS,
+				CUBE,
+				MESH,
+				FIXED = 8
+			};
+
+			Shape shape;
+			csl::math::Position randomTransform;
+			float spread;
+			float startAngle;
+			float endAngle;
+			bool useRadialDistribution;
+			bool consistentAngle;
+			bool useAngularSubdivisions;
+			unsigned char emissionParticleCount;
+			PtrData<AnimationParam> randomPositionAnimation;
+			PtrData<AnimationParam> spreadAnimation;
+			PtrData<AnimationParam> startAngleAnimation;
+			PtrData<AnimationParam> endAngleAnimation;
 		};
 
-		enum class InheritTransformFlags : unsigned int {
+		struct EmitParam {
+			enum class EmitMode : unsigned int {
+				UNK0,
+				UNK1,
+			};
+
+			enum class AttenuationMode : unsigned char {
+				FIXED,
+				POSE_POSITION,
+			};
+
+			EmitMode emissionMode;
+			float frequency;
+			float frequencyJitter;
+			float emissionCount;
+			float emissionCountJitter;
+			AttenuationMode attenuationMode;
+			float minDistance;
+			float maxDistance;
+			float distanceAttenuation; // 0->1
+			float duration;
+			float startDelay;
+			float fadeSpeed;
+			PtrData<AnimationParam> emissionCountAnimation;
+		};
+
+		enum class InheritFlag : unsigned int {
 			TRANSLATION_RAW, // ignore world scale
 			ROTATION, // parent rotation
 			TRANSLATION, // add parent translation scaled by inheritRatio
@@ -395,52 +563,77 @@ namespace ucsl::resources::cemt::v100000 {
 			UNK1,
 			UNK2,
 			UNK3,
-			USE_TEXTURES
+			USE_TEXTURES,
+			USE_RENDER_PRIORITY,
+			UNK6,
+			UNK7,
+			UNK8,
+			UNK9,
+			UNK10,
+			UNK11, // sets emitter flag 0x40
 		};
 
 		enum class CullMode : unsigned int {
+			NONE,
+			FRONT,
+			BACK,
+		};
+
+		enum class MaskType1 : unsigned int {
 			UNK0,
 			UNK1,
-			UNK2
+			UNK2,
+			UNK3,
+		};
+
+		enum class MaskType2 : unsigned int {
+			UNK0,
+			UNK1,
+			UNK2,
+			UNK3,
+			UNK4,
+		};
+
+		enum class MaskType3 : unsigned int {
+			UNK0,
+			UNK1,
+			UNK2,
+		};
+
+		enum class DepthMode : unsigned int {
+			UNK_TEST,
+			UNK,
+			TEST_WRITE,
+			TEST_WRITE,
+			UNK_TEST_WRITE,
+		};
+
+		enum class BlendMode : unsigned int {
+			MIX,
+			ADD,
+			MULTIPLY,
+			SUBTRACT,
+		};
+
+		enum class BillboardType : unsigned char {
+			UNK0,
+			UNK1,
+			UNK2,
 		};
 
 		csl::math::Position position;
 		csl::math::Position rotation;
 		csl::math::Position scale;
 		unsigned int cameraFlags; //changes how the emitter faces the camera (billboard style, using the values etc)
-		Collection<Unk1Data>* unk1;
-		Collection<Unk2Data>* unk2;
-		Collection<Unk3Data>* unk3;
-		Shape shape;
-		csl::math::Position randomTransform;
-		float spread;
-		float startAngle;
-		float endAngle;
-		bool useRadialDistribution;
-		bool consistentAngle;
-		bool useAngularSubdivisions;
-		unsigned char numSubDivisions;
-		Collection<Unk4Data>* unk4;
-		Collection<Unk5Data>* unk5;
-		Collection<Unk6Data>* unk6;
-		Collection<Unk7Data>* unk7;
-		bool disabled;
-		float frequency;
-		float frequencyJitter;
-		float emitterCount;
-		float emitterCountJitter;
-		int unk124;
-		float unk128;
-		float unk12C;
-		float unk130; //acts like transparency on some particles
-		float duration;
-		float startDelay;
-		float fadeSpeed;
-		Collection<Unk8Data>* unk8;
-		uint32_t unk7f1;
+		PtrData<AnimationParam> unk1Animation;
+		PtrData<AnimationParam> unk2Animation;
+		PtrData<AnimationParam> unk3Animation;
+		EmissionParam emissionParam;
+		EmitParam emitParam;
+		unsigned int unkType;
 		float lifeEndTime;
-		float accelarationMultiplier;
-		float accelarationNormalMultiplier;
+		float accelerationMultiplier;
+		float accelerationNormalMultiplier;
 		float initialSpeed;
 		float velocityMultiplier;
 		float shapeRadius;
@@ -451,33 +644,60 @@ namespace ucsl::resources::cemt::v100000 {
 		float emitVectorJitter;
 		float directionJitter;
 		float unk4d;
-		Collection<Unk9Data>* unk9;
-		Collection<Unk10Data>* unk10;
-		Collection<Unk11Data>* unk11;
-		Collection<Unk12Data>* unk12;
-		Collection<Unk13Data>* unk13;
-		Collection<Unk14Data>* unk14;
-		Collection<Unk15Data>* unk15;
-		int unk16;
-		unsigned int unkType;
+		PtrData<AnimationParam> accelerationMultiplierAnimation;
+		PtrData<AnimationParam> accelerationNormalMultiplierAnimation;
+		PtrData<AnimationParam> velocityMultiplierAnimation;
+		PtrData<AnimationParam> shapeRadiusAnimation;
+		PtrData<AnimationParam> velocityScaleAnimation;
+		PtrData<AnimationParam> emitSizeAnimation;
+		PtrData<AnimationParam> emitVectorAnimation;
+		BlendMode blendMode;
+		ModelUnkType modelSetting3;
 		CullMode cullMode;
-		ucsl::bits::Bitset<InheritTransformFlags> inheritTransformFlags;
-		float inheritRatio;
-		uint32_t unk17;
-		uint32_t unk18;
+		ucsl::bits::Bitset<InheritFlag> inheritTransformFlags;
+		float inheritTransformRatio;
+		ucsl::bits::Bitset<InheritFlag> inheritPoseFlags;
+		float inheritPoseRatio;
 		ucsl::bits::Bitset<UnkFlags> unkFlags;
-		char gap5[0x8];
+		float unkFloat4;
+		float unkFloat5;
 		float unkFloat0;
 		float unkFloat0Jitter;
 		float unkFloat1;
 		float unkFloat1Jitter;
-		char gap6b[0x2D];
-		uint32_t randomSeed;
-		char gap6aa1[48];
-		unsigned int unkType1; //has six values;
-		char gap6aa1b[8];
-		unsigned int unkType2; //has six values;
-		char gap6aa1bb[12];
+		float unkFloat2;
+		float unkFloat3;
+		float unkFloat6RangeEnd; // 140FE4F74
+		float unkFloat6RangeStart;
+		char gap6b[0x4];
+		unsigned int unkInt0;
+		unsigned int unkInt1;
+		unsigned int unkInt2;
+		unsigned int randomSeed;
+		unsigned char unk6b1;
+		unsigned char unk6b2;
+		unsigned char unk6b3; // 140FE4E6C
+		unsigned char unk6b4; // 140FE4F0A
+		unsigned char unkType5;
+		BillboardType billboardType; // handled in 0140FE9390
+		bool unkBool0;
+		char gap6b2;
+		unsigned char unkChar0;
+		char gap6b3[3];
+		uint32_t unkRandomSeed;
+		char gap6aa1[28];
+		MaskType1 unkType0;
+		unsigned int unkType0a;
+		char gap6aa1a[4];
+		MaskType2 unkType0c;
+		unsigned int unkType0d;
+		MaskType3 unkType1; //has six values;
+		MaskType1 unkType1a;
+		unsigned int unkType1b;
+		MaskType3 unkType2; //has six values;
+		MaskType2 unkType3;
+		unsigned int unkType4;
+		char gap6aa1bc[4];
 		ElementParam elementParam;
 	};
 
@@ -492,7 +712,7 @@ namespace ucsl::resources::cemt::v100000 {
 		unsigned int animationBufferSize;
 		unsigned int numEffects; // 8C
 
-
+		EmitterParam emitterParam;
 
 	};
 }
