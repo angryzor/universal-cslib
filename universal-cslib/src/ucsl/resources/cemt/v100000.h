@@ -181,6 +181,18 @@ namespace ucsl::resources::cemt::v100000 {
 			int axisFlags;
 		};
 
+		struct UnkSettings {
+			enum class UnkFlag : unsigned char {
+				UNK0,
+				UNK1,
+				UNK2,
+			};
+
+			float unk1;
+			float unk2;
+			ucsl::bits::Bitset<UnkFlag> flags;
+		};
+
 		union Settings {
 			GravitySettings gravity;
 			SpeedSettings speed;
@@ -192,6 +204,7 @@ namespace ucsl::resources::cemt::v100000 {
 			RandomSettings random;
 			TailSettings tail;
 			FluctuationSettings fluctuation;
+			UnkSettings unk;
 			unsigned int maxSize[8];
 		};
 
@@ -378,29 +391,47 @@ namespace ucsl::resources::cemt::v100000 {
 		};
 
 		struct Unk2ParticleParam {
-			char pad[8];
+			unsigned int type;
+			char pad[4];
 			unsigned int unk0;
 			float unk1;
 		};
 
 		struct Unk3ParticleParam {
-			char pad[8];
+			unsigned int type;
+			bool unk2;
+			char pad[3];
 			unsigned int unk0;
 			float unk1;
 		};
 
 		struct Unk4ParticleParam {
-			char pad[12];
+			unsigned int type;
+			char pad[5];
+			unsigned char unk2;
+			unsigned char gap3;
 			unsigned int unk0;
 			float unk1;
 		};
 
 		struct Unk5ParticleParam {
-			char pad[0x20];
+			unsigned int type;
+			unsigned char unk3;
+			char pad[3];
+			unsigned int unk1;
+			unsigned char unk4;
+			char pad1[0x2];
+			bool unk2;
+			char pad2[0x10];
 		};
 
 		struct HistoricalStripeParticleParam {
-			char pad[0x20];
+			unsigned int type;
+			char pad[4];
+			unsigned char unk1;
+			char pad1[0x5];
+			bool unk2;
+			char pad2[0x11];
 		};
 
 		struct PointLightParticleParam {
@@ -416,6 +447,10 @@ namespace ucsl::resources::cemt::v100000 {
 			Unk5ParticleParam unk5;
 			HistoricalStripeParticleParam historicalStripe;
 			PointLightParticleParam pointLight;
+		};
+
+		enum class GpuParticleFlag : unsigned int {
+			IS_GPU,
 		};
 
 		float initialRotation[6];
@@ -455,6 +490,7 @@ namespace ucsl::resources::cemt::v100000 {
 		char skeletonName[128];
 		char nodeAnimName[128];
 		ParticleType particleType;
+		unsigned char particleType2; // 140FE7E43
 		ParticleParam particleParam;
 		TextureParam textures[4];
 		unsigned int textureCount;
@@ -465,14 +501,16 @@ namespace ucsl::resources::cemt::v100000 {
 		char gap7b[0x4];
 		PtrData<AnimationParam> unkAnim7bc;
 		char gap7bb[0x38];
-		unsigned int flags4; // 0x1 = is gpu rendering?
+		ucsl::bits::Bitset<GpuParticleFlag> gpuParticleFlags; // 0x1 = is gpu rendering?
 		char vectorFieldName[128];
 		math::Position vectorFieldSize;
 		char gap7c2[0x3C];
 		math::Position vectorFieldParam;
 		char gap7c1[0xC];
 		math::Position depthCollision;
-		char gap7c[0x18];
+		char gap7c[0x10];
+		unsigned int unk7d; // 140FE9F5B
+		unsigned int unk7e;
 		void* gpuElementParamTexture;
 		void* gpuOtherTexture;
 		ucsl::bits::Bitset<UnkChildEffectsFlag> unkChildEffectFlags;
@@ -601,11 +639,11 @@ namespace ucsl::resources::cemt::v100000 {
 		};
 
 		enum class DepthMode : unsigned int {
-			UNK_TEST,
-			UNK,
-			TEST_WRITE,
-			TEST_WRITE,
-			UNK_TEST_WRITE,
+			BLENDING_ENABLED_WITH_DEPTH_TEST,
+			BLENDING_ENABLED,
+			BLENDING_DISABLED_WITH_DEPTH_TEST_AND_DEPTH_WRITE,
+			BLENDING_DISABLED_WITH_DEPTH_TEST_AND_DEPTH_WRITE_2,
+			BLENDING_ENABLED_WITH_DEPTH_TEST_AND_DEPTH_WRITE,
 		};
 
 		enum class BlendMode : unsigned int {
@@ -652,7 +690,7 @@ namespace ucsl::resources::cemt::v100000 {
 		PtrData<AnimationParam> emitSizeAnimation;
 		PtrData<AnimationParam> emitVectorAnimation;
 		BlendMode blendMode;
-		ModelUnkType modelSetting3;
+		DepthMode depthMode;
 		CullMode cullMode;
 		ucsl::bits::Bitset<InheritFlag> inheritTransformFlags;
 		float inheritTransformRatio;
@@ -674,7 +712,7 @@ namespace ucsl::resources::cemt::v100000 {
 		unsigned int unkInt1;
 		unsigned int unkInt2;
 		unsigned int randomSeed;
-		unsigned char unk6b1;
+		char renderLayer;
 		unsigned char unk6b2;
 		unsigned char unk6b3; // 140FE4E6C
 		unsigned char unk6b4; // 140FE4F0A
