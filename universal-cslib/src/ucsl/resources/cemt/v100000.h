@@ -6,6 +6,11 @@ namespace ucsl::resources::cemt::v100000 {
 		T* ptr;
 	};
 
+	struct JitteredValue {
+		float value;
+		float jitter;
+	};
+
 	struct Unk2Data {};
 
 	struct Unk3Data {};
@@ -39,17 +44,28 @@ namespace ucsl::resources::cemt::v100000 {
 	struct Unk17Data {};
 
 	struct AnimationKeyframeParam {
-		short frame;
-		short unk0;
-		float in[2];
-		float out[2];
+		enum class InterpolationType : unsigned short {
+			CONSTANT,
+			LINEAR,
+			HERMITE,
+		};
+
+		unsigned short frame;
+		InterpolationType interpolationType;
+		float derivativeIn;
+		float derivativeOut;
+		JitteredValue value;
 	};
 
 	struct AnimationTrackParam {
-		char index;
-		char unk0;
-		short frameCount;
-		// AnimationKeyframeParam keyframes[frameCount];
+		enum class RandomnessFlag : unsigned char {
+			DISABLE_RANDOMNESS,
+		};
+
+		unsigned char index;
+		ucsl::bits::Bitset<RandomnessFlag> randomnessFlag;
+		short keyframeCount;
+		AnimationKeyframeParam keyframes[2];
 	};
 
 	struct AnimationParam {
@@ -59,7 +75,7 @@ namespace ucsl::resources::cemt::v100000 {
 		bool durationEnabled;
 		int loopCount;
 		short totalFrameCount;
-		short activeTrackCount;
+		unsigned short trackCount;
 		AnimationTrackParam* tracks[4];
 	};
 
@@ -280,56 +296,44 @@ namespace ucsl::resources::cemt::v100000 {
 		ucsl::bits::Bitset<ScrollDirectionFlag> scrollDirectionFlags;
 		ucsl::bits::Bitset<ScrollDirectionRandomizationFlag> scrollDirectionRandomizationFlags;
 		unsigned char unk9;
-		PtrData<AnimationParam> unkAnim;
+		PtrData<AnimationParam> patternAnim;
 		ScrollColorParam scrollColorParams[2];
 		ScrollUVParam uvParams[2];
 		float uvScale[2];
 		int64_t unk22;
 	};
 
-	struct Table {
-		struct Settings {
-		};
+	struct ColorRandomSet {
+		JitteredValue color1[3][32];
+		JitteredValue color2[3][32];
+		JitteredValue unk1[32];
+		JitteredValue unk2[32];
+		JitteredValue alpha1[32];
+		JitteredValue alpha2[32];
+		unsigned char color1Count;
+		unsigned char color2Count;
+		unsigned char unk1Count;
+		unsigned char unk2Count;
+		unsigned char alpha1Count;
+		unsigned char alpha2Count;
+	};
 
-		struct Unk1 {
-			float value;
-			float unk1;
-		};
-
-		Unk1 red1;
-		Unk1 green1;
-		Unk1 blue1;
-		Unk1 alpha1;
-		Unk1 red2;
-		Unk1 green2;
-		Unk1 blue2;
-		Unk1 alpha2;
-		float unk6;
-		float unk8;
-		char gap3[0x8];
-		PtrData<AnimationParam> colorAnimation;
-		PtrData<AnimationParam> alphaAnimation;
-		void* unk4;
-		void* unk7;
-		void* unk5;
-		char gap6[0x8];
-		Unk1 reds1[32];
-		Unk1 greens1[32];
-		Unk1 blues1[32];
-		Unk1 reds2[32];
-		Unk1 greens2[32];
-		Unk1 blues2[32];
-		Unk1 unks1[32];
-		Unk1 unks2[32];
-		Unk1 alphas1[32];
-		Unk1 alphas2[32];
-		bool count1;
-		bool count2;
-		bool unk1;
-		bool unk2;
-		unsigned char alphaCount1;
-		unsigned char alphaCount2;
-		char gap7[0x12];
+	struct ColorParam {
+		JitteredValue color1[3];
+		JitteredValue alpha1;
+		JitteredValue color2[3];
+		JitteredValue alpha2;
+		JitteredValue unk6_1;
+		JitteredValue unk6_2;
+		PtrData<AnimationParam> colorAnimation1;
+		PtrData<AnimationParam> unk6Animation1;
+		PtrData<AnimationParam> alphaAnimation1;
+		PtrData<AnimationParam> colorAnimation2;
+		PtrData<AnimationParam> unk6Animation2;
+		PtrData<AnimationParam> alphaAnimation2;
+		ColorRandomSet colorRandomSet;
+		float unk7;
+		PtrData<AnimationParam> unk7Animation;
 	};
 
 	struct ElementParam {
@@ -462,23 +466,16 @@ namespace ucsl::resources::cemt::v100000 {
 		unsigned char unkVec2OffsetZRandomFlags;
 		float angularVelocity[6];
 		unsigned int unk18a01;
-		float sizeX;
-		float sizeXJitter;
-		float sizeY;
-		float sizeYJitter;
-		float sizeZ;
-		float sizeZJitter;
+		JitteredValue sizeX;
+		JitteredValue sizeY;
+		JitteredValue sizeZ;
 		unsigned int sizeFlags; //controls whetever jiggle should be used
-		float scaleX;
-		float scaleXJitter;
-		float scaleY;
-		float scaleYJitter;
-		float scaleZ;
-		float scaleZJitter;
+		JitteredValue scaleX;
+		JitteredValue scaleY;
+		JitteredValue scaleZ;
 		unsigned int scaleFlags; //controls whetever jiggle should be used
-		Table tables[2];
-		float fps;
-		float fpsJitter;
+		ColorParam colorParams[2];
+		JitteredValue fps;
 		PtrData<AnimationParam> unkVec2Anim;
 		PtrData<AnimationParam> scaleAnimation;
 		PtrData<AnimationParam> sizeAnimation;
@@ -500,7 +497,8 @@ namespace ucsl::resources::cemt::v100000 {
 		unsigned int fieldFlags; // 0x01 = has childeffects, 0x4 = use simple unkVec2 update (only x multiplier, no anim), 0x8 = use emitter global time for unkVec2 update, 0x1000 = use -1 or fps variables
 		char gap7b[0x4];
 		PtrData<AnimationParam> unkAnim7bc;
-		char gap7bb[0x38];
+		unsigned int someAnimationCount; // 140FF3B3D
+		char gap7bb[0x34];
 		ucsl::bits::Bitset<GpuParticleFlag> gpuParticleFlags; // 0x1 = is gpu rendering?
 		char vectorFieldName[128];
 		math::Position vectorFieldSize;
@@ -574,10 +572,8 @@ namespace ucsl::resources::cemt::v100000 {
 			};
 
 			EmitMode emissionMode;
-			float frequency;
-			float frequencyJitter;
-			float emissionCount;
-			float emissionCountJitter;
+			JitteredValue frequency;
+			JitteredValue emissionCount;
 			AttenuationMode attenuationMode;
 			float minDistance;
 			float maxDistance;
