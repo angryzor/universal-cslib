@@ -1,10 +1,9 @@
 #pragma once
+#include <ucsl/bitset.h>
+#include <ucsl/math.h>
 
 namespace ucsl::resources::cemt::v100000 {
-	template<typename T>
-	struct PtrData {
-		T* ptr;
-	};
+	struct EffectParam;
 
 	struct JitteredValue {
 		float value;
@@ -16,38 +15,6 @@ namespace ucsl::resources::cemt::v100000 {
 		JitteredValue y;
 		JitteredValue z;
 	};
-
-	struct Unk2Data {};
-
-	struct Unk3Data {};
-
-	struct Unk4Data {};
-
-	struct Unk5Data {};
-
-	struct Unk6Data {};
-
-	struct Unk7Data {};
-
-	struct Unk8Data {};
-
-	struct Unk9Data {};
-
-	struct Unk10Data {};
-
-	struct Unk11Data {};
-
-	struct Unk12Data {};
-
-	struct Unk13Data {};
-
-	struct Unk14Data {};
-
-	struct Unk15Data {};
-
-	struct Unk16Data {};
-
-	struct Unk17Data {};
 
 	struct AnimationKeyframeParam {
 		enum class InterpolationType : unsigned short {
@@ -91,21 +58,20 @@ namespace ucsl::resources::cemt::v100000 {
 	};
 
 	struct ChildEffect {
-		uint8_t flags; // 0x01 = animate
+		enum class Flag : unsigned char {
+			ENABLE_USING_ANIMATION,
+		};
+
+		ucsl::bits::Bitset<Flag> flags;
 		char unkType; // 0x01 = affected by fluctuation, 0x02 = related to color?
 		float unk0;
 		float unk1;
 		float unk2;
 		float unk3;
 		float unk4;
-		PtrData<AnimationParam> unkAnim;
+		AnimationParam* enableAnimation; // single track, child effect is on if inside track frame bounds
 		char name[128];
-		void* param; // EffectParam
-	};
-
-	struct ChildEffect2 {
-		unsigned int unk1;
-		char name[128];
+		EffectParam* param;
 	};
 
 	struct FieldParam {
@@ -295,9 +261,9 @@ namespace ucsl::resources::cemt::v100000 {
 			float rotation;
 			ucsl::math::Vector2 translation;
 			int gap15;
-			PtrData<AnimationParam> tilingAnimation;
-			PtrData<AnimationParam> rotationAnimation;
-			PtrData<AnimationParam> translationAnimation;
+			AnimationParam* tilingAnimation;
+			AnimationParam* rotationAnimation;
+			AnimationParam* translationAnimation;
 		};
 
 		struct PatternAnimationParam {
@@ -328,7 +294,7 @@ namespace ucsl::resources::cemt::v100000 {
 			ucsl::bits::Bitset<DirectionFlag> scrollDirectionFlags;
 			ucsl::bits::Bitset<DirectionRandomizationFlag> scrollDirectionRandomizationFlags;
 			unsigned char unk9;
-			PtrData<AnimationParam> patternAnimation;
+			AnimationParam* patternAnimation;
 		};
 
 		char name[128];
@@ -344,14 +310,14 @@ namespace ucsl::resources::cemt::v100000 {
 	struct ColorRandomSet {
 		JitteredValue color1[3][32];
 		JitteredValue color2[3][32];
-		JitteredValue unk1[32];
-		JitteredValue unk2[32];
+		JitteredValue hardness1[32];
+		JitteredValue hardness2[32];
 		JitteredValue alpha1[32];
 		JitteredValue alpha2[32];
 		unsigned char color1Count;
 		unsigned char color2Count;
-		unsigned char unk1Count;
-		unsigned char unk2Count;
+		unsigned char hardness1Count;
+		unsigned char hardness2Count;
 		unsigned char alpha1Count;
 		unsigned char alpha2Count;
 	};
@@ -361,54 +327,83 @@ namespace ucsl::resources::cemt::v100000 {
 		JitteredValue alpha1;
 		JitteredValue color2[3];
 		JitteredValue alpha2;
-		JitteredValue unk6_1;
-		JitteredValue unk6_2;
-		PtrData<AnimationParam> colorAnimation1;
-		PtrData<AnimationParam> unk6Animation1;
-		PtrData<AnimationParam> alphaAnimation1;
-		PtrData<AnimationParam> colorAnimation2;
-		PtrData<AnimationParam> unk6Animation2;
-		PtrData<AnimationParam> alphaAnimation2;
+		JitteredValue hardness1;
+		JitteredValue hardness2;
+		AnimationParam* colorAnimation1;
+		AnimationParam* hardnessAnimation1;
+		AnimationParam* alphaAnimation1;
+		AnimationParam* colorAnimation2;
+		AnimationParam* hardnessAnimation2;
+		AnimationParam* alphaAnimation2;
 		ColorRandomSet colorRandomSet;
 		float unk7;
-		PtrData<AnimationParam> unk7Animation;
+		AnimationParam* unk7Animation;
+	};
+
+	struct LODEffectParam {
+		char name[128];
+		float threshold;
+	};
+
+	struct BasicLODParam {
+		enum class Flag : unsigned char {
+			USE_NEGATIVE_ONE_UNK1864,
+		};
+
+		unsigned char lodCount;
+		ucsl::bits::Bitset<Flag> flags;
+		LODEffectParam lods[16];
+	};
+
+	struct AnimatedLODParam {
+		uint32_t gap9;
+		math::Position unk20;
+		math::Position unk21;
+		AnimationParam* unk20Animation;
+		AnimationParam* unk21Animation;
+		uint32_t gap9a;
+		math::Position unk22;
+		math::Position unk23;
+		AnimationParam* unk22Animation;
+		AnimationParam* unk23Animation;
+		uint64_t gap10;
+		unsigned char lodCount;
+		char gap11[7];
+		LODEffectParam lods[16];
+	};
+
+	union LODParam {
+		BasicLODParam basic;
+		AnimatedLODParam animated;
+	};
+
+	struct UserParameter {
+		enum class Type : unsigned int {
+			UNK0,
+			BOOL,
+			INT,
+			FLOAT,
+			STRING,
+			VECTOR,
+		};
+
+		union DataPtr {
+			void* unk0;
+			bool* boolean;
+			int* integer;
+			float* floating;
+			ucsl::math::Position* vector;
+		};
+
+		Type type;
+		unsigned int size;
+		DataPtr data;
 	};
 
 	struct ElementParam {
-		enum class UnkChildEffectsFlag : unsigned int {
+		enum class LODFlag : unsigned int {
 			BASIC_CHILD_EFFECTS,
 			ANIMATED_CHILD_EFFECTS,
-		};
-
-		struct BasicUnkChildEffectsParam {
-			enum class Flag : unsigned char {
-				USE_NEGATIVE_ONE_UNK1864,
-			};
-
-			unsigned char childEffectCount;
-			ucsl::bits::Bitset<Flag> flags;
-			ChildEffect2 childEffects[16];
-		};
-
-		struct AnimatedChildEffectsParam {
-			uint32_t gap9;
-			math::Position unk20;
-			math::Position unk21;
-			PtrData<AnimationParam> unk20Animation;
-			PtrData<AnimationParam> unk21Animation;
-			uint32_t gap9a;
-			math::Position unk22;
-			math::Position unk23;
-			PtrData<AnimationParam> unk22Animation;
-			PtrData<AnimationParam> unk23Animation;
-			uint64_t gap10;
-			unsigned char childEffectCount;
-			ChildEffect2 childEffects[16];
-		};
-
-		union UnkChildEffectsParam {
-			BasicUnkChildEffectsParam basic;
-			AnimatedChildEffectsParam animated;
 		};
 
 		enum class ParticleType : unsigned char {
@@ -499,7 +494,7 @@ namespace ucsl::resources::cemt::v100000 {
 			UNK2,
 		};
 
-		struct DirectionParam {
+		struct TransformParam {
 			enum class RandomAngleFlag : unsigned char {
 				CCW_90,
 				CW_90,
@@ -520,10 +515,15 @@ namespace ucsl::resources::cemt::v100000 {
 			unsigned int scaleFlags;
 		};
 
+		struct UserParameterParam {
+			unsigned int userParameterCount;
+			UserParameter* userParameters;
+		};
+
 		enum class UpdateFlag : unsigned int {
 			HAS_CHILDREN, // 0x1
 			HAS_RANDOMIZED_ROTATION_DIRECTION, // 0x2
-			HAS_ANGRULAR_VELOCITY, // 0x4
+			HAS_FIXED_ANGULAR_VELOCITY, // 0x4
 			USE_GLOBAL_TIME, // 0x8
 			HAS_MODEL, // 0x10
 			UNK5, // 0x20
@@ -537,12 +537,12 @@ namespace ucsl::resources::cemt::v100000 {
 			DISABLE_FIELDS, // 0x2000
 		};
 
-		DirectionParam directionParam;
+		TransformParam transformParam;
 		ColorParam colorParams[2];
 		JitteredValue lifetime;
-		PtrData<AnimationParam> rotationAnimation;
-		PtrData<AnimationParam> scaleAnimation;
-		PtrData<AnimationParam> sizeAnimation;
+		AnimationParam* rotationAnimation;
+		AnimationParam* scaleAnimation;
+		AnimationParam* sizeAnimation;
 		char gap6aa[0xC];
 		bool hasModel;
 		unsigned char modelSetting1;
@@ -557,11 +557,11 @@ namespace ucsl::resources::cemt::v100000 {
 		unsigned int textureCount;
 		ChildEffect childEffects[16];
 		FieldParam fields[8];
-		PtrData<AnimationParam> modifierAnimations[5][8];
+		AnimationParam* fieldAnimations[8][5];
 		ucsl::bits::Bitset<UpdateFlag> updateFlags; // 0x01 = has childeffects, 0x4 = use simple unkVec2 update (only x multiplier, no anim), 0x8 = use emitter global time for unkVec2 update, 0x1000 = use -1 or fps variables
 		unsigned int gap7b;
-		PtrData<AnimationParam> unkAnim7bc;
-		unsigned int someAnimationCount; // 140FF3B3D
+		AnimationParam* uvAnimation;
+		unsigned int elementAnimationCount; // 140FF3B3D
 		char gap7bb[0x34];
 		ucsl::bits::Bitset<GpuParticleFlag> gpuParticleFlags; // 0x1 = is gpu rendering?
 		char vectorFieldName[128];
@@ -571,32 +571,32 @@ namespace ucsl::resources::cemt::v100000 {
 		math::Position vectorFieldParam;
 		math::Position unkVector1;
 		math::Position depthCollision;
-		char gap7c[0x10];
-		unsigned int unk7d; // 140FE9F5B
+		UserParameterParam userParameterParam;
+		unsigned int emitterAnimationCount; // 140FE9F5B
 		unsigned int unk7e;
 		void* gpuElementParamTexture;
 		void* gpuOtherTexture;
-		ucsl::bits::Bitset<UnkChildEffectsFlag> unkChildEffectFlags;
-		UnkChildEffectsParam childEffectsParam;
-		//unsigned char unkCount;
-		//unsigned char childElementAnimationFlags;
-
-		//math::Position unk20;
-		//math::Position unk21;
-		//PtrData<AnimationParam> unk20Animation;
-		//PtrData<AnimationParam> unk21Animation;
-		//uint32_t gap9a;
-		//math::Position unk22;
-		//math::Position unk23;
-		//PtrData<AnimationParam> unk22Animation;
-		//PtrData<AnimationParam> unk23Animation;
-		//
-		//uint64_t gap10;
-		//unsigned char childEffect2Count;
-		//ChildEffect2 childEffect2s[16];
+		ucsl::bits::Bitset<LODFlag> lodFlags;
+		LODParam lodParam;
 	};
 
 	struct EmitterParam {
+		struct TransformParam {
+			enum class TransformType : unsigned int {
+				UNK0,
+				UNK1,
+				ROTATED,
+			};
+
+			ucsl::math::Position position;
+			ucsl::math::Position rotation;
+			ucsl::math::Position scale;
+			TransformType type;
+			AnimationParam* positionAnimation;
+			AnimationParam* rotationAnimation;
+			AnimationParam* scaleAnimation;
+		};
+
 		struct EmissionParam {
 			enum class Shape : unsigned int {
 				POINT,
@@ -611,18 +611,18 @@ namespace ucsl::resources::cemt::v100000 {
 			};
 
 			Shape shape;
-			ucsl::math::Position randomTransform;
+			ucsl::math::Position positionJitter;
 			float spread;
 			float startAngle;
 			float endAngle;
 			bool useRadialDistribution;
 			bool consistentAngle;
-			bool useAngularSubdivisions;
-			unsigned char emissionParticleCount;
-			PtrData<AnimationParam> randomPositionAnimation;
-			PtrData<AnimationParam> spreadAnimation;
-			PtrData<AnimationParam> startAngleAnimation;
-			PtrData<AnimationParam> endAngleAnimation;
+			bool useSubdivisions;
+			unsigned char subdivisionCount;
+			AnimationParam* positionJitterAnimation;
+			AnimationParam* spreadAnimation;
+			AnimationParam* startAngleAnimation;
+			AnimationParam* endAngleAnimation;
 		};
 
 		struct EmitParam {
@@ -637,7 +637,7 @@ namespace ucsl::resources::cemt::v100000 {
 			};
 
 			EmitMode emissionMode;
-			JitteredValue frequency;
+			JitteredValue emitInterval;
 			JitteredValue emissionCount;
 			AttenuationMode attenuationMode;
 			float minDistance;
@@ -646,7 +646,19 @@ namespace ucsl::resources::cemt::v100000 {
 			float duration;
 			float startDelay;
 			float fadeSpeed;
-			PtrData<AnimationParam> emissionCountAnimation;
+			AnimationParam* emissionCountAnimation;
+		};
+
+		struct DeathParam {
+			enum class DeathMode {
+				WAIT_FOR_ELEMENTS,
+				KILL_AFTER_DELAY,
+				WAIT_FOR_ELEMENTS_OR_KILL_AFTER_DELAY,
+				IMMEDIATE,
+			};
+
+			DeathMode mode;
+			float killDelay;
 		};
 
 		struct EmissionDynamicsParam {
@@ -656,28 +668,28 @@ namespace ucsl::resources::cemt::v100000 {
 					ANGLES,
 				};
 
-				float initialAcceleration;
-				float acceleration;
-				float randomVelocity;
-				float velocity;
-				float shapeRadius;
-				float spreadVelocity;
-				float spread;
-				SpreadDirectionType spreadType;
-				csl::math::Position spreadAnglesOrDirection;
+				float direction1Velocity;
+				float direction2Velocity;
+				float randomDirectionVelocity;
+				float localSpreadVelocity;
+				float localSpread;
+				float worldSpreadVelocity;
+				float worldSpread;
+				SpreadDirectionType worldSpreadDirectionType;
+				csl::math::Position worldSpreadAnglesOrDirection;
 				float initialVelocityJitter;
 				float velocityJitter;
 			};
 
 			Settings settings;
 			float gap4d;
-			PtrData<AnimationParam> initialAccelerationAnimation;
-			PtrData<AnimationParam> accelerationAnimation;
-			PtrData<AnimationParam> velocityAnimation;
-			PtrData<AnimationParam> shapeRadiusAnimation;
-			PtrData<AnimationParam> velocityScaleAnimation;
-			PtrData<AnimationParam> emitSizeAnimation;
-			PtrData<AnimationParam> emitVectorAnimation;
+			AnimationParam* direction1VelocityAnimation;
+			AnimationParam* direction2VelocityAnimation;
+			AnimationParam* localSpreadVelocityAnimation;
+			AnimationParam* localSpreadAnimation;
+			AnimationParam* worldSpreadVelocityAnimation;
+			AnimationParam* worldSpreadAnimation;
+			AnimationParam* worldSpreadAnglesOrDirectionAnimation;
 		};
 
 		enum class InheritFlag : unsigned int {
@@ -751,17 +763,10 @@ namespace ucsl::resources::cemt::v100000 {
 			UNK2,
 		};
 
-		ucsl::math::Position position;
-		ucsl::math::Position rotation;
-		ucsl::math::Position scale;
-		unsigned int cameraFlags; //changes how the emitter faces the camera (billboard style, using the values etc)
-		PtrData<AnimationParam> unk1Animation;
-		PtrData<AnimationParam> unk2Animation;
-		PtrData<AnimationParam> unk3Animation;
+		TransformParam transformParam;
 		EmissionParam emissionParam;
 		EmitParam emitParam;
-		unsigned int unkType;
-		float lifeEndTime;
+		DeathParam deathParam;
 		EmissionDynamicsParam emissionDynamicsParam;
 		BlendMode blendMode;
 		DepthMode depthMode;
@@ -787,7 +792,7 @@ namespace ucsl::resources::cemt::v100000 {
 		unsigned int unkInt2;
 		unsigned int randomSeed;
 		char renderLayer;
-		unsigned char unk6b2;
+		unsigned char unk6b2; // 140FE0540
 		unsigned char unk6b3; // 140FE4E6C
 		unsigned char unk6b4; // 140FE4F0A
 		unsigned char unkType5;
@@ -797,10 +802,12 @@ namespace ucsl::resources::cemt::v100000 {
 		unsigned char unkChar0;
 		char gap6b3[3];
 		uint32_t unkRandomSeed;
-		char gap6aa1[28];
+		unsigned int gap6aa1[3];
+		ucsl::math::Position unkFloat2342;
+		unsigned int gap6aa2;
 		MaskType1 unkType0;
 		unsigned int unkType0a;
-		char gap6aa1a[4];
+		unsigned int gap6aa1a;
 		MaskType2 unkType0c;
 		unsigned int unkType0d;
 		MaskType3 unkType1; //has six values;
@@ -809,7 +816,7 @@ namespace ucsl::resources::cemt::v100000 {
 		MaskType3 unkType2; //has six values;
 		MaskType2 unkType3;
 		unsigned int unkType4;
-		char gap6aa1bc[4];
+		unsigned int gap6aa1bc;
 		ElementParam elementParam;
 	};
 
@@ -822,7 +829,7 @@ namespace ucsl::resources::cemt::v100000 {
 		unsigned char buildVersion;
 		char name[0x80];
 		unsigned int animationBufferSize;
-		unsigned int numEffects; // 8C
+		unsigned int emitterCount;
 
 		EmitterParam emitterParam;
 
