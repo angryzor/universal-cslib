@@ -2,7 +2,7 @@
 #include <ucsl/bitset.h>
 #include <ucsl/math.h>
 
-namespace ucsl::resources::cemt::v100000 {
+namespace ucsl::resources::cemt::v120000 {
 	struct EffectParam;
 
 	struct JitteredValue {
@@ -74,45 +74,6 @@ namespace ucsl::resources::cemt::v100000 {
 		EffectParam* param;
 	};
 
-
-	/*
-	 * Field animation slots :
-	 * GRAVITY:
-	 *   0 - vec3 - rotation
-	 *   1 - float - scale
-	 * SPEED:
-	 *   0 - float - scale
-	 * MAGNET:
-	 *   0 - float - scale
-	 *   1 - vec3 - magnetPoint
-	 * NEWTON:
-	 *   0 - float - force
-	 *   1 - vec3 - targetPoint
-	 *   2 - float - falloffRadius
-	 * VORTEX:
-	 *   0 - float - max
-	 *   1 - float - min
-	 *   2 - float - radius
-	 *   3 - vec3 - rotation
-	 * SPIN:
-	 *   0 - float - scale
-	 *   1 - vec3 - rotation
-	 * SPIN2:
-	 *   0 - float - baseStrength
-	 *   1 - float - spinStrength
-	 *   2 - float - axisFalloff
-	 *   3 - float - rotationAngle
-	 *   4 - vec3 - axisVector
-	 * RANDOM:
-	 *   0 - float - scale
-	 * TAIL:
-	 *   0 - float - multiplier
-	 * FLUCTUATION:
-	 *   0 - float - ?
-	 *   1 - float - ?
-	 * UNK0:
-	 *   0 - float - unk1
-	 */
 	struct FieldParam {
 		enum class Type : unsigned char {
 			GRAVITY,
@@ -152,8 +113,8 @@ namespace ucsl::resources::cemt::v100000 {
 
 		struct NewtonSettings {
 			math::Position targetPoint;
-			float force;
-			float falloffRadius;
+			float scale;
+			float maxDistance;
 		};
 
 		struct VortexSettings {
@@ -349,14 +310,14 @@ namespace ucsl::resources::cemt::v100000 {
 	struct ColorRandomSet {
 		JitteredValue color1[3][32];
 		JitteredValue color2[3][32];
-		JitteredValue luminance1[32];
-		JitteredValue luminance2[32];
+		JitteredValue hardness1[32];
+		JitteredValue hardness2[32];
 		JitteredValue alpha1[32];
 		JitteredValue alpha2[32];
 		unsigned char color1Count;
 		unsigned char color2Count;
-		unsigned char luminance1Count;
-		unsigned char luminance2Count;
+		unsigned char hardness1Count;
+		unsigned char hardness2Count;
 		unsigned char alpha1Count;
 		unsigned char alpha2Count;
 	};
@@ -366,13 +327,13 @@ namespace ucsl::resources::cemt::v100000 {
 		JitteredValue alpha1;
 		JitteredValue color2[3];
 		JitteredValue alpha2;
-		JitteredValue luminance1;
-		JitteredValue luminance2;
+		JitteredValue hardness1;
+		JitteredValue hardness2;
 		AnimationParam* colorAnimation1;
-		AnimationParam* luminanceAnimation1;
+		AnimationParam* hardnessAnimation1;
 		AnimationParam* alphaAnimation1;
 		AnimationParam* colorAnimation2;
-		AnimationParam* luminanceAnimation2;
+		AnimationParam* hardnessAnimation2;
 		AnimationParam* alphaAnimation2;
 		ColorRandomSet colorRandomSet;
 		float unk7;
@@ -455,7 +416,7 @@ namespace ucsl::resources::cemt::v100000 {
 			HISTORICAL_STRIPE,
 			POINT_LIGHT,
 		};
-
+		
 		struct Unk0ParticleParam {
 			unsigned int unk0;
 			float unk1;
@@ -591,6 +552,8 @@ namespace ucsl::resources::cemt::v100000 {
 		AnimationParam* rotationAnimation;
 		AnimationParam* scaleAnimation;
 		AnimationParam* sizeAnimation;
+		char gap6aa[0xC];
+		char gap1231321[20];
 		DistanceScaleParam distanceScaleParam;
 		bool hasModel;
 		unsigned char modelSetting1;
@@ -620,6 +583,7 @@ namespace ucsl::resources::cemt::v100000 {
 		math::Position vectorFieldParam;
 		math::Position unkVector1;
 		math::Position depthCollision;
+		char gap453543[8];
 		UserParameterParam userParameterParam;
 		unsigned int emitterAnimationCount; // 140FE9F5B
 		unsigned int unk7e;
@@ -854,6 +818,7 @@ namespace ucsl::resources::cemt::v100000 {
 		float unkFloat6RangeEnd; // 140FE4F74
 		float unkFloat6RangeStart;
 		unsigned int gap6b;
+		bool unk6c;
 		float unkFloatFoo0;
 		float unkFloatFoo1;
 		float unkFloatFoo2;
@@ -874,13 +839,12 @@ namespace ucsl::resources::cemt::v100000 {
 		unsigned int gap6aa1a;
 		MaskType2 unkType0c;
 		unsigned int unkType0d;
-		MaskType3 unkType1; //has six values;
+		MaskType3 unkType1;
 		MaskType1 unkType1a;
 		unsigned int unkType1b;
-		MaskType3 unkType2; //has six values;
+		MaskType3 unkType2;
 		MaskType2 unkType3;
 		unsigned int unkType4;
-		unsigned int gap6aa1bc;
 		ElementParam elementParam;
 	};
 
