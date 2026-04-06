@@ -74,6 +74,44 @@ namespace ucsl::resources::cemt::v120000 {
 		EffectParam* param;
 	};
 
+	/*
+	 * Field animation slots :
+	 * GRAVITY:
+	 *   0 - vec3 - rotation
+	 *   1 - float - scale
+	 * SPEED:
+	 *   0 - float - scale
+	 * MAGNET:
+	 *   0 - float - scale
+	 *   1 - vec3 - magnetPoint
+	 * NEWTON:
+	 *   0 - float - force
+	 *   1 - vec3 - targetPoint
+	 *   2 - float - falloffRadius
+	 * VORTEX:
+	 *   0 - float - max
+	 *   1 - float - min
+	 *   2 - float - radius
+	 *   3 - vec3 - rotation
+	 * SPIN:
+	 *   0 - float - scale
+	 *   1 - vec3 - rotation
+	 * SPIN2:
+	 *   0 - float - baseStrength
+	 *   1 - float - spinStrength
+	 *   2 - float - axisFalloff
+	 *   3 - float - rotationAngle
+	 *   4 - vec3 - axisVector
+	 * RANDOM:
+	 *   0 - float - scale
+	 * TAIL:
+	 *   0 - float - multiplier
+	 * FLUCTUATION:
+	 *   0 - float - ?
+	 *   1 - float - ?
+	 * UNK0:
+	 *   0 - float - unk1
+	 */
 	struct FieldParam {
 		enum class Type : unsigned char {
 			GRAVITY,
@@ -113,8 +151,8 @@ namespace ucsl::resources::cemt::v120000 {
 
 		struct NewtonSettings {
 			math::Position targetPoint;
-			float scale;
-			float maxDistance;
+			float force;
+			float falloffRadius;
 		};
 
 		struct VortexSettings {
@@ -171,19 +209,20 @@ namespace ucsl::resources::cemt::v120000 {
 
 			WaveformType waveformType;
 			float baseOffset;
-			int axisFlags;
+			JitteredValue unk0;
+			JitteredValue unk1;
 		};
 
 		struct UnkSettings {
-			enum class UnkFlag : unsigned char {
-				UNK0,
-				UNK1,
-				UNK2,
+			enum class AxisFlag : unsigned char {
+				X,
+				Y,
+				Z,
 			};
 
 			float unk1;
 			float unk2;
-			bits::Bitset<UnkFlag> flags;
+			bits::Bitset<AxisFlag> axes;
 		};
 
 		union Settings {
@@ -310,14 +349,14 @@ namespace ucsl::resources::cemt::v120000 {
 	struct ColorRandomSet {
 		JitteredValue color1[3][32];
 		JitteredValue color2[3][32];
-		JitteredValue hardness1[32];
-		JitteredValue hardness2[32];
+		JitteredValue luminance1[32];
+		JitteredValue luminance2[32];
 		JitteredValue alpha1[32];
 		JitteredValue alpha2[32];
 		unsigned char color1Count;
 		unsigned char color2Count;
-		unsigned char hardness1Count;
-		unsigned char hardness2Count;
+		unsigned char luminance1Count;
+		unsigned char luminance2Count;
 		unsigned char alpha1Count;
 		unsigned char alpha2Count;
 	};
@@ -327,20 +366,20 @@ namespace ucsl::resources::cemt::v120000 {
 		JitteredValue alpha1;
 		JitteredValue color2[3];
 		JitteredValue alpha2;
-		JitteredValue hardness1;
-		JitteredValue hardness2;
+		JitteredValue luminance1;
+		JitteredValue luminance2;
 		AnimationParam* colorAnimation1;
-		AnimationParam* hardnessAnimation1;
+		AnimationParam* luminanceAnimation1;
 		AnimationParam* alphaAnimation1;
 		AnimationParam* colorAnimation2;
-		AnimationParam* hardnessAnimation2;
+		AnimationParam* luminanceAnimation2;
 		AnimationParam* alphaAnimation2;
 		ColorRandomSet colorRandomSet;
 		float unk7;
 		AnimationParam* unk7Animation;
 	};
 
-	struct LODEffectParam {
+	struct BasicLODEffectParam {
 		char name[128];
 		float threshold;
 	};
@@ -352,29 +391,46 @@ namespace ucsl::resources::cemt::v120000 {
 
 		unsigned char lodCount;
 		bits::Bitset<Flag> flags;
-		LODEffectParam lods[16];
+		BasicLODEffectParam lods[16];
 	};
 
-	struct AnimatedLODParam {
-		uint32_t gap9;
-		math::Position unk20;
-		math::Position unk21;
-		AnimationParam* unk20Animation;
-		AnimationParam* unk21Animation;
-		uint32_t gap9a;
-		math::Position unk22;
-		math::Position unk23;
-		AnimationParam* unk22Animation;
-		AnimationParam* unk23Animation;
-		uint64_t gap10;
+	struct RaycastLODEffectParam {
+		char name[128];
+		unsigned int raycastFlags;
+	};
+
+	// 0x140FEBE70
+	struct RaycastLODParam {
+		enum class RotationMode : unsigned char {
+			DISABLE,
+			ROTATE_TO_NORMAL,
+		};
+
+		enum class Flag : unsigned int {
+			UNK0
+		};
+
+		float unkLifetime;
+		math::Position from;
+		math::Position to;
+		AnimationParam* fromAnimation;
+		AnimationParam* toAnimation;
+		RotationMode rotationMode;
+		RotationMode offsetRotationMode;
+		math::Position rotation;
+		math::Position offset;
+		AnimationParam* rotationAnimation;
+		AnimationParam* offsetAnimation;
+		unsigned int filterMask;
+		bits::Bitset<Flag> flags;
 		unsigned char lodCount;
-		char gap11[7];
-		LODEffectParam lods[16];
+		char gap12[7];
+		RaycastLODEffectParam lods[16];
 	};
 
 	union LODParam {
 		BasicLODParam basic;
-		AnimatedLODParam animated;
+		RaycastLODParam raycast;
 	};
 
 	struct UserParameter {
@@ -382,9 +438,11 @@ namespace ucsl::resources::cemt::v120000 {
 			UNK0,
 			BOOL,
 			INT,
+			UINT,
 			FLOAT,
 			STRING,
-			VECTOR,
+			UNK1,
+			VECTOR4,
 		};
 
 		union DataPtr {
@@ -402,8 +460,8 @@ namespace ucsl::resources::cemt::v120000 {
 
 	struct ElementParam {
 		enum class LODFlag : unsigned int {
-			BASIC_CHILD_EFFECTS,
-			ANIMATED_CHILD_EFFECTS,
+			BASIC,
+			ANIMATED,
 		};
 
 		enum class ParticleType : unsigned char {
@@ -416,7 +474,12 @@ namespace ucsl::resources::cemt::v120000 {
 			HISTORICAL_STRIPE,
 			POINT_LIGHT,
 		};
-		
+
+		enum class ParticleUnkMode : unsigned char {
+			UNK0,
+			UNK1,
+		};
+
 		struct Unk0ParticleParam {
 			unsigned int unk0;
 			float unk1;
@@ -466,13 +529,15 @@ namespace ucsl::resources::cemt::v120000 {
 
 		struct HistoricalStripeParticleParam {
 			unsigned int type;
-			char pad[4];
+			unsigned int unkStride; // 0x141006D02
 			unsigned char unk1;
 			char pad1[0x3];
 			unsigned char unk4;
 			unsigned char unk3;
 			bool unk2;
-			char pad2[0x9];
+			char pad2;
+			unsigned int unkCount; // 0x141006D02
+			char pad3[0x4];
 		};
 
 		struct PointLightParticleParam {
@@ -540,6 +605,15 @@ namespace ucsl::resources::cemt::v120000 {
 			UNK14, // 0x4000
 		};
 
+		struct ModelParam {
+			bool hasModel;
+			unsigned char modelSetting1;
+			char gap6b[128];
+			char modelName[128];
+			char skeletonName[128];
+			char nodeAnimName[128];
+		};
+
 		struct DistanceScaleParam {
 			float min;
 			float max;
@@ -552,17 +626,11 @@ namespace ucsl::resources::cemt::v120000 {
 		AnimationParam* rotationAnimation;
 		AnimationParam* scaleAnimation;
 		AnimationParam* sizeAnimation;
-		char gap6aa[0xC];
-		char gap1231321[20];
+		char gap6aa[32];
 		DistanceScaleParam distanceScaleParam;
-		bool hasModel;
-		unsigned char modelSetting1;
-		char gap6b[128];
-		char modelName[128];
-		char skeletonName[128];
-		char nodeAnimName[128];
+		ModelParam modelParam;
 		ParticleType particleType;
-		unsigned char particleType2; // 140FE7E43
+		ParticleUnkMode particleUnkMode; // 140FE7E43
 		ParticleParam particleParam;
 		float unkScale;
 		TextureParam textures[4];
@@ -571,7 +639,6 @@ namespace ucsl::resources::cemt::v120000 {
 		FieldParam fields[8];
 		AnimationParam* fieldAnimations[8][5];
 		bits::Bitset<UpdateFlag> updateFlags; // 0x01 = has childeffects, 0x4 = use simple unkVec2 update (only x multiplier, no anim), 0x8 = use emitter global time for unkVec2 update, 0x1000 = use -1 or fps variables
-		unsigned int gap7b;
 		AnimationParam* uvAnimation;
 		unsigned int elementAnimationCount; // 140FF3B3D
 		char gap7bb[0x34];
@@ -640,8 +707,8 @@ namespace ucsl::resources::cemt::v120000 {
 
 		struct EmitParam {
 			enum class EmitMode : unsigned int {
-				UNK0,
-				UNK1,
+				CONTINUOUS,
+				INTERVAL,
 			};
 
 			enum class AttenuationMode : unsigned char {
@@ -695,7 +762,6 @@ namespace ucsl::resources::cemt::v120000 {
 			};
 
 			Settings settings;
-			float gap4d;
 			AnimationParam* direction1VelocityAnimation;
 			AnimationParam* direction2VelocityAnimation;
 			AnimationParam* localSpreadVelocityAnimation;
@@ -831,7 +897,7 @@ namespace ucsl::resources::cemt::v120000 {
 		BillboardType billboardType; // handled in 0140FE9390
 		bool enableUnkFloat2Range;
 		char gap6b2;
-		unsigned char unkChar0;
+		unsigned char unkAlpha;
 		Unk0Param unk0Param;
 		unsigned int gap6aa2;
 		MaskType1 unkType0;
