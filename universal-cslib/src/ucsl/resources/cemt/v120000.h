@@ -57,13 +57,17 @@ namespace ucsl::resources::cemt::v120000 {
 		AnimationTrackParam* tracks[4];
 	};
 
+	// 0x140FF4B40
 	struct ChildEffect {
 		enum class Flag : unsigned char {
 			ENABLE_USING_ANIMATION,
+			UNK1,
+			INHERIT_ROTATION,
 		};
 
 		bits::Bitset<Flag> flags;
 		char unkType; // 0x01 = affected by fluctuation, 0x02 = related to color?
+		unsigned char unk00;
 		float unk0;
 		float unk1;
 		float unk2;
@@ -208,6 +212,7 @@ namespace ucsl::resources::cemt::v120000 {
 			};
 
 			WaveformType waveformType;
+			bool unk2; // 0x140FF4E21
 			float baseOffset;
 			JitteredValue unk0;
 			JitteredValue unk1;
@@ -730,7 +735,7 @@ namespace ucsl::resources::cemt::v120000 {
 		};
 
 		struct DeathParam {
-			enum class DeathMode {
+			enum class DeathMode : unsigned int {
 				WAIT_FOR_ELEMENTS,
 				KILL_AFTER_DELAY,
 				WAIT_FOR_ELEMENTS_OR_KILL_AFTER_DELAY,
@@ -756,7 +761,7 @@ namespace ucsl::resources::cemt::v120000 {
 				float worldSpreadVelocity;
 				float worldSpread;
 				SpreadDirectionType worldSpreadDirectionType;
-				csl::math::Position worldSpreadAnglesOrDirection;
+				math::Position worldSpreadAnglesOrDirection;
 				float initialVelocityJitter;
 				float velocityJitter;
 			};
