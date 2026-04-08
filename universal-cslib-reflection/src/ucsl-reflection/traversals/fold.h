@@ -70,16 +70,16 @@ namespace ucsl::reflection::traversals {
 			return algorithm.visit_carray(objs..., [&, item](decltype(objs[0])&... items) { return process_type(item, items...); });
 		}
 
-		//template<typename Refl, typename... Obj>
-		//typename Algorithm::result_type process_union(Refl refl, Obj&... objs) {
-		//	return algorithm.visit_union(objs.as_union()..., [&, refl](Spread<S, opaque_obj&>... objs) {
-		//		typename Algorithm::result_type result{};
+		template<typename Refl, typename... Obj>
+		typename Algorithm::result_type process_union(Refl refl, Obj&... objs) {
+			return algorithm.visit_union(objs..., [&](Obj&... objs) {
+				typename Algorithm::result_type result{};
 
-		//		refl.visit_current_field(*std::get<0>(std::tuple{ &parents... }), [&](auto chosen) { result = process_type(objs..., parents..., chosen.get_type()); });
+				refl.visit_current_field([&](auto chosen) { result = process_type(chosen.get_type(), objs...); });
 
-		//		return result;
-		//	});
-		//}
+				return result;
+			});
+		}
 
 		template<typename Refl, typename... Obj>
 		typename Algorithm::result_type process_field(Refl refl, Obj... objs) {

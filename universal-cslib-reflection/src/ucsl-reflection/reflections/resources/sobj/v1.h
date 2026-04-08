@@ -40,7 +40,7 @@ namespace ucsl::resources::sobj::v1::reflections {
 	using ObjectTypeData = structure<impl::ObjectTypeData, "ObjectTypeData", void,
 		field<const char*, "name">,
 		field<unsigned int, "objectIndexCount">,
-		field<dynamic_carray<unsigned short, impl::ObjectTypeData, [](const impl::ObjectTypeData& parent) -> size_t { return parent.objectIndexCount; }>*, "objectIndices">
+		field<dynamic_carray<unsigned short, field_resolver<unsigned int, "objectIndexCount">>*, "objectIndices">
 	>;
 
 	template<typename AllocatorSystem>
@@ -48,9 +48,9 @@ namespace ucsl::resources::sobj::v1::reflections {
 		field<constant<unsigned int, 0x534F424A>, "magic">,
 		field<constant<unsigned int, 1>, "version">,
 		field<unsigned int, "objectTypeCount">,
-		field<dynamic_carray<ObjectTypeData, impl::SetObjectData<AllocatorSystem>, [](const impl::SetObjectData<AllocatorSystem>& parent) -> size_t { return parent.objectTypeCount; }>*, "objectTypes">,
+		field<dynamic_carray<ObjectTypeData, field_resolver<unsigned int, "objectTypeCount">>*, "objectTypes">,
 		field<int, "bvh">,
-		field<dynamic_carray<ObjectData<AllocatorSystem>*, impl::SetObjectData<AllocatorSystem>, [](const impl::SetObjectData<AllocatorSystem>& parent) -> size_t { return parent.objectCount; }>*, "objects">,
+		field<dynamic_carray<ObjectData<AllocatorSystem>*, field_resolver<unsigned int, "objectCount">>*, "objects">,
 		field<unsigned int, "objectCount">,
 		field<unsigned int, "bvhNodeCount">,
 		field<unsigned int, "objectInstanceCount">

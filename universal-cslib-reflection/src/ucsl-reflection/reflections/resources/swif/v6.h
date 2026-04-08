@@ -147,29 +147,29 @@ namespace ucsl::resources::swif::v6::reflections {
 		default: assert(false && "Invalid track flags"); return 0;
 		}
 	},
-        field<dynamic_carray<Key<float>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "constantFloat">,
-        field<dynamic_carray<Key<int>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "constantIndex">,
-        field<dynamic_carray<Key<int>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "constantInt">,
-        field<dynamic_carray<Key<bool>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "constantBool">,
-        field<dynamic_carray<Key<Color>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "constantColor">,
+        field<dynamic_carray<Key<float>, field_resolver<unsigned short, "keyCount">>*, "constantFloat">,
+        field<dynamic_carray<Key<int>, field_resolver<unsigned short, "keyCount">>*, "constantIndex">,
+        field<dynamic_carray<Key<int>, field_resolver<unsigned short, "keyCount">>*, "constantInt">,
+        field<dynamic_carray<Key<bool>, field_resolver<unsigned short, "keyCount">>*, "constantBool">,
+        field<dynamic_carray<Key<Color>, field_resolver<unsigned short, "keyCount">>*, "constantColor">,
 
-        field<dynamic_carray<KeyLinear<float>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "linearFloat">,
-        field<dynamic_carray<KeyLinear<int>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "linearIndex">,
-        field<dynamic_carray<KeyLinear<int>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "linearInt">,
-        field<dynamic_carray<KeyLinear<bool>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "linearBool">,
-        field<dynamic_carray<KeyLinear<Color>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "linearColor">,
+        field<dynamic_carray<KeyLinear<float>, field_resolver<unsigned short, "keyCount">>*, "linearFloat">,
+        field<dynamic_carray<KeyLinear<int>, field_resolver<unsigned short, "keyCount">>*, "linearIndex">,
+        field<dynamic_carray<KeyLinear<int>, field_resolver<unsigned short, "keyCount">>*, "linearInt">,
+        field<dynamic_carray<KeyLinear<bool>, field_resolver<unsigned short, "keyCount">>*, "linearBool">,
+        field<dynamic_carray<KeyLinear<Color>, field_resolver<unsigned short, "keyCount">>*, "linearColor">,
 
-        field<dynamic_carray<KeyHermite<float>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "hermiteFloat">,
-        field<dynamic_carray<KeyHermite<int>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "hermiteIndex">,
-        field<dynamic_carray<KeyHermite<int>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "hermiteInt">,
-        field<dynamic_carray<KeyHermite<bool>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "hermiteBool">,
-        field<dynamic_carray<KeyHermite<Color>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "hermiteColor">,
+        field<dynamic_carray<KeyHermite<float>, field_resolver<unsigned short, "keyCount">>*, "hermiteFloat">,
+        field<dynamic_carray<KeyHermite<int>, field_resolver<unsigned short, "keyCount">>*, "hermiteIndex">,
+        field<dynamic_carray<KeyHermite<int>, field_resolver<unsigned short, "keyCount">>*, "hermiteInt">,
+        field<dynamic_carray<KeyHermite<bool>, field_resolver<unsigned short, "keyCount">>*, "hermiteBool">,
+        field<dynamic_carray<KeyHermite<Color>, field_resolver<unsigned short, "keyCount">>*, "hermiteColor">,
 
-        field<dynamic_carray<KeyIndividual<float>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "individualFloat">,
-        field<dynamic_carray<KeyIndividual<int>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "individualIndex">,
-        field<dynamic_carray<KeyIndividual<int>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "individualInt">,
-        field<dynamic_carray<KeyIndividual<bool>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "individualBool">,
-        field<dynamic_carray<KeyIndividual<Color>, impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t { return track.keyCount; }>*, "individualColor">
+        field<dynamic_carray<KeyIndividual<float>, field_resolver<unsigned short, "keyCount">>*, "individualFloat">,
+        field<dynamic_carray<KeyIndividual<int>, field_resolver<unsigned short, "keyCount">>*, "individualIndex">,
+        field<dynamic_carray<KeyIndividual<int>, field_resolver<unsigned short, "keyCount">>*, "individualInt">,
+        field<dynamic_carray<KeyIndividual<bool>, field_resolver<unsigned short, "keyCount">>*, "individualBool">,
+        field<dynamic_carray<KeyIndividual<Color>, field_resolver<unsigned short, "keyCount">>*, "individualColor">
 	>;
 
 	using SRS_TRACK = structure<impl::SRS_TRACK, "SRS_TRACK", void,
@@ -184,7 +184,7 @@ namespace ucsl::resources::swif::v6::reflections {
 	using SRS_MOTION = structure<impl::SRS_MOTION, "SRS_MOTION", void,
 		field<unsigned short, "castId">,
 		field<unsigned short, "trackCount">,
-		field<dynamic_carray<SRS_TRACK, impl::SRS_MOTION, [](const impl::SRS_MOTION& motion) -> size_t { return motion.trackCount; }>*, "tracks">
+		field<dynamic_carray<SRS_TRACK, field_resolver<unsigned short, "trackCount">>*, "tracks">
 	>;
 
 	using SRS_ANIMATION = structure<impl::SRS_ANIMATION, "SRS_ANIMATION", void,
@@ -192,7 +192,7 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<unsigned int, "id">,
 		field<unsigned int, "motionCount">,
 		field<unsigned int, "frameCount">,
-		field<dynamic_carray<SRS_MOTION, impl::SRS_ANIMATION, [](const impl::SRS_ANIMATION& animation) -> size_t { return animation.motionCount; }>*, "motions">,
+		field<dynamic_carray<SRS_MOTION, field_resolver<unsigned int, "motionCount">>*, "motions">,
 		field<void*, "userData">,
 		field<bool, "isLooping">
 	>;
@@ -246,7 +246,7 @@ namespace ucsl::resources::swif::v6::reflections {
 
 	using SRS_USERDATA = structure<impl::SRS_USERDATA, "SRS_USERDATA", void,
 		field<unsigned int, "count">,
-		field<dynamic_carray<SRS_DATA, impl::SRS_USERDATA, [](const impl::SRS_USERDATA& userData) -> size_t { return userData.count; }>*, "items">
+		field<dynamic_carray<SRS_DATA, field_resolver<unsigned int, "count">>*, "items">
 	>;
 
 	// Textures
@@ -258,7 +258,7 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<unsigned short, "height">,
 		field<unsigned int, "flags">,
 		field<unsigned int, "cropCount">,
-		field<dynamic_carray<SRS_CROP, impl::SRS_TEXTURE, [](const impl::SRS_TEXTURE& texture) -> size_t { return texture.cropCount; }>*, "crops">,
+		field<dynamic_carray<SRS_CROP, field_resolver<unsigned int, "cropCount">>*, "crops">,
 		field<SRS_USERDATA*, "userData">
 	>;
 
@@ -266,7 +266,7 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<const char*, "name">,
 		field<unsigned int, "unk1">,
 		field<unsigned int, "textureCount">,
-		field<dynamic_carray<SRS_TEXTURE, impl::SRS_TEXTURELIST, [](const impl::SRS_TEXTURELIST& textureList) -> size_t { return textureList.textureCount; }>*, "textures">,
+		field<dynamic_carray<SRS_TEXTURE, field_resolver<unsigned int, "textureCount">>*, "textures">,
 		field<SRS_USERDATA*, "userData">
 	>;
 
@@ -283,7 +283,7 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<short, "unk2">,
 		field<unsigned short, "characterCount">,
 		field<unsigned short, "unk3">,
-		field<dynamic_carray< SRS_CHARACTER_MAPPING, impl::SRS_FONT, [](const impl::SRS_FONT& font) -> size_t { return font.characterCount; }>*, "characters">,
+		field<dynamic_carray<SRS_CHARACTER_MAPPING, field_resolver<unsigned short, "characterCount">>*, "characters">,
 		field<unsigned long long, "unk4">,
 		field<SRS_USERDATA*, "userData">
 	>;
@@ -380,8 +380,8 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<short, "cropIndex1">,
 		field<short, "cropRef0Count">,
 		field<short, "cropRef1Count">,
-		field<dynamic_carray<SRS_CROPREF, impl::SRS_IMAGECAST, [](const impl::SRS_IMAGECAST& imageCast) -> size_t { return imageCast.cropRef0Count; }>*, "cropRefs0">,
-		field<dynamic_carray<SRS_CROPREF, impl::SRS_IMAGECAST, [](const impl::SRS_IMAGECAST& imageCast) -> size_t { return imageCast.cropRef1Count; }>*, "cropRefs1">,
+		field<dynamic_carray<SRS_CROPREF, field_resolver<short, "cropRef0Count">>*, "cropRefs0">,
+		field<dynamic_carray<SRS_CROPREF, field_resolver<short, "cropRef1Count">>*, "cropRefs1">,
 		field<SRS_TEXTDATA*, "textData">,
 		field<unsigned int, "effectType">,
 		field<SRS_EFFECT_PTR<impl::SRS_IMAGECAST>, "effectData">
@@ -413,10 +413,10 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<short, "horizontalFixedCount">,
 		field<short, "verticalFixedCount">,
 		field<short, "cropRef0Count">,
-		field<dynamic_carray<SRS_CROPREF, impl::SRS_SLICECAST, [](const impl::SRS_SLICECAST& imageCast) -> size_t { return imageCast.cropRef0Count; }>*, "cropRefs0">,
+		field<dynamic_carray<SRS_CROPREF, field_resolver<short, "cropRef0Count">>*, "cropRefs0">,
 		field<unsigned int, "effectType">,
 		field<SRS_EFFECT_PTR<impl::SRS_SLICECAST>, "effectData">,
-		field<dynamic_carray<SRS_SLICE, impl::SRS_SLICECAST, [](const impl::SRS_SLICECAST& sliceCast) -> size_t { return sliceCast.sliceHorizontalCount * sliceCast.sliceVerticalCount; }>, "slices">
+		field<dynamic_carray<SRS_SLICE, selector_resolver<field_resolver<short, "sliceHorizontalCount">, field_resolver<short, "sliceVerticalCount">, [](short h, short v) { return h * v; }>>, "slices">
 	>;
 
 	using SRS_REFERENCECAST = structure<impl::SRS_REFERENCECAST, "SRS_REFERENCECAST", void,
@@ -454,19 +454,19 @@ namespace ucsl::resources::swif::v6::reflections {
 
 	// Layers
 	using SRS_TRS_PTR = unionof<impl::SRS_TRS_PTR, "SRS_TRS_PTR", impl::SRS_LAYER, [](const impl::SRS_LAYER& layer) -> size_t { return layer.Is3D() ? 1 : 0; },
-		field<dynamic_carray<SRS_TRS2D, impl::SRS_LAYER, [](const impl::SRS_LAYER& layer) -> size_t { return layer.castCount; }>*, "transforms2d">,
-		field<dynamic_carray<SRS_TRS3D, impl::SRS_LAYER, [](const impl::SRS_LAYER& layer) -> size_t { return layer.castCount; }>*, "transforms3d">
-	>;
+		field<dynamic_carray<SRS_TRS2D, field_resolver<int, "castCount">>*, "transforms2d">,
+		field<dynamic_carray<SRS_TRS3D, field_resolver<int, "castCount">>*, "transforms3d">
+	> ;
 
-	using SRS_LAYER = structure<impl::SRS_LAYER, "SRS_LAYER", void,
+	using SRS_LAYER = structure < impl::SRS_LAYER, "SRS_LAYER", void,
 		field<const char*, "name">,
 		field<unsigned int, "id">,
 		field<unsigned int, "flags">,
 		field<int, "castCount">,
-		field<dynamic_carray<SRS_CASTNODE, impl::SRS_LAYER, [](const impl::SRS_LAYER& layer) -> size_t { return layer.castCount; }>*, "casts">,
+		field<dynamic_carray<SRS_CASTNODE, field_resolver<int, "castCount">>*, "casts">,
 		field<SRS_TRS_PTR, "transforms">,
 		field<int, "animationCount">,
-		field<dynamic_carray<SRS_ANIMATION, impl::SRS_LAYER, [](const impl::SRS_LAYER& layer) -> size_t { return layer.animationCount; }>*, "animations">,
+		field<dynamic_carray<SRS_ANIMATION, field_resolver<int, "animationCount">>*, "animations">,
 		field<int, "currentAnimationIndex">,
 		field<SRS_USERDATA*, "userData">
 	>;
@@ -492,10 +492,10 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<unsigned int, "flags">,
 		field<bool, "loaded">,
 		field<int, "layerCount">,
-		field<dynamic_carray<SRS_LAYER, impl::SRS_SCENE, [](const impl::SRS_SCENE& scene) -> size_t { return scene.layerCount; }>*, "layers">,
+		field<dynamic_carray<SRS_LAYER, field_resolver<int, "layerCount">>*, "layers">,
 		field<unsigned short, "cameraCount">,
 		field<unsigned short, "currentCameraIndex">,
-		field<dynamic_carray<SRS_CAMERA, impl::SRS_SCENE, [](const impl::SRS_SCENE& scene) -> size_t { return scene.cameraCount; }>*, "cameras">,
+		field<dynamic_carray<SRS_CAMERA, field_resolver<unsigned short, "cameraCount">>*, "cameras">,
 		field<Color, "backgroundColor">,
 		field<Vector2, "resolution">,
 		field<SRS_USERDATA*, "userData">
@@ -508,9 +508,9 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<unsigned short, "unk1">,
 		field<unsigned short, "textureListCount">,
 		field<unsigned short, "fontCount">,
-		field<dynamic_carray<SRS_SCENE, impl::SRS_PROJECT, [](const impl::SRS_PROJECT& project) -> size_t { return project.sceneCount; }>*, "scenes">,
-		field<dynamic_carray<SRS_TEXTURELIST, impl::SRS_PROJECT, [](const impl::SRS_PROJECT& project) -> size_t { return project.textureListCount; }>*, "textureLists">,
-		field<dynamic_carray<SRS_FONT, impl::SRS_PROJECT, [](const impl::SRS_PROJECT& project) -> size_t { return project.fontCount; }>*, "fonts">,
+		field<dynamic_carray<SRS_SCENE, field_resolver<unsigned short, "sceneCount">>*, "scenes">,
+		field<dynamic_carray<SRS_TEXTURELIST, field_resolver<unsigned short, "textureListCount">>*, "textureLists">,
+		field<dynamic_carray<SRS_FONT, field_resolver<unsigned short, "fontCount">>*, "fonts">,
 		field<SRS_CAMERA, "camera">,
 		field<int, "startFrame">,
 		field<int, "endFrame">,

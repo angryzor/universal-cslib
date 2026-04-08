@@ -394,7 +394,7 @@ namespace ucsl::reflection::providers {
 		}
 		
 		template<typename Resolver, typename Parent>
-		static size_t resolve(const Parent& parent) {
+		static auto resolve(const Parent& parent) {
 			if constexpr (Resolver::resolver_type == RESOLVER_TYPE_FIELD) return resolve_field_resolver<Resolver, Parent>(parent);
 			if constexpr (Resolver::resolver_type == RESOLVER_TYPE_SELECTOR) return resolve_selector_resolver<Resolver, Parent>(parent);
 			else static_assert("invalid resolver type");

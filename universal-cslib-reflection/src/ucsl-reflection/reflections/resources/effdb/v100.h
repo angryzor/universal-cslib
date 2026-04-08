@@ -25,16 +25,16 @@ namespace ucsl::resources::effdb::v100::reflections {
     using Binding = structure<impl::Binding, "Binding", void,
         field<const char*, "clipName">,
         field<unsigned int, "particleCount">,
-        field<dynamic_carray<Particle, impl::Binding, [](const impl::Binding& parent) -> size_t { return parent.particleCount; }>*, "particles">,
+        field<dynamic_carray<Particle, field_resolver<unsigned int, "particleCount">>*, "particles">,
         field<unsigned int, "soundNameCount">,
-        field<dynamic_carray<const char*, impl::Binding, [](const impl::Binding& parent) -> size_t { return parent.soundNameCount; }>*, "soundNames">
+        field<dynamic_carray<const char*, field_resolver<unsigned int, "soundNameCount">>*, "soundNames">
     >;
 
     using EffdbData = structure<impl::EffdbData, "EffdbData", void,
         field<unsigned int, "magic">,
         field<unsigned int, "version">,
         field<unsigned int, "bindingCount">,
-        field<dynamic_carray<Binding, impl::EffdbData, [](const impl::EffdbData& parent) -> size_t { return parent.bindingCount; }>*, "bindings">
+        field<dynamic_carray<Binding, field_resolver<unsigned int, "bindingCount">>*, "bindings">
     >;
 }
 

@@ -143,11 +143,11 @@ namespace ucsl::resources::fxcol::v1::reflections {
         field<constant<unsigned int, 0x4658434F>, "magic">,
         field<constant<unsigned int, 1>, "version">,
         field<unsigned int, "shapeCount">,
-        field<dynamic_carray<ShapeData, impl::FxColData, [](const impl::FxColData& parent) -> size_t { return parent.shapeCount; }>*, "shapes">,
+        field<dynamic_carray<ShapeData, field_resolver<unsigned int, "shapeCount">>*, "shapes">,
         field<unsigned int, "kdTreeLeafCount">,
-        field<dynamic_carray<KdTreeLeafData, impl::FxColData, [](const impl::FxColData& parent) -> size_t { return parent.kdTreeLeafCount; }>*, "kdTreeLeaves">,
+        field<dynamic_carray<KdTreeLeafData, field_resolver<unsigned int, "kdTreeLeafCount">>*, "kdTreeLeaves">,
         field<unsigned int, "kdTreeNodeCount">,
-        field<dynamic_carray<KdTreeNodeData, impl::FxColData, [](const impl::FxColData& parent) -> size_t { return parent.kdTreeNodeCount; }>*, "kdTreeNodes">
+        field<dynamic_carray<KdTreeNodeData, field_resolver<unsigned int, "kdTreeNodeCount">>*, "kdTreeNodes">
     >;
 }
 

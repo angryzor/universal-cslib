@@ -136,7 +136,7 @@ namespace ucsl::resources::aism::v0::reflections {
         field<const char*, "targetStateName">,
         field<TriggerTriggerType, "triggerType">,
         field<TriggerConditionType, "conditionType">,
-        field<dynamic_carray<ConditionData, impl::TriggerData, [](const impl::TriggerData& trigger) -> size_t { return trigger.conditionCount; }>*, "conditions">,
+        field<dynamic_carray<ConditionData, field_resolver<unsigned int, "conditionCount">>*, "conditions">,
         field<unsigned int, "conditionCount">
     >;
 
@@ -150,14 +150,14 @@ namespace ucsl::resources::aism::v0::reflections {
         field<const char*, "type">,
         field<int, "superState">,
         field<int, "entryChildState">,
-        field<dynamic_carray<TriggerData, impl::StateData, [](const impl::StateData& state) -> size_t { return state.triggerCount; }>*, "triggers">,
+        field<dynamic_carray<TriggerData, field_resolver<unsigned int, "triggerCount">>*, "triggers">,
         field<unsigned int, "triggerCount">,
-        field<dynamic_carray<ReactionData, impl::StateData, [](const impl::StateData& state) -> size_t { return state.reactionCount; }>*, "reactions">,
+        field<dynamic_carray<ReactionData, field_resolver<unsigned int, "reactionCount">>*, "reactions">,
         field<unsigned int, "reactionCount">
 	>;
 
 	using AIStateMachineData = structure<impl::AIStateMachineData, "AIStateMachineData", void,
-        field<dynamic_carray<StateData, impl::AIStateMachineData, [](const impl::AIStateMachineData& aism) -> size_t { return aism.stateCount; }>*, "states">,
+        field<dynamic_carray<StateData, field_resolver<unsigned int, "stateCount">>*, "states">,
 		field<unsigned int, "stateCount">
 	>;
 }
