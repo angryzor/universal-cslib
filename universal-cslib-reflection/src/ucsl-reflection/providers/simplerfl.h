@@ -229,7 +229,7 @@ namespace ucsl::reflection::providers {
 
 			template<typename F, typename Fields, size_t... Is>
 			constexpr static void _visit_current_field(const auto& parent, F f, Fields, std::index_sequence<Is...>) {
-				size_t idx = T::resolver((typename T::parent&)parent);
+				size_t idx = T::resolver(parent);
 
 				((idx == Is ? (f(Field<std::tuple_element_t<Is, Fields>>{ 0 }), true) : false) || ...);
 			}

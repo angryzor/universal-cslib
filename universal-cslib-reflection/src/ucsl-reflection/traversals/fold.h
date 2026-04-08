@@ -72,12 +72,8 @@ namespace ucsl::reflection::traversals {
 
 		template<typename Refl, typename... Obj>
 		typename Algorithm::result_type process_union(Refl refl, Obj&... objs) {
-			return algorithm.visit_union(objs..., [&](Obj&... objs) {
-				typename Algorithm::result_type result{};
-
-				refl.visit_current_field([&](auto chosen) { result = process_type(chosen.get_type(), objs...); });
-
-				return result;
+			return refl.visit_current_field([&](auto r) {
+				return algorithm.visit_union(objs..., [&, r](decltype(objs)&... fields) { return process_type(r.get_type(std::get<0>(std::tuple{ objs... })), fields[r]...); });
 			});
 		}
 
@@ -123,7 +119,7 @@ namespace ucsl::reflection::traversals {
 					else if constexpr (decltype(r)::kind == providers::TypeKind::TARRAY) return process_tarray(r, objs.as_tarray()...);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::POINTER) return process_pointer(r, objs.as_pointer()...);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::CARRAY) return process_carray(r, objs.as_carray()...);
-					//else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return process_union(r, objs.as_union()...);
+					else if constexpr (decltype(r)::kind == providers::TypeKind::UNION) return process_union(r, objs.as_union()...);
 					else if constexpr (decltype(r)::kind == providers::TypeKind::STRUCTURE) return process_struct(r, objs.as_structure()...);
 					else static_assert(false, "invalid type kind");
 				});
