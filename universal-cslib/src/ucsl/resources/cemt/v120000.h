@@ -2,7 +2,7 @@
 #include <ucsl/bitset.h>
 #include <ucsl/math.h>
 
-namespace ucsl::resources::cemt::v100000 {
+namespace ucsl::resources::cemt::v120000 {
 	struct EffectParam;
 
 	struct JitteredValue {
@@ -485,24 +485,6 @@ namespace ucsl::resources::cemt::v100000 {
 			UNK1,
 		};
 
-		enum class DirectionType : unsigned int {
-			UNK0,
-			UNK1,
-			UNK2,
-			UNK3,
-			UNK4,
-			UNK5,
-		};
-
-		enum class DirectionTypeU8 : unsigned char {
-			UNK0,
-			UNK1,
-			UNK2,
-			UNK3,
-			UNK4,
-			UNK5,
-		};
-
 		struct Unk0ParticleParam {
 			unsigned int unk0;
 			float unk1;
@@ -530,7 +512,7 @@ namespace ucsl::resources::cemt::v100000 {
 
 		struct Unk4ParticleParam {
 			unsigned int type;
-			DirectionType directionType;
+			unsigned int unk3;
 			char pad1;
 			unsigned char unk2;
 			unsigned char gap3;
@@ -544,7 +526,7 @@ namespace ucsl::resources::cemt::v100000 {
 			char pad[3];
 			unsigned int unk1;
 			unsigned char unk4;
-			DirectionTypeU8 directionType;
+			unsigned char unk5;
 			unsigned char unk6;
 			bool unk2;
 			char pad2[0x8];
@@ -555,7 +537,7 @@ namespace ucsl::resources::cemt::v100000 {
 			unsigned int unkStride; // 0x141006D02
 			unsigned char unk1;
 			char pad1[0x3];
-			DirectionTypeU8 directionType;
+			unsigned char unk4;
 			unsigned char unk3;
 			bool unk2;
 			char pad2;
@@ -649,6 +631,7 @@ namespace ucsl::resources::cemt::v100000 {
 		AnimationParam* rotationAnimation;
 		AnimationParam* scaleAnimation;
 		AnimationParam* sizeAnimation;
+		char gap6aa[32];
 		DistanceScaleParam distanceScaleParam;
 		ModelParam modelParam;
 		ParticleType particleType;
@@ -672,6 +655,7 @@ namespace ucsl::resources::cemt::v100000 {
 		math::Position vectorFieldParam;
 		math::Position unkVector1;
 		math::Position depthCollision;
+		char gap453543[8];
 		UserParameterParam userParameterParam;
 		unsigned int emitterAnimationCount; // 140FE9F5B
 		unsigned int unk7e;
@@ -905,6 +889,7 @@ namespace ucsl::resources::cemt::v100000 {
 		float unkFloat6RangeEnd; // 140FE4F74
 		float unkFloat6RangeStart;
 		unsigned int gap6b;
+		bool unk6c;
 		float unkFloatFoo0;
 		float unkFloatFoo1;
 		float unkFloatFoo2;
