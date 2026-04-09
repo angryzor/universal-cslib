@@ -85,6 +85,7 @@ namespace ucsl::reflection::providers {
 
 			constexpr const char* get_name() const { return this->refl.get_name(); }
 			constexpr size_t get_offset() const { return this->refl.get_offset(); }
+			constexpr auto get_type() const { return Type<decltype(this->refl.get_type()), Parent, Root>{ this->refl.get_type(), this->parent, this->root }; }
 			constexpr auto get_type(auto new_parent) const { return Type<decltype(this->refl.get_type()), decltype(new_parent), Root>{ this->refl.get_type(), new_parent, this->root }; }
 		};
 
@@ -94,8 +95,8 @@ namespace ucsl::reflection::providers {
 
 			using ReflectionBase<Refl, Parent, Root>::ReflectionBase;
 
-			template<typename F> constexpr void visit_fields(F&& f) { this->refl.visit_fields([&](auto r) { f(Field{ r, this->parent, this->root }); }); }
-			template<typename F> constexpr void visit_current_field(F f) { this->refl.visit_current_field([&](auto r) { f(Field{ r, this->parent, this->root }); }); }
+			template<typename F> constexpr void visit_fields(F&& f) const { this->refl.visit_fields([&](auto r) { f(Field{ r, this->parent, this->root }); }); }
+			template<typename F> constexpr void visit_current_field(F f) const { this->refl.visit_current_field(this->parent, [&](auto r) { f(Field{ r, this->parent, this->root }); }); }
 		};
 
 		template<typename Refl, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
@@ -117,7 +118,7 @@ namespace ucsl::reflection::providers {
 				return base.has_value() ? std::make_optional(Structure<decltype(base.value()), Parent, Root>{ base.value(), this->parent, this->root }) : std::nullopt;
 			}
 			template<strlit field_name> constexpr auto get_field(auto obj) const { return Field{ this->refl.get_field<field_name>(obj, this->root), this->parent, this->root }; }
-			template<typename F> constexpr void visit_fields(F&& f) { this->refl.visit_fields([&](auto r) { f(Field{ r, this->parent, this->root }); }); }
+			template<typename F> constexpr void visit_fields(auto obj, F&& f) const { this->refl.visit_fields(obj, this->root, [&](const auto& r) { f(Field{ r, this->parent, this->root }); }); }
 		};
 
 		template<typename Refl, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>

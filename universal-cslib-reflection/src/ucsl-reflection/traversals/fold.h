@@ -71,10 +71,14 @@ namespace ucsl::reflection::traversals {
 		}
 
 		template<typename Refl, typename... Obj>
-		typename Algorithm::result_type process_union(Refl refl, Obj&... objs) {
-			return refl.visit_current_field([&](auto r) {
-				return algorithm.visit_union(objs..., [&, r](decltype(objs)&... fields) { return process_type(r.get_type(std::get<0>(std::tuple{ objs... })), fields[r]...); });
+		typename Algorithm::result_type process_union(Refl refl, Obj... objs) {
+			typename Algorithm::result_type result{};
+
+			refl.visit_current_field([&](auto r) {
+				result = algorithm.visit_union(objs..., [&, r](decltype(objs)&... fields) { return process_type(r.get_type(std::get<0>(std::tuple{ objs... })), fields[r]...); });
 			});
+
+			return result;
 		}
 
 		template<typename Refl, typename... Obj>

@@ -43,7 +43,7 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<unsigned char, "index">,
 		field<unsigned char, "randomnessFlag">,
 		field<short, "keyframeCount">,
-		field<dynamic_carray<AnimationKeyframeParam, impl::AnimationTrackParam, [](const impl::AnimationTrackParam& track) -> size_t { return track.keyframeCount; }>, "keyframes">
+		field<dynamic_carray<AnimationKeyframeParam, field_resolver<short, "keyframeCount">>, "keyframes">
 	>;
 
 	using AnimationParamLoopType = enumeration<impl::AnimationParam::LoopType, "AnimationParam::LoopType", unsigned char,
@@ -195,9 +195,7 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<unsigned char, "axes">
 	>;
 
-	using FieldParamSettings = unionof<impl::FieldParam::Settings, "FieldParam::Settings", impl::FieldParam, [](const impl::FieldParam& fieldParam) -> size_t {
-		return 11;
-	},
+	using FieldParamSettings = unionof<impl::FieldParam::Settings, "FieldParam::Settings", selector_resolver<size_t>::impl<[]() -> size_t { return 11; }>,
 		field<FieldParamGravitySettings, "gravity">,
 		field<FieldParamSpeedSettings, "speed">,
 		field<FieldParamMagnetSettings, "magnet">,
@@ -400,14 +398,14 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<RaycastLODEffectParam[16], "lods">
 	>;
 
-	using LODParam = unionof<impl::LODParam, "LODParam", impl::ElementParam, [](const impl::ElementParam& elementParam) -> size_t {
-		if (elementParam.lodFlags.test(impl::ElementParam::LODFlag::ANIMATED))
+	using LODParam = unionof<impl::LODParam, "LODParam", selector_resolver<size_t, field_resolver<unsigned int, "lodFlags">>::impl<[](const unsigned int& lodFlags) -> size_t {
+		if (lodFlags & 2)//lodFlags.test(impl::ElementParam::LODFlag::ANIMATED))
 			return 1;
-		else if (elementParam.lodFlags.test(impl::ElementParam::LODFlag::BASIC))
+		else if (lodFlags & 1)//lodFlags.test(impl::ElementParam::LODFlag::BASIC))
 			return 0;
 		else
 			return 0;
-	},
+	}>,
 		field<BasicLODParam, "basic">,
 		field<RaycastLODParam, "raycast">
 	>;
@@ -423,8 +421,8 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		option<"VECTOR4">
 	>;
 
-	using UserParameterDataPtr = unionof<impl::UserParameter::DataPtr, "UserParameter::DataPtr", impl::UserParameter, [](const impl::UserParameter& param) -> size_t {
-		switch (param.type) {
+	using UserParameterDataPtr = unionof<impl::UserParameter::DataPtr, "UserParameter::DataPtr", selector_resolver<size_t, field_resolver<impl::UserParameter::Type, "type">>::impl<[](const impl::UserParameter::Type& type) -> size_t {
+		switch (type) {
 		case impl::UserParameter::Type::UNK0: return 0;
 		case impl::UserParameter::Type::BOOL: return 1;
 		case impl::UserParameter::Type::INT: return 2;
@@ -435,7 +433,7 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		case impl::UserParameter::Type::VECTOR4: return 6;
 		default: return 0;
 		}
-	},
+	}>,
 		field<uint64_t, "unk0">,
 		field<bool*, "boolean">,
 		field<int*, "integer">,
@@ -446,6 +444,7 @@ namespace ucsl::resources::cemt::v100000::reflections {
 	>;
 
 	using UserParameter = structure<impl::UserParameter, "UserParameter", void,
+		field<const char*, "name">,
 		field<UserParameterType, "type">,
 		field<unsigned int, "size">,
 		field<UserParameterDataPtr, "data">
@@ -536,11 +535,11 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<char[0x18], "pad">
 	>;
 
-	using ElementParamParticleParam = unionof<impl::ElementParam::ParticleParam, "ElementParam::ParticleParam", impl::ElementParam, [](const impl::ElementParam& param) -> size_t {
-		switch (param.particleType) {
+	using ElementParamParticleParam = unionof<impl::ElementParam::ParticleParam, "ElementParam::ParticleParam", selector_resolver<size_t, field_resolver<unsigned int, "particleType">>::impl<[](const unsigned int& particleType) -> size_t {
+		switch (particleType) {
 		default: return 7;
 		}
-	},
+	}>,
 		field<ElementParamUnk0ParticleParam, "unk0">,
 		field<ElementParamUnk1ParticleParam, "unk1">,
 		field<ElementParamUnk2ParticleParam, "unk2">,
@@ -580,7 +579,7 @@ namespace ucsl::resources::cemt::v100000::reflections {
 
 	using ElementParamUserParameterParam = structure<impl::ElementParam::UserParameterParam, "ElementParam::UserParameterParam", void,
 		field<unsigned int, "userParameterCount">,
-		field<dynamic_carray<UserParameter, impl::ElementParam::UserParameterParam, [](const impl::ElementParam::UserParameterParam& param) -> size_t { return param.userParameterCount; }>*, "userParameters">
+		field<dynamic_carray<UserParameter, field_resolver<unsigned int, "userParameterCount">>*, "userParameters">
 	>;
 
 	using ElementParamUpdateFlag = enumeration<impl::ElementParam::UpdateFlag, "ElementParam::UpdateFlag", unsigned int,
@@ -649,8 +648,8 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<ElementParamUserParameterParam, "userParameterParam">,
 		field<unsigned int, "emitterAnimationCount">,
 		field<unsigned int, "unk7e">,
-		field<void*, "gpuElementParamTexture">,
-		field<void*, "gpuOtherTexture">,
+		field<uint64_t, "gpuElementParamTexture">,
+		field<uint64_t, "gpuOtherTexture">,
 		field<unsigned int, "lodFlags">,
 		field<LODParam, "lodParam">
 	>;

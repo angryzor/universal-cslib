@@ -458,6 +458,7 @@ namespace ucsl::resources::cemt::v120000 {
 			math::Position* vector;
 		};
 
+		const char* name;
 		Type type;
 		unsigned int size;
 		DataPtr data;

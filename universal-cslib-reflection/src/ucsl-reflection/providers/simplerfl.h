@@ -229,7 +229,7 @@ namespace ucsl::reflection::providers {
 
 			template<typename F, typename Fields, size_t... Is>
 			constexpr static void _visit_current_field(const auto& parent, F f, Fields, std::index_sequence<Is...>) {
-				size_t idx = T::resolver(parent);
+				size_t idx = resolve<typename desugar_t<T>::resolver>(parent);
 
 				((idx == Is ? (f(Field<std::tuple_element_t<Is, Fields>>{ 0 }), true) : false) || ...);
 			}
@@ -241,7 +241,7 @@ namespace ucsl::reflection::providers {
 			constexpr static auto get_base() { return std::optional<EmptyStruct>{}; }
 			constexpr static size_t get_size(const auto& parent, const auto& root, const auto& obj) { return 0; }
 			constexpr static size_t get_alignment(const auto& parent, const auto& root) { return 0; }
-			template<typename F> constexpr static void visit_fields(F f) {}
+			template<typename F> constexpr static void visit_fields(const auto& obj, const auto& root, F f) {}
 		};
 
 		template<typename T>
@@ -270,7 +270,7 @@ namespace ucsl::reflection::providers {
 			}
 
 			template<typename F>
-			constexpr static void visit_fields(F f) { _visit_fields(f, Fields{}); }
+			constexpr static void visit_fields(const auto& obj, const auto& root, F f) { _visit_fields(obj, root, f, Fields{}); }
 
 		private:
 			template<strlit field_name, typename... Fields>
@@ -293,16 +293,16 @@ namespace ucsl::reflection::providers {
 			}
 
 			template<typename F, typename... Fields>
-			constexpr static void _visit_fields(F f, std::tuple<Fields...>) {
+			constexpr static void _visit_fields(const auto& obj, const auto& root, F f, std::tuple<Fields...>) {
 				size_t offset{};
 				size_t thisOffset{};
 
 				if constexpr (!std::is_same_v<Base, primitive<void>>)
-					offset = size_of_v<Base>;
+					offset = dynamic_size_of_struct<Base>::get(*(const opaque_obj*)nullptr, root, obj);
 
 				(f((
-					offset = thisOffset = util::align(offset, align_of_v<typename Fields::type>),
-					offset += size_of_v<typename Fields::type>,
+					offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type>(obj, root)),
+					offset += dynamic_size_of<typename Fields::type>(obj, root, Field<Fields>{ offset }),
 					Field<Fields>{ thisOffset }
 				)), ...);
 			}
@@ -380,7 +380,11 @@ namespace ucsl::reflection::providers {
 		template<typename Resolver, typename Parent>
 		static typename Resolver::result resolve_field_resolver(const Parent& parent_) {
 			Parent& parent = const_cast<Parent&>(parent_);
-			return parent[parent.refl.get_field<Resolver::field>(parent)].visit([](const auto v) { return v.visit([](auto v) -> typename Resolver::result { return v; }); });
+			return parent[parent.refl.get_field<Resolver::field>(parent)].visit([](const auto v) {
+				if constexpr (decltype(v.refl)::kind == ucsl::reflection::providers::TypeKind::PRIMITIVE) return v.visit([](auto v) -> typename Resolver::result { return v; });
+				else if constexpr (decltype(v.refl)::kind == ucsl::reflection::providers::TypeKind::ENUM) return static_cast<typename Resolver::result>(static_cast<long long>(v));
+				else static_assert("unsupported resolution type");
+			});
 		}
 
 		template<typename Resolver, typename Parent, typename... Sources>
