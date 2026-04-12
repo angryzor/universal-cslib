@@ -117,8 +117,8 @@ namespace ucsl::reflection::providers {
 
 				return base.has_value() ? std::make_optional(Structure<decltype(base.value()), Parent, Root>{ base.value(), this->parent, this->root }) : std::nullopt;
 			}
-			template<strlit field_name> constexpr auto get_field(auto obj) const { return Field{ this->refl.get_field<field_name>(obj, this->root), this->parent, this->root }; }
-			template<typename F> constexpr void visit_fields(auto obj, F&& f) const { this->refl.visit_fields(obj, this->root, [&](const auto& r) { f(Field{ r, this->parent, this->root }); }); }
+			template<strlit field_name> constexpr auto get_field(auto obj) const { return Field<decltype(this->refl.get_field<field_name>(obj, this->root)), Parent, Root>{ this->refl.get_field<field_name>(obj, this->root), this->parent, this->root }; }
+			template<typename F> constexpr void visit_fields(auto obj, F&& f) const { this->refl.visit_fields(obj, this->root, [&](const auto& r) { f(Field<decltype(r), Parent, Root>{ r, this->parent, this->root }); }); }
 		};
 
 		template<typename Refl, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>

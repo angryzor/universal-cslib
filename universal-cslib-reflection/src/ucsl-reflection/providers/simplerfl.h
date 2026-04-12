@@ -1,6 +1,7 @@
 #pragma once
 #include <simple-reflection/simple-reflection.h>
 #include <ucsl-reflection/operators.h>
+#include <ucsl-reflection/accessors/types.h>
 #include <ucsl-reflection/opaque.h>
 #include <ucsl-reflection/util/memory.h>
 #include <vector>
@@ -27,7 +28,7 @@ namespace ucsl::reflection::providers {
 
 				((
 					offset = util::align(offset, dynamic_align_of<typename Fields::type>(self, root)),
-					offset += dynamic_size_of<typename Fields::type>(self, root, Field<Fields>{ offset })
+					offset += dynamic_size_of<typename Fields::type>(self, root, self[Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }])
 				), ...);
 
 				return util::align(offset, dynamic_align_of<structure<Repr, name, Base, Fields...>>(self, root));
@@ -61,11 +62,11 @@ namespace ucsl::reflection::providers {
 			//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
 			//	return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<desugar_t<T>::resolver>(parent, root))->GetSpawnerDataClass()->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY)
-				return resolve<typename desugar_t<T>::resolver>(parent) * dynamic_size_of<typename desugar_t<T>::type>(parent, root, self);
+				return resolve<typename desugar_t<T>::resolver>(parent) == 0 ? 0 : resolve<typename desugar_t<T>::resolver>(parent) * dynamic_size_of<typename desugar_t<T>::type>(parent, root, self.as_carray()[0]);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY)
-				return desugar_t<T>::size * dynamic_size_of<typename desugar_t<T>::type>(parent, root, self);
+				return desugar_t<T>::size * dynamic_size_of<typename desugar_t<T>::type>(parent, root, self.as_carray()[0]);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
-				return dynamic_size_of_struct<desugar_t<T>>::get(parent, root, self);
+				return dynamic_size_of_struct<desugar_t<T>>::get(parent, root, self.as_structure());
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER)
 				return sizeof(AddrType);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE) {
@@ -131,7 +132,15 @@ namespace ucsl::reflection::providers {
 			return std::array{ get_enum_member<Options>::call(counter)... };
 		}
 
-		template<typename T>
+		template<accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
+		struct ReflectionBase {
+			Parent parent;
+			Root root;
+
+			constexpr ReflectionBase(const Parent& parent, const Root& root) : parent{ parent }, root{ root } {}
+		};
+
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
 		struct Type;
 
 		template<typename T, bool erased>
@@ -160,10 +169,12 @@ namespace ucsl::reflection::providers {
 		//	auto get_flags();
 		//};
 
-		template<typename T, bool weak>
-		struct Pointer {
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root, bool weak>
+		struct Pointer : ReflectionBase<Parent, Root> {
+			using ReflectionBase<Parent, Root>::ReflectionBase;
+
 			constexpr static TypeKind kind = TypeKind::POINTER;
-			constexpr static auto get_target_type() { return Type<typename T::target>{}; }
+			constexpr auto get_target_type() const { return Type<typename T::target, Parent, Root>{ this->parent, this->root }; }
 			constexpr static bool is_weak() { return weak; }
 		};
 
@@ -175,63 +186,76 @@ namespace ucsl::reflection::providers {
 		//	constexpr static auto visit(F f) { return f(PrimitiveData<typename T::repr>{}); }
 		//};
 
-		template<typename T>
-		struct Array {
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
+		struct Array : ReflectionBase<Parent, Root> {
+			using ReflectionBase<Parent, Root>::ReflectionBase;
+
 			constexpr static TypeKind kind = TypeKind::ARRAY;
-			constexpr static auto get_item_type() { return Type<typename T::type>{}; }
+			constexpr auto get_item_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
 			//constexpr static auto get_accessor(auto& obj) { return OpaqueArray<representation_t<T>, GameInterface>{ (representation_t<T>&)obj }; }
 		};
 
-		template<typename T>
-		struct TArray {
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
+		struct TArray : ReflectionBase<Parent, Root> {
+			using ReflectionBase<Parent, Root>::ReflectionBase;
+
 			constexpr static TypeKind kind = TypeKind::TARRAY;
-			constexpr static auto get_item_type() { return Type<typename T::type>{}; }
+			constexpr auto get_item_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
 			//constexpr static auto get_accessor(auto& obj) { return OpaqueArray<representation_t<T>, GameInterface>{ (representation_t<T>&)obj }; }
 		};
 
-		template<typename T>
-		struct StaticCArray {
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
+		struct StaticCArray : ReflectionBase<Parent, Root> {
+			using ReflectionBase<Parent, Root>::ReflectionBase;
+
 			constexpr static TypeKind kind = TypeKind::CARRAY;
-			constexpr static auto get_item_type() { return Type<typename T::type>{}; }
-			constexpr static size_t get_length(const auto& parent) { return T::size; }
+			constexpr auto get_item_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
+			constexpr static size_t get_length() { return T::size; }
 		};
 
-		template<typename T>
-		struct DynamicCArray {
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
+		struct DynamicCArray : ReflectionBase<Parent, Root> {
+			using ReflectionBase<Parent, Root>::ReflectionBase;
+
 			constexpr static TypeKind kind = TypeKind::CARRAY;
-			constexpr static auto get_item_type() { return Type<typename T::type>{}; }
-			constexpr static size_t get_length(const auto& parent) { return resolve<typename T::resolver>(parent); }
+			constexpr auto get_item_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
+			constexpr size_t get_length() const { return resolve<typename T::resolver>(this->parent); }
 		};
 
-		template<typename T>
-		struct Field {
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
+		struct Field : ReflectionBase<Parent, Root> {
 			size_t offset{};
+
+			constexpr Field(const Parent& parent, const Root& root, size_t offset) : ReflectionBase<Parent, Root>{ parent, root }, offset{ offset } {}
 
 			constexpr static const char* get_name() { return T::name; }
 			constexpr size_t get_offset() const { return offset; }
-			constexpr static auto get_type() { return Type<typename T::type>{}; }
+			constexpr auto get_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
+			constexpr auto get_type(auto new_parent) const { return Type<typename T::type, decltype(new_parent), Root>{ new_parent, this->root }; }
 		};
 
-		template<typename T>
-		struct Union {
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
+		struct Union : ReflectionBase<Parent, Root> {
+			using ReflectionBase<Parent, Root>::ReflectionBase;
+
 			constexpr static TypeKind kind = TypeKind::UNION;
 			template<typename F>
-			constexpr static void visit_fields(F f) { _visit_fields(f, typename T::fields{}); }
+			constexpr void visit_fields(F f) const { _visit_fields(f, typename T::fields{}); }
 
 			template<typename F>
-			constexpr static void visit_current_field(const auto& parent, F f) { _visit_current_field(parent, f, typename T::fields{}, std::make_index_sequence<std::tuple_size_v<typename T::fields>>{}); }
+			constexpr void visit_current_field(F f) const { _visit_current_field(f, typename T::fields{}, std::make_index_sequence<std::tuple_size_v<typename T::fields>>{}); }
 
 		private:
 			template<typename F, typename... Fields>
-			constexpr static void _visit_fields(F f, std::tuple<Fields...>) {
-				(f(Field<Fields>{ 0 }), ...);
+			constexpr void _visit_fields(F f, std::tuple<Fields...>) const {
+				(f(Field<Fields, Parent, Root>{ this->parent, this->root, 0 }), ...);
 			}
 
 			template<typename F, typename Fields, size_t... Is>
-			constexpr static void _visit_current_field(const auto& parent, F f, Fields, std::index_sequence<Is...>) {
-				size_t idx = resolve<typename desugar_t<T>::resolver>(parent);
+			constexpr void _visit_current_field(F f, Fields, std::index_sequence<Is...>) const {
+				size_t idx = resolve<typename desugar_t<T>::resolver>(this->parent);
 
-				((idx == Is ? (f(Field<std::tuple_element_t<Is, Fields>>{ 0 }), true) : false) || ...);
+				((idx == Is ? (f(Field<std::tuple_element_t<Is, Fields>, Parent, Root>{ this->parent, this->root, 0 }), true) : false) || ...);
 			}
 		};
 
@@ -239,13 +263,15 @@ namespace ucsl::reflection::providers {
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			constexpr static const char* get_name() { return nullptr; }
 			constexpr static auto get_base() { return std::optional<EmptyStruct>{}; }
-			constexpr static size_t get_size(const auto& parent, const auto& root, const auto& obj) { return 0; }
-			constexpr static size_t get_alignment(const auto& parent, const auto& root) { return 0; }
-			template<typename F> constexpr static void visit_fields(const auto& obj, const auto& root, F f) {}
+			constexpr static size_t get_size(const auto& obj) { return 0; }
+			constexpr static size_t get_alignment() { return 0; }
+			template<typename F> constexpr static void visit_fields(const auto& obj, F f) {}
 		};
 
-		template<typename T>
-		struct Structure {
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
+		struct Structure : ReflectionBase<Parent, Root> {
+			using ReflectionBase<Parent, Root>::ReflectionBase;
+
 			using Base = typename T::base;
 			using Fields = typename T::fields;
 
@@ -255,55 +281,55 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			constexpr static const char* get_name() { return T::name; }
-			constexpr static size_t get_size(const auto& parent, const auto& root, const auto& obj) { return dynamic_size_of<T>(parent, root, obj); }
-			constexpr static size_t get_alignment(const auto& parent, const auto& root) { return dynamic_align_of<T>(parent, root); }
+			constexpr size_t get_size(const auto& obj) const { return dynamic_size_of<T>(this->parent, this->root, obj); }
+			constexpr size_t get_alignment() const { return dynamic_align_of<T>(this->parent, this->root); }
 			constexpr static auto get_base() {
 				if constexpr (!std::is_same_v<Base, primitive<void>>)
-					return std::make_optional(Structure<Base>{});
+					return std::make_optional(Structure<Base, Parent, Root>{});
 				else
 					return std::optional<EmptyStruct>{};
 			}
 
 			template<strlit field_name>
-			constexpr static auto get_field(const auto& obj, const auto& root) {
-				return _get_field<field_name>(obj, root, Fields{});
+			constexpr auto get_field(const auto& obj) const {
+				return _get_field<field_name>(obj, Fields{});
 			}
 
 			template<typename F>
-			constexpr static void visit_fields(const auto& obj, const auto& root, F f) { _visit_fields(obj, root, f, Fields{}); }
+			constexpr void visit_fields(const auto& obj, F f) const { _visit_fields(obj, f, Fields{}); }
 
 		private:
 			template<strlit field_name, typename... Fields>
-			constexpr static auto _get_field(const auto& obj, const auto& root, std::tuple<Fields...>) {
+			constexpr auto _get_field(const auto& obj, std::tuple<Fields...>) const {
 				using F = find_field_t<field_name, T>;
 
 				size_t offset{};
 				size_t thisOffset{};
 
 				if constexpr (!std::is_same_v<Base, primitive<void>>)
-					offset = dynamic_size_of_struct<Base>::get(*(const opaque_obj*)nullptr, root, obj);
+					offset = dynamic_size_of_struct<Base>::get(*(const opaque_obj*)nullptr, this->root, obj);
 
 				((
-					offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type>(obj, root)),
-					offset += dynamic_size_of<typename Fields::type>(obj, root, Field<Fields>{ offset }),
+					offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type>(obj, this->root)),
+					offset += dynamic_size_of<typename Fields::type>(obj, this->root, obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
 					!std::is_same_v<F, Fields>
 				) && ...);
 
-				return Field<F>{ thisOffset };
+				return Field<F, Parent, Root>{ this->parent, this->root, thisOffset };
 			}
 
 			template<typename F, typename... Fields>
-			constexpr static void _visit_fields(const auto& obj, const auto& root, F f, std::tuple<Fields...>) {
+			constexpr void _visit_fields(const auto& obj, F f, std::tuple<Fields...>) const {
 				size_t offset{};
 				size_t thisOffset{};
 
 				if constexpr (!std::is_same_v<Base, primitive<void>>)
-					offset = dynamic_size_of_struct<Base>::get(*(const opaque_obj*)nullptr, root, obj);
+					offset = dynamic_size_of_struct<Base>::get(*(const opaque_obj*)nullptr, this->root, obj);
 
 				(f((
-					offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type>(obj, root)),
-					offset += dynamic_size_of<typename Fields::type>(obj, root, Field<Fields>{ offset }),
-					Field<Fields>{ thisOffset }
+					offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type>(obj, this->root)),
+					offset += dynamic_size_of<typename Fields::type>(obj, this->root, obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
+					Field<Fields, Parent, Root>{ this->parent, this->root, thisOffset }
 				)), ...);
 			}
 		};
@@ -347,32 +373,34 @@ namespace ucsl::reflection::providers {
 		//	}
 		//};
 
-		template<typename T>
-		struct Type {
-			constexpr static size_t get_size(const auto& parent, const auto& root, const auto& obj) { return dynamic_size_of<T>(parent, root, obj); }
-			constexpr static size_t get_alignment(const auto& parent, const auto& root) { return dynamic_align_of<T>(parent, root); }
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
+		struct Type : ReflectionBase<Parent, Root> {
+			using ReflectionBase<Parent, Root>::ReflectionBase;
+
+			constexpr size_t get_size(const auto& obj) const { return dynamic_size_of<T>(this->parent, this->root, obj); }
+			constexpr size_t get_alignment() const { return dynamic_align_of<T>(this->parent, this->root); }
 
 			template<typename F>
-			constexpr static auto visit(const auto& parent, const auto& root, F f) {
+			constexpr auto visit(F f) const {
 				if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE) return f(Primitive<desugar_t<T>, ucsl::reflection::is_erased_v<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_CONSTANT) return f(Constant<desugar_t<T>, ucsl::reflection::is_erased_v<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ENUMERATION) return f(Enum<desugar_t<T>, ucsl::reflection::is_erased_v<T>>{});
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER) return f(Pointer<desugar_t<T>, ucsl::reflection::is_weak_v<T>>{});
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER) return f(Pointer<desugar_t<T>, Parent, Root, ucsl::reflection::is_weak_v<T>>{ this->parent, this->root });
 				//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_OFFSET) return f(Offset<desugar_t<T>>{});
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ARRAY) return f(Array<desugar_t<T>>{});
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_TARRAY) return f(TArray<desugar_t<T>>{});
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY) return f(DynamicCArray<desugar_t<T>>{});
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY) return f(StaticCArray<desugar_t<T>>{});
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return f(Union<desugar_t<T>>{});
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return f(Structure<desugar_t<T>>{});
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
-					return f(typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(desugar_t<T>::resolver((typename desugar_t<T>::parent&)parent)) });
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
-					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSpawnerDataClass() });
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
-					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSpawnerDataClass() });
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
-					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent, (const typename desugar_t<T>::root&)root))->GetSpawnerDataClass() });
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ARRAY) return f(Array<desugar_t<T>, Parent, Root>{ this->parent, this->root });
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_TARRAY) return f(TArray<desugar_t<T>, Parent, Root>{ this->parent, this->root });
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY) return f(DynamicCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root });
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY) return f(StaticCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root });
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return f(Union<desugar_t<T>, Parent, Root>{ this->parent, this->root });
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return f(Structure<desugar_t<T>, Parent, Root>{ this->parent, this->root });
+				//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
+				//	return f(typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(desugar_t<T>::resolver((typename desugar_t<T>::parent&)this->parent)) });
+				//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
+				//	return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)this->parent))->GetSpawnerDataClass() });
+				//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
+				//	return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)this->parent))->GetSpawnerDataClass() });
+				//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
+				//	return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)this->parent, (const typename desugar_t<T>::root&)this->root))->GetSpawnerDataClass() });
 				else static_assert("invalid desc type");
 			}
 		};
@@ -380,7 +408,7 @@ namespace ucsl::reflection::providers {
 		template<typename Resolver, typename Parent>
 		static typename Resolver::result resolve_field_resolver(const Parent& parent_) {
 			Parent& parent = const_cast<Parent&>(parent_);
-			return parent[parent.refl.get_field<Resolver::field>(parent)].visit([](const auto v) {
+			return parent[parent.refl.template get_field<Resolver::field>(parent)].visit([](const auto v) {
 				if constexpr (decltype(v.refl)::kind == ucsl::reflection::providers::TypeKind::PRIMITIVE) return v.visit([](auto v) -> typename Resolver::result { return v; });
 				else if constexpr (decltype(v.refl)::kind == ucsl::reflection::providers::TypeKind::ENUM) return static_cast<typename Resolver::result>(static_cast<long long>(v));
 				else static_assert("unsupported resolution type");
@@ -404,10 +432,24 @@ namespace ucsl::reflection::providers {
 			else static_assert("invalid resolver type");
 		} 
 
-		template<typename T>
-		static constexpr Type<canonical_t<T>> reflect() { return {}; }
+		struct NullValueAccessor {
+			const auto visit(auto f) const { return f(4); }
+			auto visit(auto f) { return f(4); }
+		};
+
+		struct NullStructureAccessor {
+			template<typename FieldRefl> inline auto operator[](const FieldRefl& field_refl) { return NullValueAccessor{}; }
+			template<typename FieldRefl> inline const auto operator[](const FieldRefl& field_refl) const { return NullValueAccessor{}; }
+		};
 
 		template<typename T>
-		static constexpr Type<canonical_t<T>> reflect(const T&) { return {}; }
+		struct RootType : public Type<T, NullStructureAccessor, NullStructureAccessor> {
+			RootType() : Type<T, NullStructureAccessor, NullStructureAccessor>{ {}, {} } {}
+		};
+		//template<typename T>
+		//static constexpr Type<canonical_t<T>> reflect() { return {}; }
+
+		//template<typename T>
+		//static constexpr Type<canonical_t<T>> reflect(const T&) { return {}; }
 	};
 }

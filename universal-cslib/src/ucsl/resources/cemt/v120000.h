@@ -486,6 +486,24 @@ namespace ucsl::resources::cemt::v120000 {
 			UNK1,
 		};
 
+		enum class DirectionType : unsigned int {
+			UNK0,
+			UNK1,
+			UNK2,
+			UNK3,
+			UNK4,
+			UNK5,
+		};
+
+		enum class DirectionTypeU8 : unsigned char {
+			UNK0,
+			UNK1,
+			UNK2,
+			UNK3,
+			UNK4,
+			UNK5,
+		};
+
 		struct Unk0ParticleParam {
 			unsigned int unk0;
 			float unk1;
@@ -513,7 +531,7 @@ namespace ucsl::resources::cemt::v120000 {
 
 		struct Unk4ParticleParam {
 			unsigned int type;
-			unsigned int unk3;
+			DirectionType directionType;
 			char pad1;
 			unsigned char unk2;
 			unsigned char gap3;
@@ -527,7 +545,7 @@ namespace ucsl::resources::cemt::v120000 {
 			char pad[3];
 			unsigned int unk1;
 			unsigned char unk4;
-			unsigned char unk5;
+			DirectionTypeU8 directionType;
 			unsigned char unk6;
 			bool unk2;
 			char pad2[0x8];
@@ -538,7 +556,7 @@ namespace ucsl::resources::cemt::v120000 {
 			unsigned int unkStride; // 0x141006D02
 			unsigned char unk1;
 			char pad1[0x3];
-			unsigned char unk4;
+			DirectionTypeU8 directionType;
 			unsigned char unk3;
 			bool unk2;
 			char pad2;

@@ -15,6 +15,7 @@ namespace ucsl::resources::effdb::v100::reflections {
     using Particle = structure<impl::Particle, "Particle", void,
         field<bool, "attachedToBone">,
         field<unsigned char, "flags">,
+        field<float, "delay">,
         field<const char*, "particleName">,
         field<const char*, "boneName">,
         field<math::Vector3, "position">,
