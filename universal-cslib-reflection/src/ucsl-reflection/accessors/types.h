@@ -80,12 +80,12 @@ namespace ucsl::reflection::accessors {
 
 	template<typename T>
 	concept ReadOnlyPointerAccessor = requires (const T t) {
-		{ t.get().value() } -> ReadOnlyValueAccessor;
+		{ *t } -> ReadOnlyValueAccessor;
 	};
 
 	template<typename T>
 	concept PointerAccessor = ReadOnlyPointerAccessor<T> && requires (T t) {
-		{ t.get().value() } -> ValueAccessor;
+		{ *t } -> ValueAccessor;
 	};
 
 	//&& requires (const T t) {

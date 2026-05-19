@@ -13,7 +13,7 @@
 #include "types.h"
 
 namespace ucsl::reflection::providers {
-	template<typename GameInterface, typename ObjectAccessor>
+	template<typename GameInterface>
 	struct rflclass {
 		using MemberType = typename GameInterface::RflSystem::RflClassMember::Type;
 
@@ -91,7 +91,6 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::ARRAY;
 			SubType get_item_type() const { return { member }; }
-			//constexpr auto get_accessor(ObjectAccessor& obj) const { return OpaqueRflArray<containers::arrays::Array, GameInterface>{ (containers::arrays::Array<ObjectAccessor, typename GameInterface::AllocatorSystem>&)obj, member }; }
 		};
 
 		struct TArray {
@@ -99,7 +98,6 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::TARRAY;
 			SubType get_item_type() const { return { member }; }
-			//constexpr auto get_accessor(ObjectAccessor& obj) const { return OpaqueRflArray<containers::arrays::TArray, GameInterface>{ (containers::arrays::TArray<ObjectAccessor, typename GameInterface::AllocatorSystem>&)obj, member }; }
 		};
 
 		struct CArray {
@@ -107,7 +105,7 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::CARRAY;
 			Type get_item_type() const { return { member, false }; }
-			size_t get_length(ObjectAccessor& parent) const { return member->GetArrayLength(); }
+			size_t get_length() const { return member->GetArrayLength(); }
 		};
 
 		struct Enum {
@@ -158,6 +156,7 @@ namespace ucsl::reflection::providers {
 			const char* get_name() const { return member->GetName(); }
 			size_t get_offset() const { return member->GetOffset(); }
 			Type get_type() const { return { member, true }; }
+			Type get_type(auto new_parent) const { return get_type(); }
 		};
 
 		struct Structure {
@@ -165,8 +164,8 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			const char* get_name() const { return rflClass->GetName(); }
-			size_t get_size(const ObjectAccessor& parent, const ObjectAccessor& root, const ObjectAccessor& self) const { return rflClass->GetSize(); }
-			size_t get_alignment(const ObjectAccessor& parent, const ObjectAccessor& root) const { return rflClass->GetAlignment(); }
+			template<typename AddrType> size_t get_size(const auto& obj) const { return rflClass->GetSize(); }
+			template<typename AddrType> size_t get_alignment() const { return rflClass->GetAlignment(); }
 
 			std::optional<Structure> get_base() const {
 				auto* parent = rflClass->GetParent();
@@ -174,8 +173,24 @@ namespace ucsl::reflection::providers {
 				return parent != nullptr ? std::make_optional(Structure{ parent }) : std::nullopt;
 			}
 
-			template<typename F>
-			void visit_fields(const ObjectAccessor& obj, const ObjectAccessor& root, F f) const {
+			template<size_t index, typename AddrType>
+			auto get_field_by_index(const auto& obj) const {
+				return Field{ &rflClass->GetMembers()[index] };
+			}
+
+			template<simplerfl::strlit field_name, typename AddrType>
+			auto get_field(const auto& obj) const {
+				for (const auto& member : rflClass->GetMembers())
+					if (!strcmp(member.GetName(), field_name))
+						return Field{ &member };
+
+				assert(false && "Unknown field.");
+
+				return Field{ nullptr };
+			}
+
+			template<typename AddrType, typename F>
+			void visit_fields(const auto& obj, F f) const {
 				for (const auto& member : rflClass->GetMembers())
 					f(Field{ &member });
 			}
@@ -184,11 +199,11 @@ namespace ucsl::reflection::providers {
 		struct SubType {
 			const GameInterface::RflSystem::RflClassMember* member;
 
-			size_t get_size(const ObjectAccessor& parent, const ObjectAccessor& root, const ObjectAccessor& self) const { return member->GetSubTypeSize(); }
-			size_t get_alignment(const ObjectAccessor& parent, const ObjectAccessor& root) const { return member->GetSubTypeAlignment(); }
+			template<typename AddrType> size_t get_size(const auto& obj) const { return member->GetSubTypeSize(); }
+			template<typename AddrType> size_t get_alignment() const { return member->GetSubTypeAlignment(); }
 
 			template<typename F>
-			auto visit(const ObjectAccessor& parent, const ObjectAccessor& root, F f) const {
+			auto visit(F f) const {
 				switch (member->GetSubType()) {
 				case MemberType::STRUCT: return f(Structure{ member->GetClass() });
 				default: return f(Primitive{ member, member->GetSubType() });
@@ -200,14 +215,14 @@ namespace ucsl::reflection::providers {
 			const GameInterface::RflSystem::RflClassMember* member;
 			bool allowCArray;
 
-			size_t get_size(const ObjectAccessor& parent, const ObjectAccessor& root, const ObjectAccessor& self) const {
+			template<typename AddrType> size_t get_size(const auto& obj) const {
 				if (allowCArray) return member->GetSize();
 				else return member->GetSingleSize();
 			}
-			size_t get_alignment(const ObjectAccessor& parent, const ObjectAccessor& root) const { return member->GetAlignment(); }
+			template<typename AddrType> size_t get_alignment() const { return member->GetAlignment(); }
 
 			template<typename F>
-			auto visit(const ObjectAccessor& parent, const ObjectAccessor& root, F f) const {
+			auto visit(F f) const {
 				if (allowCArray && member->GetArrayLength() > 0)
 					return f(CArray{ member });
 
@@ -230,11 +245,11 @@ namespace ucsl::reflection::providers {
 		struct RootType {
 			const GameInterface::RflSystem::RflClass* rflClass;
 
-			size_t get_size(const ObjectAccessor& parent, const ObjectAccessor& root, const ObjectAccessor& self) const { return rflClass->GetSize(); }
-			size_t get_alignment(const ObjectAccessor& parent, const ObjectAccessor& root) const { return rflClass->GetAlignment(); }
+			template<typename AddrType> size_t get_size(const auto& obj) const { return rflClass->GetSize(); }
+			template<typename AddrType> size_t get_alignment() const { return rflClass->GetAlignment(); }
 
 			template<typename F>
-			auto visit(const ObjectAccessor& parent, const ObjectAccessor& root, F f) const {
+			auto visit(F f) const {
 				return f(Structure{ rflClass });
 			}
 		};

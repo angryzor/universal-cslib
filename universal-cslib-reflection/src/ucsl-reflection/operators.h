@@ -20,9 +20,9 @@ namespace ucsl::reflection {
     //};
 
     static constexpr unsigned long long DESCTYPE_CONSTANT = 0x434f4e5354414e54;
-    template<typename Repr, Repr value> struct constant : simplerfl::decl<DESCTYPE_CONSTANT> {
+    template<typename Repr, Repr value_> struct constant : simplerfl::decl<DESCTYPE_CONSTANT> {
         using repr = Repr;
-        static constexpr Repr value = value;
+        static constexpr Repr value = value_;
     };
 
     static constexpr unsigned long long DESCTYPE_RFLCLASS = 0x52464c434c415353;
