@@ -66,6 +66,18 @@ namespace ucsl::reflection::accessors {
 	};
 
 	template<typename T>
+	concept ReadOnlyUnionAccessor = requires (const T t) {
+		{ t[mocks::Field{}] } -> ReadOnlyValueAccessor;
+		//{ t.visit([](auto curAcc) -> size_t { return 0; }) } -> std::convertible_to<size_t>;
+	};
+
+	template<typename T>
+	concept UnionAccessor = ReadOnlyUnionAccessor<T> && requires (T t) {
+		{ t[mocks::Field{}] } -> ValueAccessor;
+		//{ t.visit([](auto curAcc) -> size_t { return 0; }) } -> std::convertible_to<size_t>;
+	};
+
+	template<typename T>
 	concept ArrayAccessor = more_concepts::sequence_container<T>;
 	
 	template<typename T>

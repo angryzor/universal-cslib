@@ -15,7 +15,11 @@ namespace ucsl::resources::animation_state_machine::v103_rangers::reflections {
 		field<float, "start">,
 		field<float, "end">,
 		field<float, "speed">,
-		field<unsigned char, "flags">,
+		field<bitfield<unsigned char,
+			component<bool, "mirror", 0, 1>,
+			component<bool, "playUntilAnimationEnded", 1, 1>,
+			component<bool, "noAnimationResolution", 2, 1>
+		>, "flags">,
 		field<bool, "loops">
 	>;
 
@@ -71,7 +75,11 @@ namespace ucsl::resources::animation_state_machine::v103_rangers::reflections {
 		field<const char*, "name">,
 		field<StateType, "type">,
 		field<bool, "transitImmediately">,
-		field<unsigned char, "flags">,
+		field<bitfield<unsigned char,
+			component<bool, "loops", 0, 1>,
+			component<bool, "unk1", 1, 1>,
+			component<bool, "usePba", 2, 1>
+		>, "flags">,
 		field<char, "defaultLayerIndex">,
 		field<short, "rootBlendNodeOrClipIndex">,
 		field<short, "maxCycles">,

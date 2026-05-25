@@ -23,7 +23,7 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::PRIMITIVE;
 			template<typename F>
-			auto visit(F f) {
+			auto visit(F f) const {
 				if constexpr (GameInterface::RflSystem::TypeSet::template supports_primitive<objectids::ObjectIdV1>)
 					if (type == MemberType::OBJECT_ID_V1)
 						return f(PrimitiveData<objectids::ObjectIdV1>{});
@@ -114,7 +114,7 @@ namespace ucsl::reflection::providers {
 			constexpr static TypeKind kind = TypeKind::ENUM;
 			decltype(auto) get_options() const { return member->GetEnum()->GetValues(); }
 			template<typename F>
-			auto visit(F f) {
+			auto visit(F f) const {
 				switch (member->GetSubType()) {
 				case MemberType::SINT8: return f(PrimitiveData<int8_t>{});
 				case MemberType::UINT8: return f(PrimitiveData<uint8_t>{});
@@ -129,13 +129,34 @@ namespace ucsl::reflection::providers {
 			}
 		};
 
-		struct Flags {
+		struct AlwaysBoolPrimitive {
+			constexpr static TypeKind kind = TypeKind::PRIMITIVE;
+
+			constexpr static auto visit(auto f) { return f(PrimitiveData<bool>{}); }
+			constexpr static bool is_erased() { return false; }
+		};
+
+		struct AlwaysBoolType {
+			template<typename AddrType> constexpr static size_t get_size(const auto& obj) { return GameInterface::RflSystem::TypeSet::metadata[MemberType::BOOL].size; }
+			template<typename AddrType> constexpr static size_t get_alignment() { return GameInterface::RflSystem::TypeSet::metadata[MemberType::BOOL].alignment; }
+
+			constexpr static auto visit(auto f) { return f(AlwaysBoolPrimitive{}); }
+		};
+
+		struct BitfieldComponent {
+			const GameInterface::RflSystem::RflClassEnumMember* enumMember;
+
+			const char* get_name() const { return enumMember->GetEnglishName(); }
+			size_t get_offset() const { return (size_t)enumMember->GetIndex(); }
+			constexpr static size_t get_width() { return 1; }
+			constexpr static AlwaysBoolType get_type() { return {}; }
+		};
+
+		struct Bitfield {
 			const GameInterface::RflSystem::RflClassMember* member;
 
-			constexpr static TypeKind kind = TypeKind::FLAGS;
-			decltype(auto) get_values() { return member->GetFlagValues(); }
-			template<typename F>
-			auto visit(F f) {
+			constexpr static TypeKind kind = TypeKind::BITFIELD;
+			auto visit_underlying(auto f) const {
 				switch (member->GetSubType()) {
 				case MemberType::SINT8: return f(PrimitiveData<int8_t>{});
 				case MemberType::UINT8: return f(PrimitiveData<uint8_t>{});
@@ -147,6 +168,21 @@ namespace ucsl::reflection::providers {
 				case MemberType::UINT64: return f(PrimitiveData<uint64_t>{});
 				default: assert(!"reflective operation assertion failed: unknown primitive type"); return f(PrimitiveData<int32_t>{});
 				}
+			}
+			template<simplerfl::strlit name>
+			auto get_component() const {
+				for (const auto& value : member->GetFlagValues().value())
+					if (!strcmp(value.GetName(), name))
+						return BitfieldComponent{ &value };
+
+				assert(false && "unknown field name");
+
+				return BitfieldComponent{ &*member->GetFlagValues().values().begin() };
+			}
+
+			void visit_components(auto f) const {
+				for (const auto& value : member->GetFlagValues().value())
+					f(BitfieldComponent{ &value });
 			}
 		};
 
@@ -234,7 +270,7 @@ namespace ucsl::reflection::providers {
 				case MemberType::ARRAY: return f(Array{ member });
 				case MemberType::POINTER: return f(Pointer{ member });
 				case MemberType::ENUM: return f(Enum{ member });
-				case MemberType::FLAGS: return f(Flags{ member });
+				case MemberType::FLAGS: return member->GetFlagValues().has_value() ? f(Bitfield{ member }) : f(Primitive{ member, member->GetSubType() });
 				case MemberType::SIMPLE_ARRAY: assert(!"This RflClass member type (SIMPLE_ARRAY) is not implemented yet because it is unused."); return f(Primitive{ member, MemberType::VOID });
 				case MemberType::STRUCT: return f(Structure{ member->GetClass() });
 				default: return f(Primitive{ member, member->GetType() });

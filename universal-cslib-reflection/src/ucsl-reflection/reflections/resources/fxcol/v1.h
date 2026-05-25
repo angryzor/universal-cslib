@@ -51,16 +51,18 @@ namespace ucsl::resources::fxcol::v1::reflections {
         field<float, "height">,
         field<float, "borderThickness">
     >;
-
-    using Extents = unionof<impl::ShapeData::Extents, "Extents", impl::ShapeData, [](const impl::ShapeData& parent) -> size_t {
-        switch (parent.shape) {
+    
+    inline size_t get_shape_idx(const impl::ShapeData::Shape& shape) {
+        switch (shape) {
         case impl::ShapeData::Shape::SPHERE: return 0;
         case impl::ShapeData::Shape::CYLINDER: return 1;
         case impl::ShapeData::Shape::ANISOTROPIC_OBB: return 2;
         case impl::ShapeData::Shape::ISOTROPIC_OBB: return 3;
         default: assert(false && "unknown shape"); return 0;
         }
-    }, 
+    }
+
+    using Extents = unionof<impl::ShapeData::Extents, "Extents", selector_resolver<size_t, field_resolver<impl::ShapeData::Shape, "shape">>::impl<get_shape_idx>,
         field<SphereExtents, "sphere">,
         field<CylinderExtents, "cylinder">,
         field<AnisotropicObbExtents, "anisotropicObb">,
@@ -92,15 +94,17 @@ namespace ucsl::resources::fxcol::v1::reflections {
         field<float, "interpolationTime">
     >;
 
-    using Parameters = unionof<impl::ShapeData::Parameters, "Parameters", impl::ShapeData, [](const impl::ShapeData& parent) -> size_t {
-        switch (parent.type) {
+    inline size_t get_shape_type_idx(const impl::ShapeData::Type& type) {
+        switch (type) {
         case impl::ShapeData::Type::SCENE_PARAMETER_INDEX: return 0;
         case impl::ShapeData::Type::LIGHT_PARAMETER_INDEX: return 1;
         case impl::ShapeData::Type::HEAT_HAZE: return 2;
         case impl::ShapeData::Type::CAMERA: return 3;
         default: assert(false && "unknown type"); return 0;
         }
-    },
+    }
+
+    using Parameters = unionof<impl::ShapeData::Parameters, "Parameters", selector_resolver<size_t, field_resolver<impl::ShapeData::Type, "type">>::impl<get_shape_type_idx>,
         field<SceneParameterIndexParameters, "sceneParameterIndex">,
         field<LightParameterIndexParameters, "lightParameterIndex">,
         field<HeatHazeParameters, "heatHaze">,

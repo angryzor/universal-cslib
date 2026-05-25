@@ -20,7 +20,8 @@ namespace ucsl::reflection::providers {
 		struct dynamic_size_of_struct;
 		template<typename AddrType, typename Repr, strlit name, typename Base, typename... Fields>
 		struct dynamic_size_of_struct<structure<Repr, name, Base, Fields...>, AddrType> {
-			static size_t get(const auto& parent, const auto& root, const auto& self) {
+			template<accessors::StructureAccessor Parent, accessors::StructureAccessor Root, accessors::StructureAccessor Self>
+			static size_t get(const Parent& parent, const Root& root, const Self& self) {
 				size_t offset{};
 
 				if constexpr (!std::is_same_v<Base, void>)
@@ -36,10 +37,25 @@ namespace ucsl::reflection::providers {
 		};
 
 		template<typename T, typename AddrType>
+		struct dynamic_size_of_union;
+		template<typename AddrType, typename Repr, strlit name, typename Resolver, typename... Fields>
+		struct dynamic_size_of_union<unionof<Repr, name, Resolver, Fields...>, AddrType> {
+			template<accessors::StructureAccessor Parent, accessors::StructureAccessor Root, accessors::UnionAccessor Self>
+			static size_t get(const Parent& parent, const Root& root, const Self& self) {
+				size_t maxSize{};
+
+				((maxSize = std::max(maxSize, dynamic_size_of<typename Fields::type, AddrType>(parent, root, self[Field<Fields, decltype(parent), decltype(root)>{ parent, root, 0 }]))), ...);
+
+				return util::align(maxSize, dynamic_align_of<unionof<Repr, name, Resolver, Fields...>, AddrType>(parent, root));
+			}
+		};
+
+		template<typename T, typename AddrType>
 		struct dynamic_align_of_struct;
 		template<typename AddrType, typename Repr, strlit name, typename Base, typename... Fields>
 		struct dynamic_align_of_struct<structure<Repr, name, Base, Fields...>, AddrType> {
-			static size_t get(const auto& root) {
+			template<accessors::StructureAccessor Root>
+			static size_t get(const Root& root) {
 				size_t maxAlign{};
 
 				if constexpr (!std::is_same_v<Base, void>)
@@ -51,15 +67,28 @@ namespace ucsl::reflection::providers {
 			}
 		};
 
-		// FIXME: Need to support union, otherwise addr type in union will be wrong.
+		template<typename T, typename AddrType>
+		struct dynamic_align_of_union;
+		template<typename AddrType, typename Repr, strlit name, typename Resolver, typename... Fields>
+		struct dynamic_align_of_union<unionof<Repr, name, Resolver, Fields...>, AddrType> {
+			template<accessors::StructureAccessor Root>
+			static size_t get(const Root& root) {
+				size_t maxAlign{};
+
+				((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type, AddrType>(NullAccessor{}, root))), ...);
+
+				return maxAlign;
+			}
+		};
+
 		template<typename T, typename AddrType>
 		static size_t dynamic_size_of(const auto& parent, const auto& root, const auto& self) {
 			if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
-				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(parent))->GetSize();
+				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(parent).c_str())->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
-				return GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(parent))->GetSpawnerDataClass()->GetSize();
+				return GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(parent).c_str())->GetSpawnerDataClass()->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
-				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(parent))->GetSpawnerDataClass()->GetSize();
+				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(parent).c_str())->GetSpawnerDataClass()->GetSize();
 			//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
 			//	return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<desugar_t<T>::resolver>(parent, root))->GetSpawnerDataClass()->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY)
@@ -68,10 +97,14 @@ namespace ucsl::reflection::providers {
 				return desugar_t<T>::size * dynamic_size_of<typename desugar_t<T>::type, AddrType>(parent, root, self.as_carray()[0]);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
 				return dynamic_size_of_struct<desugar_t<T>, AddrType>::get(parent, root, self.as_structure());
+			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION)
+				return dynamic_size_of_union<desugar_t<T>, AddrType>::get(parent, root, self.as_union());
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER)
 				return sizeof(AddrType);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE) {
 				if constexpr (std::is_same_v<typename desugar_t<T>::repr, const char*>)
+					return sizeof(AddrType);
+				else if constexpr (std::is_same_v<typename desugar_t<T>::repr, ucsl::strings::VariableString>)
 					return sizeof(AddrType);
 				else
 					return sizeof(typename desugar_t<T>::repr);
@@ -85,23 +118,27 @@ namespace ucsl::reflection::providers {
 			if constexpr (is_realigned_v<T>)
 				return align_of_v<T>;
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
-				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetAlignment();
+				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(parent).c_str())->GetAlignment();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
-				return GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSpawnerDataClass()->GetAlignment();
+				return GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(parent).c_str())->GetSpawnerDataClass()->GetAlignment();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
-				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent))->GetSpawnerDataClass()->GetAlignment();
-			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
-				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent, (const typename desugar_t<T>::root&)root))->GetSpawnerDataClass()->GetAlignment();
+				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(parent).c_str())->GetSpawnerDataClass()->GetAlignment();
+			//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
+			//	return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent, (const typename desugar_t<T>::root&)root))->GetSpawnerDataClass()->GetAlignment();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY)
 				return dynamic_align_of<typename desugar_t<T>::type, AddrType>(parent, root);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY)
 				return dynamic_align_of<typename desugar_t<T>::type, AddrType>(parent, root);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
 				return dynamic_align_of_struct<desugar_t<T>, AddrType>::get(root);
+			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION)
+				return dynamic_align_of_union<desugar_t<T>, AddrType>::get(root);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER)
 				return alignof(AddrType);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE) {
 				if constexpr (std::is_same_v<typename desugar_t<T>::repr, const char*>)
+					return alignof(AddrType);
+				else if constexpr (std::is_same_v<typename desugar_t<T>::repr, ucsl::strings::VariableString>)
 					return alignof(AddrType);
 				else
 					return alignof(typename desugar_t<T>::repr);
@@ -166,9 +203,45 @@ namespace ucsl::reflection::providers {
 			constexpr static auto visit(F f) { return f(PrimitiveData<typename T::underlying>{ .is_erased = erased }); }
 		};
 
-		//struct Flags {
-		//	auto get_flags();
-		//};
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
+		struct BitfieldComponent : ReflectionBase<Parent, Root> {
+			using ReflectionBase<Parent, Root>::ReflectionBase;
+
+			constexpr static const char* get_name() { return T::name; }
+			constexpr static size_t get_offset() { return T::offset; }
+			constexpr static size_t get_width() { return T::width; }
+			constexpr auto get_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
+		};
+
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root, bool erased>
+		struct Bitfield : ReflectionBase<Parent, Root> {
+			using ReflectionBase<Parent, Root>::ReflectionBase;
+
+			using Components = typename T::components;
+
+			constexpr static TypeKind kind = TypeKind::BITFIELD;
+			constexpr static auto visit_underlying(auto f) { return f(PrimitiveData<typename T::underlying>{ .is_erased = erased }); }
+
+			template<strlit component_name>
+			constexpr auto get_component() const {
+				return _get_component<component_name>(Components{});
+			}
+
+			constexpr void visit_components(auto f) const {
+				_visit_components(f, Components{});
+			}
+
+		private:
+			template<strlit component_name, typename... Components>
+			constexpr auto _get_component(std::tuple<Components...>) const {
+				return BitfieldComponent<find_named_type_t<component_name, Components...>, Parent, Root>{ this->parent, this->root };
+			}
+
+			template<typename... Components>
+			constexpr void _visit_components(auto f, std::tuple<Components...>) const {
+				(f(BitfieldComponent<Components, Parent, Root>{ this->parent, this->root }), ...);
+			}
+		};
 
 		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root, bool weak>
 		struct Pointer : ReflectionBase<Parent, Root> {
@@ -411,7 +484,7 @@ namespace ucsl::reflection::providers {
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_CONSTANT) return f(Constant<desugar_t<T>, ucsl::reflection::is_erased_v<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ENUMERATION) return f(Enum<desugar_t<T>, ucsl::reflection::is_erased_v<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER) return f(Pointer<desugar_t<T>, Parent, Root, ucsl::reflection::is_weak_v<T>>{ this->parent, this->root });
-				//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_OFFSET) return f(Offset<desugar_t<T>>{});
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_BITFIELD) return f(Bitfield<desugar_t<T>, Parent, Root, ucsl::reflection::is_erased_v<T>>{ this->parent, this->root });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ARRAY) return f(Array<desugar_t<T>, Parent, Root>{ this->parent, this->root });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_TARRAY) return f(TArray<desugar_t<T>, Parent, Root>{ this->parent, this->root });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY) return f(DynamicCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root });
@@ -419,23 +492,33 @@ namespace ucsl::reflection::providers {
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return f(Union<desugar_t<T>, Parent, Root>{ this->parent, this->root });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return f(Structure<desugar_t<T>, Parent, Root>{ this->parent, this->root });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
-					return f(typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(this->parent)) });
-				//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
-				//	return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)this->parent))->GetSpawnerDataClass() });
-				//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
-				//	return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)this->parent))->GetSpawnerDataClass() });
+					return f(typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(this->parent).c_str()) });
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
+					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(this->parent).c_str())->GetSpawnerDataClass() });
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
+					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(this->parent).c_str())->GetSpawnerDataClass() });
 				//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
 				//	return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)this->parent, (const typename desugar_t<T>::root&)this->root))->GetSpawnerDataClass() });
 				else static_assert("invalid desc type");
 			}
 		};
 
-		template<typename Resolver, typename Parent>
+		template<typename Resolver, typename Parent, std::enable_if_t<std::is_enum_v<typename Resolver::result>, bool> = true>
 		static typename Resolver::result resolve_field_resolver(const Parent& parent_) {
 			Parent& parent = const_cast<Parent&>(parent_);
-			return parent.template get_field<Resolver::field>().visit([](const auto v) {
-				if constexpr (decltype(v.refl)::kind == ucsl::reflection::providers::TypeKind::PRIMITIVE) return v.visit([](auto v) -> typename Resolver::result { return v; });
-				else if constexpr (decltype(v.refl)::kind == ucsl::reflection::providers::TypeKind::ENUM) return static_cast<typename Resolver::result>(static_cast<long long>(v));
+
+			return parent.template get_field<Resolver::field>().visit([](const auto& v) {
+				if constexpr (decltype(v.refl)::kind == ucsl::reflection::providers::TypeKind::ENUM) return static_cast<typename Resolver::result>(static_cast<long long>(v));
+				else static_assert("unsupported resolution type");
+			});
+		}
+
+		template<typename Resolver, typename Parent, std::enable_if_t<!std::is_enum_v<typename Resolver::result>, bool> = true>
+		static typename Resolver::result resolve_field_resolver(const Parent& parent_) {
+			Parent& parent = const_cast<Parent&>(parent_);
+
+			return parent.template get_field<Resolver::field>().visit([](const auto& v) {
+				if constexpr (decltype(v.refl)::kind == ucsl::reflection::providers::TypeKind::PRIMITIVE) return v.visit([](const auto& v) -> typename Resolver::result { return static_cast<typename Resolver::result>(v); });
 				else static_assert("unsupported resolution type");
 			});
 		}

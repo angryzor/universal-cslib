@@ -5,7 +5,7 @@ namespace ucsl::reflection::providers {
 	enum class TypeKind {
 		PRIMITIVE,
 		ENUM,
-		FLAGS,
+		BITFIELD,
 		ARRAY,
 		TARRAY,
 		POINTER,
