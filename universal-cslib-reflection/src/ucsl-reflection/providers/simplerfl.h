@@ -104,7 +104,7 @@ namespace ucsl::reflection::providers {
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_TARRAY)
 				return sizeof(AddrType) * 3;
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY)
-				return resolve<typename desugar_t<T>::resolver>(parent) == 0 ? 0 : resolve<typename desugar_t<T>::resolver>(parent) * dynamic_size_of<typename desugar_t<T>::type, AddrType>(parent, root, self.as_carray()[0]);
+				return resolve<typename desugar_t<T>::resolver>(parent, root) == 0 ? 0 : resolve<typename desugar_t<T>::resolver>(parent, root) * dynamic_size_of<typename desugar_t<T>::type, AddrType>(parent, root, self.as_carray()[0]);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY)
 				return desugar_t<T>::size * dynamic_size_of<typename desugar_t<T>::type, AddrType>(parent, root, self.as_carray()[0]);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION)
@@ -112,16 +112,15 @@ namespace ucsl::reflection::providers {
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
 				return dynamic_size_of_struct<desugar_t<T>, AddrType>::get(parent, root, self.as_structure());
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
-				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(parent).c_str())->GetSize();
+				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(parent, root).c_str())->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
-				return GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(parent).c_str())->GetSpawnerDataClass()->GetSize();
+				return GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(parent, root).c_str())->GetSpawnerDataClass()->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
-				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(parent).c_str())->GetSpawnerDataClass()->GetSize();
+				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(parent, root).c_str())->GetSpawnerDataClass()->GetSize();
 			//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
 			//	return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<desugar_t<T>::resolver>(parent, root))->GetSpawnerDataClass()->GetSize();
 			else
 				static_assert(false, "getting size of unknown type");
-				return 0;
 		}
 
 		template<typename T, typename AddrType>
@@ -157,16 +156,15 @@ namespace ucsl::reflection::providers {
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
 				return dynamic_align_of_struct<desugar_t<T>, AddrType>::get(root);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
-				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(parent).c_str())->GetAlignment();
+				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(parent, root).c_str())->GetAlignment();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
-				return GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(parent).c_str())->GetSpawnerDataClass()->GetAlignment();
+				return GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(parent, root).c_str())->GetSpawnerDataClass()->GetAlignment();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
-				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(parent).c_str())->GetSpawnerDataClass()->GetAlignment();
+				return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(parent, root).c_str())->GetSpawnerDataClass()->GetAlignment();
 			//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
 			//	return GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)parent, (const typename desugar_t<T>::root&)root))->GetSpawnerDataClass()->GetAlignment();
 			else
 				static_assert(false, "getting alignment of unknown type");
-				return 0;
 		}
 
 		struct EnumMember {
@@ -191,6 +189,16 @@ namespace ucsl::reflection::providers {
 
 			return std::array{ get_enum_member<Options>::call(counter)... };
 		}
+
+		struct NullValueAccessor {
+			const auto visit(auto f) const { return f(4); }
+			auto visit(auto f) { return f(4); }
+		};
+
+		struct NullStructureAccessor {
+			template<typename FieldRefl> inline auto operator[](const FieldRefl& field_refl) { return NullValueAccessor{}; }
+			template<typename FieldRefl> inline const auto operator[](const FieldRefl& field_refl) const { return NullValueAccessor{}; }
+		};
 
 		template<accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
 		struct ReflectionBase {
@@ -315,7 +323,7 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::CARRAY;
 			constexpr auto get_item_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
-			constexpr size_t get_length() const { return resolve<typename T::resolver>(this->parent); }
+			constexpr size_t get_length() const { return resolve<typename T::resolver>(this->parent, this->root); }
 		};
 
 		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
@@ -327,7 +335,12 @@ namespace ucsl::reflection::providers {
 			constexpr static const char* get_name() { return T::name; }
 			constexpr size_t get_offset() const { return offset; }
 			constexpr auto get_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
-			constexpr auto get_type(auto new_parent) const { return Type<typename T::type, decltype(new_parent), Root>{ new_parent, this->root }; }
+			constexpr auto get_type(auto new_parent) const {
+				if constexpr (std::is_same_v<Root, NullValueAccessor>)
+					return Type<typename T::type, decltype(new_parent), decltype(new_parent)>{ new_parent, new_parent };
+				else
+					return Type<typename T::type, decltype(new_parent), Root>{ new_parent, this->root };
+			}
 		};
 
 		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
@@ -349,7 +362,7 @@ namespace ucsl::reflection::providers {
 
 			template<typename F, typename Fields, size_t... Is>
 			constexpr void _visit_current_field(F f, Fields, std::index_sequence<Is...>) const {
-				size_t idx = resolve<typename desugar_t<T>::resolver>(this->parent);
+				size_t idx = resolve<typename desugar_t<T>::resolver>(this->parent, this->root);
 
 				((idx == Is ? (f(Field<std::tuple_element_t<Is, Fields>, Parent, Root>{ this->parent, this->root, 0 }), true) : false) || ...);
 			}
@@ -514,63 +527,61 @@ namespace ucsl::reflection::providers {
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return f(Union<desugar_t<T>, Parent, Root>{ this->parent, this->root });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return f(Structure<desugar_t<T>, Parent, Root>{ this->parent, this->root });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
-					return f(typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(this->parent).c_str()) });
+					return f(typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str()) });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
-					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(this->parent).c_str())->GetSpawnerDataClass() });
+					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS)
-					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(this->parent).c_str())->GetSpawnerDataClass() });
+					return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() });
 				//else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT)
 				//	return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(desugar_t<T>::resolver((const typename desugar_t<T>::parent&)this->parent, (const typename desugar_t<T>::root&)this->root))->GetSpawnerDataClass() });
-				else static_assert("invalid desc type");
+				else static_assert(false, "invalid desc type");
 			}
 		};
 
-		template<typename Resolver, typename Parent, std::enable_if_t<std::is_enum_v<typename Resolver::result>, bool> = true>
-		static typename Resolver::result resolve_field_resolver(const Parent& parent_) {
-			Parent& parent = const_cast<Parent&>(parent_);
+		template<typename Resolver, typename Scope, std::enable_if_t<std::is_enum_v<typename Resolver::result>, bool> = true>
+		static typename Resolver::result _resolve_field_resolver(const Scope& scope_) {
+			Scope& scope = const_cast<Scope&>(scope_);
 
-			return parent.template get_field<Resolver::field>().visit([](const auto& v) {
+			return scope.template get_field<Resolver::field>().visit([](const auto& v) {
 				if constexpr (decltype(v.refl)::kind == ucsl::reflection::providers::TypeKind::ENUM) return static_cast<typename Resolver::result>(static_cast<long long>(v));
-				else static_assert("unsupported resolution type");
+				else static_assert(false, "unsupported resolution type");
 			});
 		}
 
-		template<typename Resolver, typename Parent, std::enable_if_t<!std::is_enum_v<typename Resolver::result>, bool> = true>
-		static typename Resolver::result resolve_field_resolver(const Parent& parent_) {
-			Parent& parent = const_cast<Parent&>(parent_);
+		template<typename Resolver, typename Scope, std::enable_if_t<!std::is_enum_v<typename Resolver::result>, bool> = true>
+		static typename Resolver::result _resolve_field_resolver(const Scope& scope_) {
+			Scope& scope = const_cast<Scope&>(scope_);
 
-			return parent.template get_field<Resolver::field>().visit([](const auto& v) {
+			return scope.template get_field<Resolver::field>().visit([](const auto& v) {
 				if constexpr (decltype(v.refl)::kind == ucsl::reflection::providers::TypeKind::PRIMITIVE) return v.visit([](const auto& v) -> typename Resolver::result { return static_cast<typename Resolver::result>(v); });
-				else static_assert("unsupported resolution type");
+				else static_assert(false, "unsupported resolution type");
 			});
 		}
 
-		template<typename Resolver, typename Parent, typename... Sources>
-		static typename Resolver::result _resolve_selector_resolver(const Parent& parent_, std::tuple<Sources...>) {
-			return Resolver::function(resolve<Sources, Parent>(parent_)...);
+		template<typename Resolver, typename Parent, typename Root>
+		static typename Resolver::result resolve_field_resolver(const Parent& parent, const Root& root) {
+			if constexpr (Resolver::scope == RESOLVER_SCOPE_PARENT) return _resolve_field_resolver<Resolver, Parent>(parent);
+			else if constexpr (Resolver::scope == RESOLVER_SCOPE_ROOT) return _resolve_field_resolver<Resolver, Root>(root);
+			else static_assert(false, "unsupported resolver scope");
 		}
 
-		template<typename Resolver, typename Parent>
-		static typename Resolver::result resolve_selector_resolver(const Parent& parent_) {
-			return _resolve_selector_resolver<Resolver, Parent>(parent_, typename Resolver::sources{});
+		template<typename Resolver, typename Parent, typename Root, typename... Sources>
+		static typename Resolver::result _resolve_selector_resolver(const Parent& parent, const Root& root, std::tuple<Sources...>) {
+			return Resolver::function(resolve<Sources, Parent>(parent, root)...);
 		}
-		
-		template<typename Resolver, typename Parent>
-		static auto resolve(const Parent& parent) {
-			if constexpr (Resolver::resolver_type == RESOLVER_TYPE_FIELD) return resolve_field_resolver<Resolver, Parent>(parent);
-			if constexpr (Resolver::resolver_type == RESOLVER_TYPE_SELECTOR) return resolve_selector_resolver<Resolver, Parent>(parent);
-			else static_assert("invalid resolver type");
-		} 
 
-		struct NullValueAccessor {
-			const auto visit(auto f) const { return f(4); }
-			auto visit(auto f) { return f(4); }
-		};
+		template<typename Resolver, typename Parent, typename Root>
+		static typename Resolver::result resolve_selector_resolver(const Parent& parent, const Root& root) {
+			return _resolve_selector_resolver<Resolver, Parent>(parent, root, typename Resolver::sources{});
+		}
 
-		struct NullStructureAccessor {
-			template<typename FieldRefl> inline auto operator[](const FieldRefl& field_refl) { return NullValueAccessor{}; }
-			template<typename FieldRefl> inline const auto operator[](const FieldRefl& field_refl) const { return NullValueAccessor{}; }
-		};
+		template<typename Resolver, typename Parent, typename Root>
+		static auto resolve(const Parent& parent, const Root& root) {
+			if constexpr (Resolver::resolver_type == RESOLVER_TYPE_FIELD) return resolve_field_resolver<Resolver, Parent, Root>(parent, root);
+			else if constexpr (Resolver::resolver_type == RESOLVER_TYPE_SELECTOR) return resolve_selector_resolver<Resolver, Parent, Root>(parent, root);
+			else if constexpr (Resolver::resolver_type == RESOLVER_TYPE_CUSTOM) return typename Resolver::f{}(parent, root);
+			else static_assert(false, "invalid resolver type");
+		}
 
 		template<typename T>
 		struct RootType : public Type<T, NullStructureAccessor, NullStructureAccessor> {

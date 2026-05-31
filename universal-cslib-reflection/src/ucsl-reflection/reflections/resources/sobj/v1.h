@@ -15,6 +15,34 @@ namespace ucsl::resources::sobj::v1::reflections {
 		field<math::Position, "rotation">
 	>;
 
+	struct get_object_type {
+		inline std::string operator()(const auto& parent, const auto& root) {
+			auto objectId = parent.template get_field<"id">().as_primitive().as<ucsl::objectids::ObjectIdV1>();
+			auto objects = root.template get_field<"objects">().as_carray();
+
+			unsigned int objIndex{};
+			for (const auto& object : objects) {
+				if (object.as_structure().template get_field<"id">().as_primitive().as<ucsl::objectids::ObjectIdV1>() == objectId)
+					break;
+
+				objIndex++;
+			}
+
+			auto objectTypes = parent.template get_field<"objectTypes">().as_carray();
+
+			for (const auto& type_ : objectTypes) {
+				auto type = type_.as_structure();
+				auto objectIndices = type.template get_field<"objectIndices">().as_carray();
+
+				for (const unsigned int index : objectIndices)
+					if (index == objIndex)
+						return type.template get_field<"name">().as_primitive().as<const char*>();
+			}
+
+			return "";
+		}
+	};
+
 	template<typename AllocatorSystem>
 	using ObjectData = structure<impl::ObjectData<AllocatorSystem>, "ObjectData", void,
 		field<ucsl::objectids::ObjectIdV1, "id">,
@@ -24,17 +52,7 @@ namespace ucsl::resources::sobj::v1::reflections {
 		field<float, "m_distance">,
 		field<float, "m_range">,
 		field<containers::arrays::TArray<ObjectTransformData, AllocatorSystem>, "instances">,
-		field<spawner_data_rflclass_with_root<impl::ObjectData<AllocatorSystem>, impl::SetObjectData<AllocatorSystem>, [](const impl::ObjectData<AllocatorSystem>& parent, const impl::SetObjectData<AllocatorSystem>& root) -> const char* {
-			for (size_t i = 0; i < root.objectTypeCount; i++) {
-				auto& type = root.objectTypes[i];
-				for (size_t j = 0; j < type.objectIndexCount; j++) {
-					auto objectIdx = type.objectIndices[j];
-					if (root.objects[objectIdx] == &parent)
-						return type.name;
-				}
-			}
-			return nullptr;
-		}>, "spawnerData">
+		field<spawner_data_rflclass<custom_resolver<std::string, get_object_type>>, "spawnerData">
 	>;
 
 	using ObjectTypeData = structure<impl::ObjectTypeData, "ObjectTypeData", void,

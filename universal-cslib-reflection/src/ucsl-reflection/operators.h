@@ -35,11 +35,6 @@ namespace ucsl::reflection {
         using resolver = Resolver;
     };
 
-    static constexpr unsigned long long DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT = 0x5350574e44415452;
-    template<typename Resolver> struct spawner_data_rflclass_with_root : simplerfl::decl<DESCTYPE_SPAWNER_DATA_RFLCLASS_WITH_ROOT> {
-        using resolver = Resolver;
-    };
-
     static constexpr unsigned long long DESCTYPE_COMPONENT_DATA = 0x434f4d5044415441;
     template<typename Resolver> struct component_data_rflclass : simplerfl::decl<DESCTYPE_COMPONENT_DATA> {
         using resolver = Resolver;
@@ -68,6 +63,11 @@ namespace ucsl::reflection {
     //    using repr = AddrRepr;
     //};
 
+    static constexpr unsigned long long RESOLVER_TYPE_CUSTOM = 0x4143434553534F52;
+    template<typename Result, typename F> struct custom_resolver : simplerfl::resolver<RESOLVER_TYPE_CUSTOM, Result> {
+        using f = F;
+    };
+
     //template<typename Type> struct is_erased { static constexpr bool value = is_erased<Type::type>::value; };
     //template<typename T> struct is_erased<simplerfl::primitive<T>> { static constexpr bool value = false; };
     //template<typename Repr, Repr value> struct is_erased<constant<Repr, value>> { static constexpr bool value = false; };
@@ -88,7 +88,6 @@ namespace simplerfl {
     template<typename Repr, Repr value> struct is_realigned<ucsl::reflection::constant<Repr, value>> { static constexpr bool value = false; };
     template<typename Resolver> struct is_realigned<ucsl::reflection::rflclass<Resolver>> { static constexpr bool value = false; };
     template<typename Resolver> struct is_realigned<ucsl::reflection::spawner_data_rflclass<Resolver>> { static constexpr bool value = false; };
-    template<typename Resolver> struct is_realigned<ucsl::reflection::spawner_data_rflclass_with_root<Resolver>> { static constexpr bool value = false; };
     template<typename Resolver> struct is_realigned<ucsl::reflection::component_data_rflclass<Resolver>> { static constexpr bool value = false; };
     template<typename Type, typename AllocatorSystem> struct is_realigned<ucsl::reflection::array<Type, AllocatorSystem>> { static constexpr bool value = false; };
     template<typename Type, typename AllocatorSystem> struct is_realigned<ucsl::reflection::tarray<Type, AllocatorSystem>> { static constexpr bool value = false; };
@@ -97,7 +96,6 @@ namespace simplerfl {
     template<typename Repr, long long value> struct representation<ucsl::reflection::constant<Repr, value>> { using type = Repr; };
     template<typename Resolver> struct representation<ucsl::reflection::rflclass<Resolver>> { static_assert("Cannot get representation of dynamic type."); using type = void; };
     template<typename Resolver> struct representation<ucsl::reflection::spawner_data_rflclass<Resolver>> { static_assert("Cannot get representation of dynamic type."); using type = void; };
-    template<typename Resolver> struct representation<ucsl::reflection::spawner_data_rflclass_with_root<Resolver>> { static_assert("Cannot get representation of dynamic type."); using type = void; };
     template<typename Resolver> struct representation<ucsl::reflection::component_data_rflclass<Resolver>> { static_assert("Cannot get representation of dynamic type."); using type = void; };
     template<typename Type, typename AllocatorSystem> struct representation<ucsl::reflection::array<Type, AllocatorSystem>> { using type = ucsl::containers::arrays::Array<typename representation<typename ucsl::reflection::array<Type, AllocatorSystem>::type>::type, AllocatorSystem>; };
     template<typename Type, typename AllocatorSystem> struct representation<ucsl::reflection::tarray<Type, AllocatorSystem>> { using type = ucsl::containers::arrays::TArray<typename representation<typename ucsl::reflection::tarray<Type, AllocatorSystem>::type>::type, AllocatorSystem>; };
