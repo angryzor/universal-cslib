@@ -14,7 +14,15 @@ namespace ucsl::reflection::providers {
 
 	template<typename GameInterface>
 	struct simplerfl {
-		struct NullAccessor {};
+		struct NullValueAccessor {
+			const auto visit(auto f) const { return f(4); }
+			auto visit(auto f) { return f(4); }
+		};
+
+		struct NullStructureAccessor {
+			template<typename FieldRefl> inline auto operator[](const FieldRefl& field_refl) { return NullValueAccessor{}; }
+			template<typename FieldRefl> inline const auto operator[](const FieldRefl& field_refl) const { return NullValueAccessor{}; }
+		};
 
 		template<typename T, typename AddrType>
 		struct dynamic_size_of_struct;
@@ -27,6 +35,11 @@ namespace ucsl::reflection::providers {
 				if constexpr (!std::is_same_v<Base, void>)
 					offset = dynamic_size_of_struct<Base, AddrType>::get(parent, root, self);
 
+				// IDEA
+				//((
+				//	offset = util::align(offset, Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }.get_type(self).get_alignment(),
+				//	offset += Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }.get_type(self).get_size(self[Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }])
+				//), ...);
 				((
 					offset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(self, root)),
 					offset += dynamic_size_of<typename Fields::type, AddrType>(self, root, self[Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }])
@@ -61,7 +74,7 @@ namespace ucsl::reflection::providers {
 				if constexpr (!std::is_same_v<Base, void>)
 					maxAlign = std::max(maxAlign, dynamic_align_of_struct<Base, AddrType>::get(root));
 
-				((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type, AddrType>(NullAccessor{}, root))), ...);
+				((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type, AddrType>(NullStructureAccessor{}, root))), ...);
 
 				return maxAlign;
 			}
@@ -75,7 +88,7 @@ namespace ucsl::reflection::providers {
 			static size_t get(const Root& root) {
 				size_t maxAlign{};
 
-				((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type, AddrType>(NullAccessor{}, root))), ...);
+				((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type, AddrType>(NullStructureAccessor{}, root))), ...);
 
 				return maxAlign;
 			}
@@ -109,8 +122,12 @@ namespace ucsl::reflection::providers {
 				return desugar_t<T>::size * dynamic_size_of<typename desugar_t<T>::type, AddrType>(parent, root, self.as_carray()[0]);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION)
 				return dynamic_size_of_union<desugar_t<T>, AddrType>::get(parent, root, self.as_union());
-			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
-				return dynamic_size_of_struct<desugar_t<T>, AddrType>::get(parent, root, self.as_structure());
+			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) {
+				if constexpr (std::is_same_v<std::decay_t<decltype(root)>, NullStructureAccessor>)
+					return dynamic_size_of_struct<desugar_t<T>, AddrType>::get(parent, parent, self.as_structure());
+				else
+					return dynamic_size_of_struct<desugar_t<T>, AddrType>::get(parent, root, self.as_structure());
+			}
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
 				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(parent, root).c_str())->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
@@ -153,8 +170,12 @@ namespace ucsl::reflection::providers {
 				return dynamic_align_of<typename desugar_t<T>::type, AddrType>(parent, root);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION)
 				return dynamic_align_of_union<desugar_t<T>, AddrType>::get(root);
-			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
-				return dynamic_align_of_struct<desugar_t<T>, AddrType>::get(root);
+			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) {
+				if constexpr (std::is_same_v<std::decay_t<decltype(root)>, NullStructureAccessor>)
+					return dynamic_align_of_struct<desugar_t<T>, AddrType>::get(parent);
+				else
+					return dynamic_align_of_struct<desugar_t<T>, AddrType>::get(root);
+			}
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
 				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(parent, root).c_str())->GetAlignment();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
@@ -189,16 +210,6 @@ namespace ucsl::reflection::providers {
 
 			return std::array{ get_enum_member<Options>::call(counter)... };
 		}
-
-		struct NullValueAccessor {
-			const auto visit(auto f) const { return f(4); }
-			auto visit(auto f) { return f(4); }
-		};
-
-		struct NullStructureAccessor {
-			template<typename FieldRefl> inline auto operator[](const FieldRefl& field_refl) { return NullValueAccessor{}; }
-			template<typename FieldRefl> inline const auto operator[](const FieldRefl& field_refl) const { return NullValueAccessor{}; }
-		};
 
 		template<accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
 		struct ReflectionBase {

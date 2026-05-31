@@ -18,25 +18,25 @@ namespace ucsl::resources::sobj::v1::reflections {
 	struct get_object_type {
 		inline std::string operator()(const auto& parent, const auto& root) {
 			auto objectId = parent.template get_field<"id">().as_primitive().as<ucsl::objectids::ObjectIdV1>();
-			auto objects = root.template get_field<"objects">().as_carray();
+			auto objects = (*root.template get_field<"objects">().as_pointer()).as_carray();
 
-			unsigned int objIndex{};
+			unsigned short objIndex{};
 			for (const auto& object : objects) {
-				if (object.as_structure().template get_field<"id">().as_primitive().as<ucsl::objectids::ObjectIdV1>() == objectId)
+				if (static_cast<ucsl::objectids::ObjectIdV1>((*object.as_pointer()).as_structure().template get_field<"id">().as_primitive().as<ucsl::objectids::ObjectIdV1>()) == objectId)
 					break;
 
 				objIndex++;
 			}
 
-			auto objectTypes = parent.template get_field<"objectTypes">().as_carray();
+			auto objectTypes = (*root.template get_field<"objectTypes">().as_pointer()).as_carray();
 
 			for (const auto& type_ : objectTypes) {
 				auto type = type_.as_structure();
-				auto objectIndices = type.template get_field<"objectIndices">().as_carray();
+				auto objectIndices = (*type.template get_field<"objectIndices">().as_pointer()).as_carray();
 
-				for (const unsigned int index : objectIndices)
-					if (index == objIndex)
-						return type.template get_field<"name">().as_primitive().as<const char*>();
+				for (const auto& index : objectIndices)
+					if (static_cast<unsigned short>(index.as_primitive().as<unsigned short>()) == objIndex)
+						return static_cast<std::string>(type.template get_field<"name">().as_primitive().as<const char*>());
 			}
 
 			return "";
