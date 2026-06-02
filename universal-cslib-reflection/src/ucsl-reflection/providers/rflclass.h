@@ -200,8 +200,39 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			const char* get_name() const { return rflClass->GetName(); }
-			template<typename AddrType> size_t get_size(const auto& obj) const { return rflClass->GetSize(); }
-			template<typename AddrType> size_t get_alignment() const { return rflClass->GetAlignment(); }
+			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const {
+				size_t size{};
+
+				if (auto base = get_base())
+					size += base.value().template get_size<AddrType>(obj);
+
+				for (const auto& member : rflClass->GetMembers()) {
+					auto field = Field{ &member };
+					auto type = field.get_type();
+
+					size = util::align(size, type.template get_alignment<AddrType>());
+					size += type.template get_size<AddrType>(obj);
+				}
+
+				size = util::align(size, get_alignment<AddrType>());
+			}
+			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const { return rflClass->GetSize(); }
+			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const {
+				size_t maxAlign{ 1 };
+
+				if (auto base = get_base())
+					maxAlign = std::max(maxAlign, base.value().template get_alignment<AddrType>());
+
+				for (const auto& member : rflClass->GetMembers()) {
+					auto field = Field{ &member };
+					auto type = field.get_type();
+
+					maxAlign = std::max(maxAlign, type.template get_alignment<AddrType>());
+				}
+
+				return maxAlign;
+			}
+			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const { return rflClass->GetAlignment(); }
 
 			std::optional<Structure> get_base() const {
 				auto* parent = rflClass->GetParent();
@@ -235,8 +266,24 @@ namespace ucsl::reflection::providers {
 		struct SubType {
 			const GameInterface::RflSystem::RflClassMember* member;
 
-			template<typename AddrType> size_t get_size(const auto& obj) const { return member->GetSubTypeSize(); }
-			template<typename AddrType> size_t get_alignment() const { return member->GetSubTypeAlignment(); }
+			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const {
+				switch (member->GetSubType()) {
+				case MemberType::STRUCT: return Structure{ member->GetClass() }.get_size<AddrType>(obj);
+				case MemberType::CSTRING: return sizeof(AddrType);
+				case MemberType::STRING: return sizeof(AddrType) * 2;
+				default: return member->GetSubTypeSize();
+				}
+			}
+			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const { return member->GetSubTypeSize(); }
+			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const {
+				switch (member->GetSubType()) {
+				case MemberType::STRUCT: return Structure{ member->GetClass() }.get_alignment<AddrType>();
+				case MemberType::CSTRING: return alignof(AddrType);
+				case MemberType::STRING: return alignof(AddrType);
+				default: return member->GetSubTypeAlignment();
+				}
+			}
+			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const { return member->GetSubTypeAlignment(); }
 
 			template<typename F>
 			auto visit(F f) const {
@@ -251,11 +298,44 @@ namespace ucsl::reflection::providers {
 			const GameInterface::RflSystem::RflClassMember* member;
 			bool allowCArray;
 
-			template<typename AddrType> size_t get_size(const auto& obj) const {
+			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const {
+				auto get_single_size = [&]() -> size_t {
+					if constexpr (GameInterface::RflSystem::TypeSet::supports_old_array)
+						if (member->GetType() == MemberType::OLD_ARRAY)
+							return sizeof(AddrType) * 3;
+
+					switch (member->GetType()) {
+					case MemberType::STRUCT: return Structure{ member->GetClass() }.get_size<AddrType>(obj);
+					case MemberType::ARRAY: return sizeof(AddrType) * 4;
+					case MemberType::POINTER: return sizeof(AddrType);
+					case MemberType::CSTRING: return sizeof(AddrType);
+					case MemberType::STRING: return sizeof(AddrType) * 2;
+					default: return member->GetSingleSize();
+					}
+					};
+
+				if (allowCArray) return member->GetArrayLength() ? member->GetArrayLength() * get_single_size() : get_single_size();
+				else return get_single_size();
+			}
+			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const {
 				if (allowCArray) return member->GetSize();
 				else return member->GetSingleSize();
 			}
-			template<typename AddrType> size_t get_alignment() const { return member->GetAlignment(); }
+			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const {
+				if constexpr (GameInterface::RflSystem::TypeSet::supports_old_array)
+					if (member->GetType() == MemberType::OLD_ARRAY)
+						return alignof(AddrType);
+
+				switch (member->GetType()) {
+				case MemberType::STRUCT: return Structure{ member->GetClass() }.get_alignment<AddrType>();
+				case MemberType::ARRAY: return alignof(AddrType);
+				case MemberType::POINTER: return alignof(AddrType);
+				case MemberType::CSTRING: return alignof(AddrType);
+				case MemberType::STRING: return alignof(AddrType);
+				default: return member->GetAlignment();
+				}
+			}
+			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const { return member->GetAlignment(); }
 
 			template<typename F>
 			auto visit(F f) const {
@@ -281,8 +361,39 @@ namespace ucsl::reflection::providers {
 		struct RootType {
 			const GameInterface::RflSystem::RflClass* rflClass;
 
-			template<typename AddrType> size_t get_size(const auto& obj) const { return rflClass->GetSize(); }
-			template<typename AddrType> size_t get_alignment() const { return rflClass->GetAlignment(); }
+			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const {
+				size_t size{};
+
+				if (auto base = get_base())
+					size += base.value().template get_size<AddrType>(obj);
+
+				for (const auto& member : rflClass->GetMembers()) {
+					auto field = Field{ &member };
+					auto type = field.get_type();
+
+					size = util::align(size, type.template get_alignment<AddrType>());
+					size += type.template get_size<AddrType>(obj);
+				}
+
+				size = util::align(size, get_alignment<AddrType>());
+			}
+			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const { return rflClass->GetSize(); }
+			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const {
+				size_t maxAlign{ 1 };
+
+				if (auto base = get_base())
+					maxAlign = std::max(maxAlign, base.value().template get_alignment<AddrType>());
+
+				for (const auto& member : rflClass->GetMembers()) {
+					auto field = Field{ &member };
+					auto type = field.get_type();
+
+					maxAlign = std::max(maxAlign, type.template get_alignment<AddrType>());
+				}
+
+				return maxAlign;
+			}
+			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const { return rflClass->GetAlignment(); }
 
 			template<typename F>
 			auto visit(F f) const {

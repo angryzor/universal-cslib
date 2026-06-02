@@ -40,12 +40,18 @@ namespace ucsl::reflection::providers {
 				//	offset = util::align(offset, Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }.get_type(self).get_alignment(),
 				//	offset += Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }.get_type(self).get_size(self[Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }])
 				//), ...);
-				((
-					offset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(self, root)),
-					offset += dynamic_size_of<typename Fields::type, AddrType>(self, root, self[Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }])
-				), ...);
+				if constexpr (std::is_same_v<Root, NullStructureAccessor>)
+					((
+						offset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(self, self)),
+						offset += dynamic_size_of<typename Fields::type, AddrType>(self, self, self[Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }])
+					), ...);
+				else
+					((
+						offset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(self, root)),
+						offset += dynamic_size_of<typename Fields::type, AddrType>(self, root, self[Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }])
+					), ...);
 
-				return util::align(offset, dynamic_align_of<structure<Repr, name, Base, Fields...>, AddrType>(self, root));
+				return util::align(offset, dynamic_align_of<structure<Repr, name, Base, Fields...>, AddrType>(parent, root));
 			}
 		};
 
@@ -67,14 +73,17 @@ namespace ucsl::reflection::providers {
 		struct dynamic_align_of_struct;
 		template<typename AddrType, typename Repr, strlit name, typename Base, typename... Fields>
 		struct dynamic_align_of_struct<structure<Repr, name, Base, Fields...>, AddrType> {
-			template<accessors::StructureAccessor Root>
-			static size_t get(const Root& root) {
+			template<accessors::StructureAccessor Parent, accessors::StructureAccessor Root, accessors::StructureAccessor Self>
+			static size_t get(const Parent& parent, const Root& root, const Self& self) {
 				size_t maxAlign{};
 
 				if constexpr (!std::is_same_v<Base, void>)
-					maxAlign = std::max(maxAlign, dynamic_align_of_struct<Base, AddrType>::get(root));
+					maxAlign = std::max(maxAlign, dynamic_align_of_struct<Base, AddrType>::get(parent, root, self));
 
-				((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type, AddrType>(NullStructureAccessor{}, root))), ...);
+				if constexpr (std::is_same_v<Root, NullStructureAccessor>)
+					((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type, AddrType>(self, self, self[Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }]))), ...);
+				else
+					((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type, AddrType>(self, root, self[Field<Fields, decltype(parent), decltype(root)>{ parent, root, offset }]))), ...);
 
 				return maxAlign;
 			}
@@ -84,11 +93,11 @@ namespace ucsl::reflection::providers {
 		struct dynamic_align_of_union;
 		template<typename AddrType, typename Repr, strlit name, typename Resolver, typename... Fields>
 		struct dynamic_align_of_union<unionof<Repr, name, Resolver, Fields...>, AddrType> {
-			template<accessors::StructureAccessor Root>
-			static size_t get(const Root& root) {
+			template<accessors::StructureAccessor Parent, accessors::StructureAccessor Root, accessors::UnionAccessor Self>
+			static size_t get(const Parent& parent, const Root& root, const Self& self) {
 				size_t maxAlign{};
 
-				((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type, AddrType>(NullStructureAccessor{}, root))), ...);
+				((maxAlign = std::max(maxAlign, dynamic_align_of<typename Fields::type, AddrType>(parent, root, self[Field<Fields, decltype(parent), decltype(root)>{ parent, root, 0 }]))), ...);
 
 				return maxAlign;
 			}
@@ -122,12 +131,8 @@ namespace ucsl::reflection::providers {
 				return desugar_t<T>::size * dynamic_size_of<typename desugar_t<T>::type, AddrType>(parent, root, self.as_carray()[0]);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION)
 				return dynamic_size_of_union<desugar_t<T>, AddrType>::get(parent, root, self.as_union());
-			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) {
-				if constexpr (std::is_same_v<std::decay_t<decltype(root)>, NullStructureAccessor>)
-					return dynamic_size_of_struct<desugar_t<T>, AddrType>::get(parent, parent, self.as_structure());
-				else
-					return dynamic_size_of_struct<desugar_t<T>, AddrType>::get(parent, root, self.as_structure());
-			}
+			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
+				return dynamic_size_of_struct<desugar_t<T>, AddrType>::get(parent, root, self.as_structure());
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
 				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(parent, root).c_str())->GetSize();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
@@ -141,7 +146,7 @@ namespace ucsl::reflection::providers {
 		}
 
 		template<typename T, typename AddrType>
-		static size_t dynamic_align_of(const auto& parent, const auto& root) {
+		static size_t dynamic_align_of(const auto& parent, const auto& root, const auto& self) {
 			if constexpr (is_realigned_v<T>)
 				return align_of_v<T>;
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE) {
@@ -165,17 +170,13 @@ namespace ucsl::reflection::providers {
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_TARRAY)
 				return alignof(AddrType);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY)
-				return dynamic_align_of<typename desugar_t<T>::type, AddrType>(parent, root);
+				return dynamic_align_of<typename desugar_t<T>::type, AddrType>(parent, root, self.as_carray()[0]);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY)
-				return dynamic_align_of<typename desugar_t<T>::type, AddrType>(parent, root);
+				return dynamic_align_of<typename desugar_t<T>::type, AddrType>(parent, root, self.as_carray()[0]);
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION)
-				return dynamic_align_of_union<desugar_t<T>, AddrType>::get(root);
-			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) {
-				if constexpr (std::is_same_v<std::decay_t<decltype(root)>, NullStructureAccessor>)
-					return dynamic_align_of_struct<desugar_t<T>, AddrType>::get(parent);
-				else
-					return dynamic_align_of_struct<desugar_t<T>, AddrType>::get(root);
-			}
+				return dynamic_align_of_union<desugar_t<T>, AddrType>::get(parent, root, self.as_union());
+			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE)
+				return dynamic_align_of_struct<desugar_t<T>, AddrType>::get(parent, root, self.as_structure());
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS)
 				return GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(parent, root).c_str())->GetAlignment();
 			else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA)
@@ -347,7 +348,7 @@ namespace ucsl::reflection::providers {
 			constexpr size_t get_offset() const { return offset; }
 			constexpr auto get_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
 			constexpr auto get_type(auto new_parent) const {
-				if constexpr (std::is_same_v<Root, NullValueAccessor>)
+				if constexpr (std::is_same_v<Root, NullStructureAccessor>)
 					return Type<typename T::type, decltype(new_parent), decltype(new_parent)>{ new_parent, new_parent };
 				else
 					return Type<typename T::type, decltype(new_parent), Root>{ new_parent, this->root };
@@ -384,7 +385,7 @@ namespace ucsl::reflection::providers {
 			constexpr static const char* get_name() { return nullptr; }
 			constexpr static auto get_base() { return std::optional<EmptyStruct>{}; }
 			constexpr static size_t get_size(const auto& obj) { return 0; }
-			constexpr static size_t get_alignment() { return 0; }
+			constexpr static size_t get_alignment(const auto& obj) { return 0; }
 			template<typename AddrType, typename F> constexpr static void visit_fields(const auto& obj, F f) {}
 		};
 
@@ -402,7 +403,7 @@ namespace ucsl::reflection::providers {
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			constexpr static const char* get_name() { return T::name; }
 			template<typename AddrType> constexpr size_t get_size(const auto& obj) const { return dynamic_size_of<T, AddrType>(this->parent, this->root, obj); }
-			template<typename AddrType> constexpr size_t get_alignment() const { return dynamic_align_of<T, AddrType>(this->parent, this->root); }
+			template<typename AddrType> constexpr size_t get_alignment(const auto& obj) const { return dynamic_align_of<T, AddrType>(this->parent, this->root, obj); }
 			constexpr static auto get_base() {
 				if constexpr (!std::is_same_v<Base, primitive<void>>)
 					return std::make_optional(Structure<Base, Parent, Root>{});
@@ -432,15 +433,26 @@ namespace ucsl::reflection::providers {
 				size_t thisOffset{};
 
 				if constexpr (!std::is_same_v<Base, primitive<void>>)
-					offset = dynamic_size_of_struct<Base, AddrType>::get(*(const opaque_obj*)nullptr, this->root, obj);
+					offset = dynamic_size_of_struct<Base, AddrType>::get(this->parent, this->root, obj);
 
-				((
-					offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(obj, this->root)),
-					offset += dynamic_size_of<typename Fields::type, AddrType>(obj, this->root, obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
-					!std::is_same_v<F, Fields>
-				) && ...);
+				if constexpr (std::is_same_v<Root, NullStructureAccessor>) {
+					((
+						offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(obj, obj)),
+						offset += dynamic_size_of<typename Fields::type, AddrType>(obj, obj, obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
+						!std::is_same_v<F, Fields>
+					) && ...);
 
-				return Field<F, Parent, Root>{ this->parent, this->root, thisOffset };
+					return Field<F, Parent, Root>{ this->parent, this->root, thisOffset };
+				}
+				else {
+					((
+						offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(obj, this->root)),
+						offset += dynamic_size_of<typename Fields::type, AddrType>(obj, this->root, obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
+						!std::is_same_v<F, Fields>
+					) && ...);
+
+					return Field<F, Parent, Root>{ this->parent, this->root, thisOffset };
+				}
 			}
 
 			template<strlit field_name, typename AddrType, typename... Fields>
@@ -451,15 +463,26 @@ namespace ucsl::reflection::providers {
 				size_t thisOffset{};
 
 				if constexpr (!std::is_same_v<Base, primitive<void>>)
-					offset = dynamic_size_of_struct<Base, AddrType>::get(*(const opaque_obj*)nullptr, this->root, obj);
+					offset = dynamic_size_of_struct<Base, AddrType>::get(this->parent, this->root, obj);
 
-				((
-					offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(obj, this->root)),
-					offset += dynamic_size_of<typename Fields::type, AddrType>(obj, this->root, obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
-					!std::is_same_v<F, Fields>
-				) && ...);
+				if constexpr (std::is_same_v<Root, NullStructureAccessor>) {
+					((
+						offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(obj, obj)),
+						offset += dynamic_size_of<typename Fields::type, AddrType>(obj, obj, obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
+						!std::is_same_v<F, Fields>
+					) && ...);
 
-				return Field<F, Parent, Root>{ this->parent, this->root, thisOffset };
+					return Field<F, Parent, Root>{ this->parent, this->root, thisOffset };
+				}
+				else {
+					((
+						offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(obj, this->root)),
+						offset += dynamic_size_of<typename Fields::type, AddrType>(obj, this->root, obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
+						!std::is_same_v<F, Fields>
+					) && ...);
+
+					return Field<F, Parent, Root>{ this->parent, this->root, thisOffset };
+				}
 			}
 
 			template<typename AddrType, typename F, typename... Fields>
@@ -468,13 +491,22 @@ namespace ucsl::reflection::providers {
 				size_t thisOffset{};
 
 				if constexpr (!std::is_same_v<Base, primitive<void>>)
-					offset = dynamic_size_of_struct<Base, AddrType>::get(*(const opaque_obj*)nullptr, this->root, obj);
+					offset = dynamic_size_of_struct<Base, AddrType>::get(this->parent, this->root, obj);
 
-				(f((
-					offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(obj, this->root)),
-					offset += dynamic_size_of<typename Fields::type, AddrType>(obj, this->root, obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
-					Field<Fields, Parent, Root>{ this->parent, this->root, thisOffset }
-				)), ...);
+				if constexpr (std::is_same_v<Root, NullStructureAccessor>) {
+					(f((
+						offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(obj, obj)),
+						offset += dynamic_size_of<typename Fields::type, AddrType>(obj, obj, obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
+						Field<Fields, Parent, Root>{ this->parent, this->root, thisOffset }
+					)), ...);
+				}
+				else {
+					(f((
+						offset = thisOffset = util::align(offset, dynamic_align_of<typename Fields::type, AddrType>(obj, this->root)),
+						offset += dynamic_size_of<typename Fields::type, AddrType>(obj, this->root, obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
+						Field<Fields, Parent, Root>{ this->parent, this->root, thisOffset }
+					)), ...);
+				}
 			}
 		};
 
@@ -522,7 +554,7 @@ namespace ucsl::reflection::providers {
 			using ReflectionBase<Parent, Root>::ReflectionBase;
 
 			template<typename AddrType> constexpr size_t get_size(const auto& obj) const { return dynamic_size_of<T, AddrType>(this->parent, this->root, obj); }
-			template<typename AddrType> constexpr size_t get_alignment() const { return dynamic_align_of<T, AddrType>(this->parent, this->root); }
+			template<typename AddrType> constexpr size_t get_alignment(const auto& obj) const { return dynamic_align_of<T, AddrType>(this->parent, this->root, obj); }
 
 			template<typename F>
 			constexpr auto visit(F f) const {
