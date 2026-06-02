@@ -388,8 +388,7 @@ namespace ucsl::reflection::providers {
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str()) }.template get_size<AddrType>(obj.as_structure());
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_size<AddrType>(obj.as_structure());
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_size<AddrType>(obj.as_structure());
-				else
-					static_assert(false, "getting size of unknown type");
+				else static_assert(false, "getting size of unknown type");
 			}
 			template<typename AddrType> constexpr size_t get_alignment(const accessors::ValueAccessor auto& obj) const {
 				if constexpr (is_realigned_v<T>) return align_of_v<T>;
@@ -411,8 +410,7 @@ namespace ucsl::reflection::providers {
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str()) }.template get_alignment<AddrType>(obj.as_structure());
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_alignment<AddrType>(obj.as_structure());
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_alignment<AddrType>(obj.as_structure());
-				else
-					static_assert(false, "getting alignment of unknown type");
+				else static_assert(false, "getting alignment of unknown type");
 			}
 
 			template<typename F>
