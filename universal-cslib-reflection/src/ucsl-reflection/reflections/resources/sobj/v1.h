@@ -55,7 +55,7 @@ namespace ucsl::resources::sobj::v1::reflections {
 		field<float, "m_distance">,
 		field<float, "m_range">,
 		field<containers::arrays::TArray<ObjectTransformData, AllocatorSystem>, "instances">,
-		field<spawner_data_rflclass<custom_resolver<std::string, get_object_type>>, "spawnerData">
+		field<aligned<1, spawner_data_rflclass<custom_resolver<std::string, get_object_type>>>, "spawnerData">
 	>;
 
 	using ObjectTypeData = structure<impl::ObjectTypeData, "ObjectTypeData", void,

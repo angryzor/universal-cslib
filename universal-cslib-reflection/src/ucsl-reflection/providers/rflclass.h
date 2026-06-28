@@ -207,38 +207,32 @@ namespace ucsl::reflection::providers {
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			const char* get_name() const { return rflClass->GetName(); }
 			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const {
-				size_t size{};
+				size_t offset{};
 
 				if (auto base = get_base())
-					size += base.value().template get_size<AddrType>(obj);
+					offset += base.value().template get_size<AddrType>(obj);
 
 				for (const auto& member : rflClass->GetMembers()) {
-					auto field = Field{ &member };
-					auto type = field.get_type();
-
-					size = util::align(size, type.template get_alignment<AddrType>(obj));
-					size += type.template get_size<AddrType>(obj);
+					offset = util::align(offset, Field{ &member }.get_type().template get_alignment<AddrType>());
+					offset += FieldWithOffset{ &member, offset }.get_type().template get_size<AddrType>(obj);
 				}
 
-				return util::align(size, get_alignment<AddrType>(obj));
+				return util::align(offset, get_alignment<AddrType>());
 			}
 			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const { return rflClass->GetSize(); }
-			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment(const auto& obj) const {
+			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const {
 				size_t maxAlign{ 1 };
 
 				if (auto base = get_base())
-					maxAlign = std::max(maxAlign, base.value().template get_alignment<AddrType>(obj));
+					maxAlign = std::max(maxAlign, base.value().template get_alignment<AddrType>());
 
 				for (const auto& member : rflClass->GetMembers()) {
-					auto field = Field{ &member };
-					auto type = field.get_type();
-
-					maxAlign = std::max(maxAlign, type.template get_alignment<AddrType>(obj));
+					maxAlign = std::max(maxAlign, Field{ &member }.get_type().template get_alignment<AddrType>());
 				}
 
 				return maxAlign;
 			}
-			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment(const auto& obj) const { return rflClass->GetAlignment(); }
+			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const { return rflClass->GetAlignment(); }
 
 			std::optional<Structure> get_base() const {
 				auto* parent = rflClass->GetParent();
@@ -255,15 +249,12 @@ namespace ucsl::reflection::providers {
 					offset += base.value().template get_size<AddrType>(obj);
 
 				for (const auto& member : rflClass->GetMembers()) {
-					auto field = FieldWithOffset{ &member, offset };
+					offset = util::align(offset, Field{ &member }.get_type().template get_alignment<AddrType>());
 
 					if (i++ == index)
-						return field;
+						return FieldWithOffset{ &member, offset };
 
-					auto type = field.get_type();
-
-					offset = util::align(offset, type.template get_alignment<AddrType>(obj));
-					offset += type.template get_size<AddrType>(obj);
+					offset += FieldWithOffset{ &member, offset }.get_type().template get_size<AddrType>(obj);
 				}
 
 				assert(false && "Unknown field.");
@@ -283,21 +274,17 @@ namespace ucsl::reflection::providers {
 					offset += base.value().template get_size<AddrType>(obj);
 
 				for (const auto& member : rflClass->GetMembers()) {
-					offset = util::align(offset, type.template get_alignment<AddrType>(obj));
-
-					auto field = FieldWithOffset{ &member, offset };
+					offset = util::align(offset, Field{ &member }.get_type().template get_alignment<AddrType>());
 
 					if (!strcmp(member.GetName(), field_name))
-						return field;
+						return FieldWithOffset{ &member, offset };
 
-					auto type = field.get_type();
-
-					offset += type.template get_size<AddrType>(obj);
+					offset += FieldWithOffset{ &member, offset }.get_type().template get_size<AddrType>(obj);
 				}
 
 				assert(false && "Unknown field.");
 
-				return Field{ nullptr };
+				return FieldWithOffset{ nullptr, offset };
 			}
 			template<simplerfl::strlit field_name, typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true>
 			auto get_field(const auto& obj) const {
@@ -318,15 +305,11 @@ namespace ucsl::reflection::providers {
 					offset += base.value().template get_size<AddrType>(obj);
 
 				for (const auto& member : rflClass->GetMembers()) {
-					offset = util::align(offset, type.template get_alignment<AddrType>(obj));
+					offset = util::align(offset, Field{ &member }.get_type().template get_alignment<AddrType>());
 
-					auto field = FieldWithOffset{ &member, offset };
+					f(FieldWithOffset{ &member, offset });
 
-					f(field);
-
-					auto type = field.get_type();
-
-					offset += type.template get_size<AddrType>(obj);
+					offset += FieldWithOffset{ &member, offset }.get_type().template get_size<AddrType>(obj);
 				}
 			}
 			template<typename AddrType, typename F, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true>
@@ -348,15 +331,15 @@ namespace ucsl::reflection::providers {
 				}
 			}
 			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const { return member->GetSubTypeSize(); }
-			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment(const auto& obj) const {
+			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const {
 				switch (member->GetSubType()) {
-				case MemberType::STRUCT: return Structure{ member->GetClass() }.template get_alignment<AddrType>(obj);
+				case MemberType::STRUCT: return Structure{ member->GetClass() }.template get_alignment<AddrType>();
 				case MemberType::CSTRING: return alignof(AddrType);
 				case MemberType::STRING: return alignof(AddrType);
 				default: return member->GetSubTypeAlignment();
 				}
 			}
-			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment(const auto& obj) const { return member->GetSubTypeAlignment(); }
+			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const { return member->GetSubTypeAlignment(); }
 
 			template<typename F>
 			auto visit(F f) const {
@@ -394,13 +377,13 @@ namespace ucsl::reflection::providers {
 				if (allowCArray) return member->GetSize();
 				else return member->GetSingleSize();
 			}
-			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment(const auto& obj) const {
+			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const {
 				if constexpr (GameInterface::RflSystem::TypeSet::supports_old_array)
 					if (member->GetType() == MemberType::OLD_ARRAY)
 						return alignof(AddrType);
 
 				switch (member->GetType()) {
-				case MemberType::STRUCT: return Structure{ member->GetClass() }.template get_alignment<AddrType>(obj);
+				case MemberType::STRUCT: return Structure{ member->GetClass() }.template get_alignment<AddrType>();
 				case MemberType::ARRAY: return alignof(AddrType);
 				case MemberType::POINTER: return alignof(AddrType);
 				case MemberType::CSTRING: return alignof(AddrType);
@@ -408,7 +391,7 @@ namespace ucsl::reflection::providers {
 				default: return member->GetAlignment();
 				}
 			}
-			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment(const auto& obj) const { return member->GetAlignment(); }
+			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment() const { return member->GetAlignment(); }
 
 			template<typename F>
 			auto visit(F f) const {
@@ -434,39 +417,8 @@ namespace ucsl::reflection::providers {
 		struct RootType {
 			const GameInterface::RflSystem::RflClass* rflClass;
 
-			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const {
-				size_t size{};
-
-				if (auto base = get_base())
-					size += base.value().template get_size<AddrType>(obj);
-
-				for (const auto& member : rflClass->GetMembers()) {
-					auto field = Field{ &member };
-					auto type = field.get_type();
-
-					size = util::align(size, type.template get_alignment<AddrType>(obj));
-					size += type.template get_size<AddrType>(obj);
-				}
-
-				return util::align(size, get_alignment<AddrType>(obj));
-			}
-			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_size(const auto& obj) const { return rflClass->GetSize(); }
-			template<typename AddrType, std::enable_if_t<!std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment(const auto& obj) const {
-				size_t maxAlign{ 1 };
-
-				if (auto base = get_base())
-					maxAlign = std::max(maxAlign, base.value().template get_alignment<AddrType>(obj));
-
-				for (const auto& member : rflClass->GetMembers()) {
-					auto field = Field{ &member };
-					auto type = field.get_type();
-
-					maxAlign = std::max(maxAlign, type.template get_alignment<AddrType>(obj));
-				}
-
-				return maxAlign;
-			}
-			template<typename AddrType, std::enable_if_t<std::is_same_v<AddrType, size_t>, bool> = true> size_t get_alignment(const auto& obj) const { return rflClass->GetAlignment(); }
+			template<typename AddrType> size_t get_size(const auto& obj) const { return Structure{ rflClass }.template get_size<AddrType>(obj); }
+			template<typename AddrType> size_t get_alignment() const { return Structure{ rflClass }.template get_alignment<AddrType>(); }
 
 			template<typename F>
 			auto visit(F f) const {

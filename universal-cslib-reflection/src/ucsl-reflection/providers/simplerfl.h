@@ -175,13 +175,10 @@ namespace ucsl::reflection::providers {
 
 		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
 		struct Field : ReflectionBase<Parent, Root> {
-			size_t offset{};
-
-			constexpr Field(const Parent& parent, const Root& root, size_t offset) : ReflectionBase<Parent, Root>{ parent, root }, offset{ offset } {}
+			constexpr Field(const Parent& parent, const Root& root) : ReflectionBase<Parent, Root>{ parent, root } {}
 
 			constexpr static const char* get_name() { return T::name; }
-			constexpr size_t get_offset() const { return offset; }
-			constexpr auto get_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
+			constexpr auto get_type() const { return get_type(NullStructureAccessor{}); }
 			constexpr auto get_type(accessors::StructureAccessor auto new_parent) const {
 				if constexpr (std::is_same_v<Root, NullStructureAccessor>)
 					return Type<typename T::type, decltype(new_parent), decltype(new_parent)>{ new_parent, new_parent };
@@ -191,12 +188,21 @@ namespace ucsl::reflection::providers {
 		};
 
 		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
+		struct FieldWithOffset : Field<T, Parent, Root> {
+			size_t offset{};
+
+			constexpr FieldWithOffset(const Parent& parent, const Root& root, size_t offset) : Field<T, Parent, Root>{ parent, root }, offset{ offset } {}
+
+			constexpr size_t get_offset() const { return offset; }
+		};
+
+		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
 		struct Union : ReflectionBase<Parent, Root> {
 			using ReflectionBase<Parent, Root>::ReflectionBase;
 
 			constexpr static TypeKind kind = TypeKind::UNION;
 			template<typename AddrType> constexpr size_t get_size(const accessors::UnionAccessor auto& obj) const { return _get_size<AddrType>(obj, typename T::fields{}); }
-			template<typename AddrType> constexpr size_t get_alignment(const accessors::UnionAccessor auto& obj) const { return _get_alignment<AddrType>(obj, typename T::fields{}); }
+			template<typename AddrType> constexpr size_t get_alignment() const { return _get_alignment<AddrType>(typename T::fields{}); }
 
 			template<typename F>
 			constexpr void visit_fields(F f) const { _visit_fields(f, typename T::fields{}); }
@@ -208,15 +214,15 @@ namespace ucsl::reflection::providers {
 			template<typename AddrType, typename... Fields> constexpr size_t _get_size(const accessors::UnionAccessor auto& obj, std::tuple<Fields...>) const {
 				size_t maxSize{};
 
-				((maxSize = std::max(maxSize, Field<Fields, Parent, Root>{ this->parent, this->root, 0 }.get_type(obj).template get_size<AddrType>(obj_[Field<Fields, Parent, Root>{ this->parent, this->root, 0 }]))), ...);
+				((maxSize = std::max(maxSize, Field<Fields, Parent, Root>{ this->parent, this->root, 0 }.get_type(obj).template get_size<AddrType>(obj[Field<Fields, Parent, Root>{ this->parent, this->root, 0 }]))), ...);
 
 				return util::align(maxSize, get_alignment(obj));
 			}
 
-			template<typename AddrType, typename... Fields> constexpr size_t _get_alignment(const accessors::UnionAccessor auto& obj, std::tuple<Fields...>) const {
+			template<typename AddrType, typename... Fields> constexpr size_t _get_alignment(std::tuple<Fields...>) const {
 				size_t maxAlign{};
 
-				((maxAlign = std::max(maxAlign, Field<Fields, Parent, Root>{ this->parent, this->root, 0 }.get_type(obj).template get_alignment<AddrType>(obj_[Field<Fields, Parent, Root>{ this->parent, this->root, 0 }]))), ...);
+				((maxAlign = std::max(maxAlign, Field<Fields, Parent, Root>{ this->parent, this->root }.get_type().template get_alignment<AddrType>())), ...);
 
 				return maxAlign;
 			}
@@ -239,7 +245,7 @@ namespace ucsl::reflection::providers {
 			constexpr static const char* get_name() { return nullptr; }
 			constexpr static auto get_base() { return std::optional<EmptyStruct>{}; }
 			constexpr static size_t get_size(const auto& obj) { return 0; }
-			constexpr static size_t get_alignment(const auto& obj) { return 0; }
+			constexpr static size_t get_alignment() { return 0; }
 			template<typename AddrType, typename F> constexpr static void visit_fields(const auto& obj, F f) {}
 		};
 
@@ -257,7 +263,7 @@ namespace ucsl::reflection::providers {
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			constexpr static const char* get_name() { return T::name; }
 			template<typename AddrType> constexpr size_t get_size(const accessors::StructureAccessor auto& obj) const { return _get_size<AddrType>(obj, Fields{}); }
-			template<typename AddrType> constexpr size_t get_alignment(const accessors::StructureAccessor auto& obj) const { return _get_alignment<AddrType>(obj, Fields{}); }
+			template<typename AddrType> constexpr size_t get_alignment() const { return _get_alignment<AddrType>(Fields{}); }
 			constexpr static auto get_base() {
 				if constexpr (!std::is_same_v<Base, primitive<void>>)
 					return std::make_optional(Structure<Base, Parent, Root>{});
@@ -286,27 +292,22 @@ namespace ucsl::reflection::providers {
 					offset = base.value().template get_size<AddrType>(obj);
 
 				((
-					offset = util::align(offset, Field<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_alignment<AddrType>(obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }])),
-					offset += Field<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }])
-					), ...);
+					offset = util::align(offset, Field<Fields, Parent, Root>{ this->parent, this->root }.get_type().template get_alignment<AddrType>()),
+					offset += FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }])
+				), ...);
 
-				return util::align(offset, get_alignment<AddrType>(obj));
+				return util::align(offset, get_alignment<AddrType>());
 			}
 
-			template<typename AddrType, typename... Fields> constexpr size_t _get_alignment(const accessors::StructureAccessor auto& obj, std::tuple<Fields...>) const {
+			template<typename AddrType, typename... Fields> constexpr size_t _get_alignment(std::tuple<Fields...>) const {
 				size_t alignment{};
 				size_t offset{};
 				size_t maxAlign{};
 
 				if constexpr (constexpr auto base = get_base())
-					maxAlign = base.value().template get_alignment<AddrType>(obj);
+					maxAlign = base.value().template get_alignment<AddrType>();
 
-				((
-					alignment = Field<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_alignment<AddrType>(obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
-					offset = util::align(offset, alignment),
-					maxAlign = std::max(maxAlign, alignment),
-					offset += Field<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }])
-				), ...);
+				((maxAlign = std::max(maxAlign, Field<Fields, Parent, Root>{ this->parent, this->root }.get_type().template get_alignment<AddrType>())), ...);
 
 				return maxAlign;
 			}
@@ -322,12 +323,12 @@ namespace ucsl::reflection::providers {
 					offset = base.value().template get_size<AddrType>(obj);
 
 				((
-					offset = thisOffset = util::align(offset, Field<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_alignment<AddrType>(obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }])),
-					offset += Field<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
+					offset = thisOffset = util::align(offset, Field<Fields, Parent, Root>{ this->parent, this->root }.get_type().template get_alignment<AddrType>()),
+					offset += FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }]),
 					!std::is_same_v<F, Fields>
 				) && ...);
 
-				return Field<F, Parent, Root>{ this->parent, this->root, thisOffset };
+				return FieldWithOffset<F, Parent, Root>{ this->parent, this->root, thisOffset };
 			}
 
 			template<strlit field_name, typename AddrType, typename... Fields>
@@ -341,12 +342,12 @@ namespace ucsl::reflection::providers {
 					offset = base.value().template get_size<AddrType>(obj);
 
 				((
-					offset = thisOffset = util::align(offset, Field<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_alignment<AddrType>(obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }])),
-					offset += Field<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
+					offset = thisOffset = util::align(offset, Field<Fields, Parent, Root>{ this->parent, this->root }.get_type().template get_alignment<AddrType>()),
+					offset += FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }]),
 					!std::is_same_v<F, Fields>
 				) && ...);
 
-				return Field<F, Parent, Root>{ this->parent, this->root, thisOffset };
+				return FieldWithOffset<F, Parent, Root>{ this->parent, this->root, thisOffset };
 			}
 
 			template<typename AddrType, typename F, typename... Fields>
@@ -358,9 +359,9 @@ namespace ucsl::reflection::providers {
 					offset = base.value().template get_size<AddrType>(obj);
 
 				(f((
-					offset = thisOffset = util::align(offset, Field<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_alignment<AddrType>(obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }])),
-					offset += Field<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[Field<Fields, Parent, Root>{ this->parent, this->root, offset }]),
-					Field<Fields, Parent, Root>{ this->parent, this->root, thisOffset }
+					offset = thisOffset = util::align(offset, Field<Fields, Parent, Root>{ this->parent, this->root }.get_type().template get_alignment<AddrType>()),
+					offset += FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }]),
+					FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, thisOffset }
 				)), ...);
 			}
 		};
@@ -390,7 +391,7 @@ namespace ucsl::reflection::providers {
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_size<AddrType>(obj.as_structure());
 				else static_assert(false, "getting size of unknown type");
 			}
-			template<typename AddrType> constexpr size_t get_alignment(const accessors::ValueAccessor auto& obj) const {
+			template<typename AddrType> constexpr size_t get_alignment() const {
 				if constexpr (is_realigned_v<T>) return align_of_v<T>;
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE) {
 					if constexpr (std::is_same_v<typename desugar_t<T>::repr, const char*>) return alignof(AddrType);
@@ -403,13 +404,13 @@ namespace ucsl::reflection::providers {
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER) return alignof(AddrType);
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ARRAY) return alignof(AddrType);
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_TARRAY) return alignof(AddrType);
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY) return DynamicCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root }.get_item_type().template get_alignment<AddrType>(obj.as_carray()[0]);
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY) return StaticCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root }.get_item_type().template get_alignment<AddrType>(obj.as_carray()[0]);
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return Union<desugar_t<T>, Parent, Root>{ this->parent, this->root }.template get_alignment<AddrType>(obj.as_union());
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return Structure<desugar_t<T>, Parent, Root>{ this->parent, this->root }.template get_alignment<AddrType>(obj.as_structure());
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str()) }.template get_alignment<AddrType>(obj.as_structure());
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_alignment<AddrType>(obj.as_structure());
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_alignment<AddrType>(obj.as_structure());
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY) return DynamicCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root }.get_item_type().template get_alignment<AddrType>();
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY) return StaticCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root }.get_item_type().template get_alignment<AddrType>();
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return Union<desugar_t<T>, Parent, Root>{ this->parent, this->root }.template get_alignment<AddrType>();
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return Structure<desugar_t<T>, Parent, Root>{ this->parent, this->root }.template get_alignment<AddrType>();
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str()) }.template get_alignment<AddrType>();
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_alignment<AddrType>();
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_alignment<AddrType>();
 				else static_assert(false, "getting alignment of unknown type");
 			}
 
