@@ -18,6 +18,7 @@ namespace ucsl::reflection::accessors {
 		struct Field {
 			constexpr const char* get_name() const { return "foo"; }
 			constexpr size_t get_offset() const { return 15; }
+			constexpr auto get_type() const { return Type{}; }
 			constexpr auto get_type(auto new_parent) const { return Type{}; }
 		};
 	}

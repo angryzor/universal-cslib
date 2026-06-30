@@ -28,6 +28,46 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<unsigned char, "a">
 	>;
 
+	// User data
+	using EDataType = enumeration<impl::SRS_DATA::Type, "EDataType", unsigned int,
+		option<"BOOL">,
+		option<"INT">,
+		option<"UINT">,
+		option<"FLOAT">,
+		option<"UNK">,
+		option<"STRING">
+	>;
+
+	inline size_t get_data_value_ptr_idx(const impl::SRS_DATA::Type& type) {
+		switch (type) {
+		case impl::SRS_DATA::Type::BOOL: return 0;
+		case impl::SRS_DATA::Type::INT: return 1;
+		case impl::SRS_DATA::Type::UINT: return 2;
+		case impl::SRS_DATA::Type::FLOAT: return 3;
+		case impl::SRS_DATA::Type::STRING: return 4;
+		default: assert(false && "Unknown data type"); return 0;
+		}
+	}
+
+	using SRS_DATA_VALUE_PTR = unionof<impl::SRS_DATA_VALUE_PTR, "SRS_CASTNODE_PTR", selector_resolver<size_t, field_resolver<impl::SRS_DATA::Type, "type">>::impl<get_data_value_ptr_idx>,
+		field<bool*, "b">,
+		field<int*, "i32">,
+		field<unsigned int*, "u32">,
+		field<float*, "float">,
+		field<const char*, "u32">
+	>;
+
+	using SRS_DATA = structure<impl::SRS_DATA, "SRS_DATA", void,
+		field<const char*, "name">,
+		field<EDataType, "type">,
+		field<SRS_DATA_VALUE_PTR, "value">
+	>;
+
+	using SRS_USERDATA = structure<impl::SRS_USERDATA, "SRS_USERDATA", void,
+		field<unsigned int, "count">,
+		field<dynamic_carray<SRS_DATA, field_resolver<unsigned int, "count">>*, "items">
+	>;
+
 	using ECurveType = enumeration<impl::ECurveType, "ECurveType", unsigned short,
 		option<"TranslationX">,
 		option<"TranslationY">,
@@ -106,10 +146,10 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<EInterpolationType, "interpolationType">
 	>;
 
-	using SRS_KEYFRAME_PTR = unionof<impl::SRS_KEYFRAME_PTR, "SRS_KEYFRAME_PTR", impl::SRS_TRACK, [](const impl::SRS_TRACK& track) -> size_t {
-		switch (track.GetInterpolationType()) {
+	inline size_t get_keyframe_ptr_idx(const unsigned int& flags) {
+		switch (static_cast<impl::EInterpolationType>(flags & 0x3)) {
 		case impl::EInterpolationType::CONSTANT:
-			switch (track.GetDataType()) {
+			switch (static_cast<impl::ETrackDataType>((flags >> 4) & 0xF)) {
 			case impl::ETrackDataType::FLOAT: return 0;
 			case impl::ETrackDataType::INDEX: return 1;
 			case impl::ETrackDataType::INT: return 2;
@@ -118,7 +158,7 @@ namespace ucsl::resources::swif::v5::reflections {
 			default: assert(false && "Invalid track flags"); return 0;
 			}
 		case impl::EInterpolationType::LINEAR:
-			switch (track.GetDataType()) {
+			switch (static_cast<impl::ETrackDataType>((flags >> 4) & 0xF)) {
 			case impl::ETrackDataType::FLOAT: return 5;
 			case impl::ETrackDataType::INDEX: return 6;
 			case impl::ETrackDataType::INT: return 7;
@@ -127,7 +167,7 @@ namespace ucsl::resources::swif::v5::reflections {
 			default: assert(false && "Invalid track flags"); return 0;
 			}
 		case impl::EInterpolationType::HERMITE:
-			switch (track.GetDataType()) {
+			switch (static_cast<impl::ETrackDataType>((flags >> 4) & 0xF)) {
 			case impl::ETrackDataType::FLOAT: return 10;
 			case impl::ETrackDataType::INDEX: return 11;
 			case impl::ETrackDataType::INT: return 12;
@@ -136,7 +176,7 @@ namespace ucsl::resources::swif::v5::reflections {
 			default: assert(false && "Invalid track flags"); return 0;
 			}
 		case impl::EInterpolationType::INDIVIDUAL:
-			switch (track.GetDataType()) {
+			switch (static_cast<impl::ETrackDataType>((flags >> 4) & 0xF)) {
 			case impl::ETrackDataType::FLOAT: return 15;
 			case impl::ETrackDataType::INDEX: return 16;
 			case impl::ETrackDataType::INT: return 17;
@@ -146,7 +186,9 @@ namespace ucsl::resources::swif::v5::reflections {
 			}
 		default: assert(false && "Invalid track flags"); return 0;
 		}
-	},
+	}
+
+	using SRS_KEYFRAME_PTR = unionof<impl::SRS_KEYFRAME_PTR, "SRS_KEYFRAME_PTR", selector_resolver<size_t, field_resolver<unsigned int, "flags">>::impl<get_keyframe_ptr_idx>,
         field<dynamic_carray<Key<float>, field_resolver<unsigned short, "keyCount">>*, "constantFloat">,
         field<dynamic_carray<Key<int>, field_resolver<unsigned short, "keyCount">>*, "constantIndex">,
         field<dynamic_carray<Key<int>, field_resolver<unsigned short, "keyCount">>*, "constantInt">,
@@ -193,7 +235,7 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<unsigned int, "motionCount">,
 		field<unsigned int, "frameCount">,
 		field<dynamic_carray<SRS_MOTION, field_resolver<unsigned int, "motionCount">>*, "motions">,
-		field<void*, "userData">,
+		field<SRS_USERDATA*, "userData">,
 		field<bool, "isLooping">
 	>;
 
@@ -209,44 +251,6 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<short, "textureListIndex">,
 		field<short, "textureIndex">,
 		field<short, "cropIndex">
-	>;
-
-	// User data
-	using EDataType = enumeration<impl::SRS_DATA::Type, "EDataType", unsigned int,
-		option<"BOOL">,
-		option<"INT">,
-		option<"UINT">,
-		option<"FLOAT">,
-		option<"UNK">,
-		option<"STRING">
-	>;
-
-	using SRS_DATA_VALUE_PTR = unionof<impl::SRS_DATA_VALUE_PTR, "SRS_CASTNODE_PTR", impl::SRS_DATA, [](const impl::SRS_DATA& data) -> size_t {
-		switch (data.type) {
-		case impl::SRS_DATA::Type::BOOL: return 0;
-		case impl::SRS_DATA::Type::INT: return 1;
-		case impl::SRS_DATA::Type::UINT: return 2;
-		case impl::SRS_DATA::Type::FLOAT: return 3;
-		case impl::SRS_DATA::Type::STRING: return 4;
-		default: assert(false && "Unknown data type"); return 0;
-		}
-	},
-		field<bool*, "b">,
-		field<int*, "i32">,
-		field<unsigned int*, "u32">,
-		field<float*, "float">,
-		field<const char*, "u32">
-	>;
-
-	using SRS_DATA = structure<impl::SRS_DATA, "SRS_DATA", void,
-		field<const char*, "name">,
-		field<EDataType, "type">,
-		field<SRS_DATA_VALUE_PTR, "value">
-	>;
-
-	using SRS_USERDATA = structure<impl::SRS_USERDATA, "SRS_USERDATA", void,
-		field<unsigned int, "count">,
-		field<dynamic_carray<SRS_DATA, field_resolver<unsigned int, "count">>*, "items">
 	>;
 
 	// Textures
@@ -352,16 +356,17 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<Vector3, "scale">
 	>;
 
-	// Casts
-	template<typename Parent>
-	using SRS_EFFECT_PTR = unionof<impl::SRS_EFFECT_PTR, "SRS_EFFECT_PTR", Parent, [](const Parent& cast) -> size_t {
-		switch (cast.GetEffectType()) {
+	inline size_t get_effect_ptr_idx(const unsigned int& effectType) {
+		switch (static_cast<impl::EEffectType>(effectType & 0xF)) {
 		case impl::EEffectType::NONE: return 0;
 		case impl::EEffectType::BLUR: return 1;
 		case impl::EEffectType::REFLECT: return 2;
 		default: assert(false && "invalid type"); return 0;
 		}
-	},
+	}
+
+	// Casts
+	using SRS_EFFECT_PTR = unionof<impl::SRS_EFFECT_PTR, "SRS_EFFECT_PTR", selector_resolver<size_t, field_resolver<unsigned int, "effectType">>::impl<get_effect_ptr_idx>,
 		field<void*, "none">,
 		field<SRS_BLUR3D*, "blur">,
 		field<SRS_REFLECT3D*, "reflect">
@@ -383,7 +388,7 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<dynamic_carray<SRS_CROPREF, field_resolver<short, "cropRef1Count">>*, "cropRefs1">,
 		field<SRS_TEXTDATA*, "textData">,
 		field<unsigned int, "effectType">,
-		field<SRS_EFFECT_PTR<impl::SRS_IMAGECAST>, "effectData">
+		field<SRS_EFFECT_PTR, "effectData">
 	>;
 
 	using SRS_SLICE = structure<impl::SRS_SLICE, "SRS_SLICE", void,
@@ -397,6 +402,10 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<Color, "vertexColorBottomRight">,
 		field<short, "cropIndex0">
 	>;
+
+	inline size_t get_slice_count(const short& h, const short& v) {
+		return h * v;
+	}
 
 	using SRS_SLICECAST = structure<impl::SRS_SLICECAST, "SRS_SLICECAST", void,
 		field<unsigned int, "flags">,
@@ -414,8 +423,8 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<short, "cropRef0Count">,
 		field<dynamic_carray<SRS_CROPREF, field_resolver<short, "cropRef0Count">>*, "cropRefs0">,
 		field<unsigned int, "effectType">,
-		field<SRS_EFFECT_PTR<impl::SRS_SLICECAST>, "effectData">,
-		field<dynamic_carray<SRS_SLICE, selector_resolver<field_resolver<short, "sliceHorizontalCount">, field_resolver<short, "sliceVerticalCount">, [](short h, short v) { return h * v; }>>, "slices">
+		field<SRS_EFFECT_PTR, "effectData">,
+		field<dynamic_carray<SRS_SLICE, selector_resolver<size_t, field_resolver<short, "sliceHorizontalCount">, field_resolver<short, "sliceVerticalCount">>::impl<get_slice_count>>, "slices">
 	>;
 
 	using SRS_REFERENCECAST = structure<impl::SRS_REFERENCECAST, "SRS_REFERENCECAST", void,
@@ -426,15 +435,17 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<int, "unk2">
 	>;
 
-	using SRS_CAST_PTR = unionof<impl::SRS_CAST_PTR, "SRS_CASTNODE_PTR", impl::SRS_CASTNODE, [](const impl::SRS_CASTNODE& castNode) -> size_t {
-		switch (castNode.GetType()) {
+	inline size_t get_cast_ptr_idx(const unsigned int& flags) {
+		switch (static_cast<impl::SRS_CASTNODE::Type>(flags & 0xF)) {
 		case impl::SRS_CASTNODE::Type::NORMAL: return 0;
 		case impl::SRS_CASTNODE::Type::IMAGE: return 1;
 		case impl::SRS_CASTNODE::Type::SLICE: return 2;
 		case impl::SRS_CASTNODE::Type::REFERENCE: return 3;
 		default: assert(false && "invalid type"); return 0;
 		}
-	},
+	}
+
+	using SRS_CAST_PTR = unionof<impl::SRS_CAST_PTR, "SRS_CASTNODE_PTR", selector_resolver<size_t, field_resolver<unsigned int, "flags">>::impl<get_cast_ptr_idx>,
 		field<void*, "none">,
 		field<SRS_IMAGECAST*, "image">,
 		field<SRS_SLICECAST*, "slice">,
@@ -451,8 +462,12 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<SRS_USERDATA*, "userData">
 	>;
 
+	inline size_t get_trs_ptr_idx(const unsigned int& flags) {
+		return flags & 0x1 ? 1 : 0;
+	}
+
 	// Layers
-	using SRS_TRS_PTR = unionof<impl::SRS_TRS_PTR, "SRS_TRS_PTR", impl::SRS_LAYER, [](const impl::SRS_LAYER& layer) -> size_t { return layer.Is3D() ? 1 : 0; },
+	using SRS_TRS_PTR = unionof<impl::SRS_TRS_PTR, "SRS_TRS_PTR", selector_resolver<size_t, field_resolver<unsigned int, "flags">>::impl<get_trs_ptr_idx>,
 		field<dynamic_carray<SRS_TRS2D, field_resolver<int, "castCount">>*, "transforms2d">,
 		field<dynamic_carray<SRS_TRS3D, field_resolver<int, "castCount">>*, "transforms3d">
 	>;
