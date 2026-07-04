@@ -424,7 +424,7 @@ namespace ucsl::resources::swif::v6::reflections {
 	>;
 
 	using SRS_REFERENCECAST = structure<impl::SRS_REFERENCECAST, "SRS_REFERENCECAST", void,
-		field<uint64_t, "layer">,
+		field<weak<deferred<impl::SRS_LAYER>*>, "layer">,
 		field<unsigned int, "flags">,
 		field<unsigned int, "animationId">,
 		field<unsigned int, "animationFrame">,

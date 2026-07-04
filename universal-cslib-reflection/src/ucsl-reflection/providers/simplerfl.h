@@ -12,59 +12,149 @@
 namespace ucsl::reflection::providers {
 	using namespace ::simplerfl;
 
-	template<typename T> struct has_desugared_dynamic_size;
-	template<typename T> struct has_desugared_dynamic_size<primitive<T>> { static constexpr bool value = false; };
-	template<typename Repr, strlit name, typename Underlying, typename... Options> struct has_desugared_dynamic_size<enumeration<Repr, name, Underlying, Options...>> { static constexpr bool value = false; };
-	template<typename Underlying, typename... Components> struct has_desugared_dynamic_size<bitfield<Underlying, Components...>> { static constexpr bool value = false; };
-	template<typename T> struct has_desugared_dynamic_size<pointer<T>> { static constexpr bool value = false; };
-	template<typename Repr, strlit name, typename Base, typename... Fields> struct has_desugared_dynamic_size<structure<Repr, name, Base, Fields...>> { static constexpr bool value = (has_desugared_dynamic_size<typename Fields::type>::value || ...); };
-	template<typename Repr, strlit name, typename Parent, typename Resolver, typename... Fields> struct has_desugared_dynamic_size<unionof<Repr, name, Parent, Resolver, Fields...>> { static constexpr bool value = (has_desugared_dynamic_size<typename Fields::type>::value || ...); };
-	template<size_t alignment, typename Type> struct has_desugared_dynamic_size<aligned<alignment, Type>> { static constexpr bool value = false; };
-	template<typename Type> struct has_desugared_dynamic_size<deferred<Type>> { static constexpr bool value = has_desugared_dynamic_size<resolve_decl_t<typename deferred<Type>::unresolved_type>>::value; };
-	template<typename Repr, Repr value> struct has_desugared_dynamic_size<ucsl::reflection::constant<Repr, value>> { static constexpr bool value = false; };
-	template<typename Resolver> struct has_desugared_dynamic_size<ucsl::reflection::rflclass<Resolver>> { static constexpr bool value = true; };
-	template<typename Resolver> struct has_desugared_dynamic_size<ucsl::reflection::spawner_data_rflclass<Resolver>> { static constexpr bool value = true; };
-	template<typename Resolver> struct has_desugared_dynamic_size<ucsl::reflection::component_data_rflclass<Resolver>> { static constexpr bool value = true; };
-	template<typename Type, typename AllocatorSystem> struct has_desugared_dynamic_size<ucsl::reflection::array<Type, AllocatorSystem>> { static constexpr bool value = false; };
-	template<typename Type, typename AllocatorSystem> struct has_desugared_dynamic_size<ucsl::reflection::tarray<Type, AllocatorSystem>> { static constexpr bool value = false; };
-	template<typename Type> static constexpr bool has_desugared_dynamic_size_v = has_base_type_dynamic_size<Type>::value;
+	// Static optimizations
+	// skip accessors
+	template<typename T> struct requires_accessors_desugared;
+	template<typename T> struct requires_accessors;
 
-	template<typename AddrType, typename T> struct static_size_of_desugared;
-	template<typename AddrType, typename T> struct static_size_of;
+	template<typename Type> struct requires_accessors_desugared<primitive<Type>> { static constexpr bool value = false; };
+	template<typename Repr, strlit name, typename Underlying, typename... Options> struct requires_accessors_desugared<enumeration<Repr, name, Underlying, Options...>> { static constexpr bool value = false; };
+	template<typename Underlying, typename... Components> struct requires_accessors_desugared<bitfield<Underlying, Components...>> { static constexpr bool value = false; };
+	template<typename Type> struct requires_accessors_desugared<pointer<Type>> { static constexpr bool value = requires_accessors<typename pointer<Type>::target>::value; };
+	template<typename Type, typename Resolver> struct requires_accessors_desugared<dynamic_carray<Type, Resolver>> { static constexpr bool value = true; };
+	template<typename Type, size_t size> struct requires_accessors_desugared<static_carray<Type, size>> { static constexpr bool value = requires_accessors<typename static_carray<Type, size>::type>::value; };
+	template<typename Repr, strlit name, typename Base, typename... Fields> struct requires_accessors_desugared<structure<Repr, name, Base, Fields...>> { static constexpr bool value = (requires_accessors<typename Fields::type>::value || ...); };
+	template<typename Repr, strlit name, typename Parent, typename Resolver, typename... Fields> struct requires_accessors_desugared<unionof<Repr, name, Parent, Resolver, Fields...>> { static constexpr bool value = true; };
+	template<typename Repr, Repr v> struct requires_accessors_desugared<ucsl::reflection::constant<Repr, v>> { static constexpr bool value = false; };
+	template<typename Resolver> struct requires_accessors_desugared<ucsl::reflection::rflclass<Resolver>> { static constexpr bool value = true; };
+	template<typename Resolver> struct requires_accessors_desugared<ucsl::reflection::spawner_data_rflclass<Resolver>> { static constexpr bool value = true; };
+	template<typename Resolver> struct requires_accessors_desugared<ucsl::reflection::component_data_rflclass<Resolver>> { static constexpr bool value = true; };
+	template<typename Type, typename AllocatorSystem> struct requires_accessors_desugared<ucsl::reflection::array<Type, AllocatorSystem>> { static constexpr bool value = requires_accessors<typename ucsl::reflection::array<Type, AllocatorSystem>::type>::value; };
+	template<typename Type, typename AllocatorSystem> struct requires_accessors_desugared<ucsl::reflection::tarray<Type, AllocatorSystem>> { static constexpr bool value = requires_accessors<typename ucsl::reflection::tarray<Type, AllocatorSystem>::type>::value; };
+	template<typename T> static constexpr bool requires_accessors_desugared_v = requires_accessors_desugared<T>::value;
 
-	template<typename AddrType, size_t acc, typename... Fields> struct static_size_of_structure_fields_;
-	template<typename AddrType, size_t acc> struct static_size_of_structure_fields_<AddrType, acc> { static constexpr size_t value = acc; };
-	template<typename AddrType, size_t acc, typename Field, typename... Fields> struct static_size_of_structure_fields_<AddrType, acc, Field, Fields...> { static constexpr size_t value = static_size_of_structure_fields_<AddrType, util::align(acc, static_alignment_of<Field>::value) + static_size_of<Field>::value, Fields...>::value; };
-	template<typename AddrType, typename... Fields> struct static_size_of_structure_fields { static constexpr size_t value = static_size_of_structure_fields_<AddrType, 0, Fields...>::value; };
-	template<typename AddrType, typename... Fields> static constexpr size_t static_size_of_structure_fields_v = static_size_of_structure_fields<AddrType, Fields...>::value;
+	template<typename T> struct requires_accessors { static constexpr bool value = requires_accessors_desugared_v<desugar_t<T>>; };
+	template<typename T> static constexpr bool requires_accessors_v = requires_accessors<T>::value;
 
-	template<typename AddrType, size_t acc, typename... Fields> struct static_size_of_union_fields_;
-	template<typename AddrType, size_t acc> struct static_size_of_union_fields_<AddrType, acc> { static constexpr size_t value = acc; };
-	template<typename AddrType, size_t acc, typename Field, typename... Fields> struct static_size_of_union_fields_<AddrType, acc, Field, Fields...> { static constexpr size_t value = static_size_of_union_fields_<AddrType, std::max(acc, static_size_of<Field>::value), Fields...>::value; };
-	template<typename AddrType, typename... Fields> struct static_size_of_union_fields { static constexpr size_t value = static_size_of_union_fields_<AddrType, 0, Fields...>::value; };
-	template<typename AddrType, typename... Fields> static constexpr size_t static_size_of_union_fields_v = static_size_of_union_fields<AddrType, Fields...>::value;
+	//template<typename T> struct has_static_size_of_desugared;
+	//template<typename T> struct has_static_size_of;
+	//template<typename T> struct has_static_alignment_of_desugared;
+	//template<typename T> struct has_static_alignment_of;
 
-	template<typename AddrType, typename... Fields> struct static_size_of_fields;
-	template<typename AddrType> struct static_size_of_fields<AddrType> { static constexpr size_t value = 0; };
-	template<typename AddrType, typename Field, typename... Fields> struct static_size_of_fields<AddrType, Field, Fields...> { static constexpr size_t value = util::align(static_size_of_fields<Fields...>::value, static_alignment_of<Field>::value) + static_size_of<Field>::value; };
+	//// skip size calculation
+	//template<typename Type> struct has_static_size_of_desugared<primitive<Type>> { static constexpr bool value = true; };
+	//template<typename Repr, strlit name, typename Underlying, typename... Options> struct has_static_size_of_desugared<enumeration<Repr, name, Underlying, Options...>> { static constexpr bool value = true; };
+	//template<typename Underlying, typename... Components> struct has_static_size_of_desugared<bitfield<Underlying, Components...>> { static constexpr bool value = true; };
+	//template<typename Type> struct has_static_size_of_desugared<pointer<Type>> { static constexpr bool value = true; };
+	//template<typename Type, typename Resolver> struct has_static_size_of_desugared<dynamic_carray<Type, Resolver>> { static constexpr bool value = false; };
+	//template<typename Type, size_t size> struct has_static_size_of_desugared<static_carray<Type, size>> { static constexpr bool value = has_static_size_of<typename static_carray<Type, size>::type>::value; };
+	//template<typename Repr, strlit name, typename Base, typename... Fields> struct has_static_size_of_desugared<structure<Repr, name, Base, Fields...>> { static constexpr bool value = (has_static_size_of<typename Fields::type>::value && ...); }; //  && has_static_alignment_of<typename Fields::type>::value
+	//template<typename Repr, strlit name, typename Parent, typename Resolver, typename... Fields> struct has_static_size_of_desugared<unionof<Repr, name, Parent, Resolver, Fields...>> { static constexpr bool value = (has_static_size_of<typename Fields::type>::value && ...); };
+	//template<typename Repr, Repr v> struct has_static_size_of_desugared<ucsl::reflection::constant<Repr, v>> { static constexpr bool value = true; };
+	//template<typename Resolver> struct has_static_size_of_desugared<ucsl::reflection::rflclass<Resolver>> { static constexpr bool value = false; };
+	//template<typename Resolver> struct has_static_size_of_desugared<ucsl::reflection::spawner_data_rflclass<Resolver>> { static constexpr bool value = false; };
+	//template<typename Resolver> struct has_static_size_of_desugared<ucsl::reflection::component_data_rflclass<Resolver>> { static constexpr bool value = false; };
+	//template<typename Type, typename AllocatorSystem> struct has_static_size_of_desugared<ucsl::reflection::array<Type, AllocatorSystem>> { static constexpr bool value = true; };
+	//template<typename Type, typename AllocatorSystem> struct has_static_size_of_desugared<ucsl::reflection::tarray<Type, AllocatorSystem>> { static constexpr bool value = true; };
+	//template<typename T> static constexpr bool has_static_size_of_desugared_v = has_static_size_of_desugared<T>::value;
 
-	template<typename AddrType> struct static_size_of_desugared<AddrType, primitive<const char*>> { static constexpr size_t value = sizeof(AddrType); };
-	template<typename AddrType> struct static_size_of_desugared<AddrType, primitive<ucsl::strings::VariableString>> { static constexpr size_t value = sizeof(AddrType) * 2; };
-	template<typename AddrType, typename T> struct static_size_of_desugared<AddrType, primitive<T>> { static constexpr size_t value = sizeof(T); };
-	template<typename AddrType, typename Repr, strlit name, typename Underlying, typename... Options> struct static_size_of_desugared<AddrType, enumeration<Repr, name, Underlying, Options...>> { static constexpr size_t value = sizeof(Repr); };
-	template<typename AddrType, typename Underlying, typename... Components> struct static_size_of_desugared<AddrType, bitfield<Underlying, Components...>> { static constexpr size_t value = sizeof(Underlying); };
-	template<typename AddrType, typename T> struct static_size_of_desugared<AddrType, pointer<T>> { static constexpr size_t value = sizeof(AddrType); };
-	template<typename AddrType, typename Repr, strlit name, typename Base, typename... Fields> struct static_size_of_desugared<AddrType, structure<Repr, name, Base, Fields...>> { static constexpr size_t value = static_size_of<Field>::value + util::align(...; };
-	template<typename AddrType, typename Repr, strlit name, typename Parent, typename Resolver, typename... Fields> struct static_size_of_desugared<AddrType, unionof<Repr, name, Parent, Resolver, Fields...>> { static constexpr size_t value = (static_size_of_desugared<AddrType, typename Fields::type>::value || ...); };
-	template<typename AddrType, size_t alignment, typename Type> struct static_size_of_desugared<AddrType, aligned<alignment, Type>> { static constexpr size_t value = false; };
-	template<typename AddrType, typename Type> struct static_size_of_desugared<AddrType, deferred<Type>> { static constexpr size_t value = static_size_of_desugared<AddrType, resolve_decl_t<typename deferred<Type>::unresolved_type>>::value; };
-	template<typename AddrType, typename Repr, Repr value> struct static_size_of_desugared<AddrType, ucsl::reflection::constant<Repr, value>> { static constexpr size_t value = false; };
-	template<typename AddrType, typename Resolver> struct static_size_of_desugared<AddrType, ucsl::reflection::rflclass<Resolver>> { static constexpr size_t value = true; };
-	template<typename AddrType, typename Resolver> struct static_size_of_desugared<AddrType, ucsl::reflection::spawner_data_rflclass<Resolver>> { static constexpr size_t value = true; };
-	template<typename AddrType, typename Resolver> struct static_size_of_desugared<AddrType, ucsl::reflection::component_data_rflclass<Resolver>> { static constexpr size_t value = true; };
-	template<typename AddrType, typename Type, typename AllocatorSystem> struct static_size_of_desugared<AddrType, ucsl::reflection::array<Type, AllocatorSystem>> { static constexpr size_t value = false; };
-	template<typename AddrType, typename Type, typename AllocatorSystem> struct static_size_of_desugared<AddrType, ucsl::reflection::tarray<Type, AllocatorSystem>> { static constexpr size_t value = false; };
-	template<typename AddrType, typename Type> static constexpr size_t static_size_of_desugared_v = static_size_of_desugared<AddrType, Type>::value;
+	//template<typename T> struct has_static_size_of { static constexpr bool value = has_static_size_of_desugared_v<desugar_t<T>>; };
+	//template<typename T> static constexpr bool has_static_size_of_v = has_static_size_of<T>::value;
+
+	//// skip alignment calculation
+	//template<typename Type> struct has_static_alignment_of_desugared<primitive<Type>> { static constexpr bool value = true; };
+	//template<typename Repr, strlit name, typename Underlying, typename... Options> struct has_static_alignment_of_desugared<enumeration<Repr, name, Underlying, Options...>> { static constexpr bool value = false; };
+	//template<typename Underlying, typename... Components> struct has_static_alignment_of_desugared<bitfield<Underlying, Components...>> { static constexpr bool value = false; };
+	//template<typename Type> struct has_static_alignment_of_desugared<pointer<Type>> { static constexpr bool value = true; };
+	//template<typename Type, typename Resolver> struct has_static_alignment_of_desugared<dynamic_carray<Type, Resolver>> { static constexpr bool value = has_static_alignment_of<typename dynamic_carray<Type, Resolver>::type>::value; };
+	//template<typename Type, size_t size> struct has_static_alignment_of_desugared<static_carray<Type, size>> { static constexpr bool value = has_static_alignment_of<typename static_carray<Type, size>::type>::value; };
+	//template<typename Repr, strlit name, typename Base, typename... Fields> struct has_static_alignment_of_desugared<structure<Repr, name, Base, Fields...>> { static constexpr bool value = (has_static_alignment_of<typename Fields::type>::value && ...); };
+	//template<typename Repr, strlit name, typename Parent, typename Resolver, typename... Fields> struct has_static_alignment_of_desugared<unionof<Repr, name, Parent, Resolver, Fields...>> { static constexpr bool value = (has_static_alignment_of<typename Fields::type>::value && ...); };
+	//template<typename Repr, Repr v> struct has_static_alignment_of_desugared<ucsl::reflection::constant<Repr, v>> { static constexpr bool value = true; };
+	//template<typename Resolver> struct has_static_alignment_of_desugared<ucsl::reflection::rflclass<Resolver>> { static constexpr bool value = false; };
+	//template<typename Resolver> struct has_static_alignment_of_desugared<ucsl::reflection::spawner_data_rflclass<Resolver>> { static constexpr bool value = false; };
+	//template<typename Resolver> struct has_static_alignment_of_desugared<ucsl::reflection::component_data_rflclass<Resolver>> { static constexpr bool value = false; };
+	//template<typename Type, typename AllocatorSystem> struct has_static_alignment_of_desugared<ucsl::reflection::array<Type, AllocatorSystem>> { static constexpr bool value = true; };
+	//template<typename Type, typename AllocatorSystem> struct has_static_alignment_of_desugared<ucsl::reflection::tarray<Type, AllocatorSystem>> { static constexpr bool value = true; };
+	//template<typename T> static constexpr bool has_static_alignment_of_desugared_v = has_static_alignment_of_desugared<T>::value;
+
+	//template<typename T> struct has_static_alignment_of { static constexpr bool value = has_static_alignment_of_desugared_v<desugar_t<T>>; };
+	//template<typename T> static constexpr bool has_static_alignment_of_v = has_static_alignment_of<T>::value;
+
+	//template<typename AddrType, typename T> struct static_size_of_desugared;
+	//template<typename AddrType, typename T> struct static_size_of;
+	//template<typename AddrType, typename T> struct static_alignment_of_desugared;
+	//template<typename AddrType, typename T> struct static_alignment_of;
+
+	//// static size calculation
+	//template<typename AddrType, size_t acc, typename... Fields> struct static_size_of_structure_fields_;
+	//template<typename AddrType, size_t acc> struct static_size_of_structure_fields_<AddrType, acc> { static constexpr size_t value = acc; };
+	//template<typename AddrType, size_t acc, typename Field, typename... Fields> struct static_size_of_structure_fields_<AddrType, acc, Field, Fields...> { static constexpr size_t value = static_size_of_structure_fields_<AddrType, util::align(acc, static_alignment_of<AddrType, typename Field::type>::value) + static_size_of<AddrType, typename Field::type>::value, Fields...>::value; };
+	//template<typename AddrType, typename... Fields> struct static_size_of_structure_fields { static constexpr size_t value = static_size_of_structure_fields_<AddrType, 0, Fields...>::value; };
+	//template<typename AddrType, typename... Fields> static constexpr size_t static_size_of_structure_fields_v = static_size_of_structure_fields<AddrType, Fields...>::value;
+
+	//template<typename AddrType, size_t acc, typename... Fields> struct static_size_of_union_fields_;
+	//template<typename AddrType, size_t acc> struct static_size_of_union_fields_<AddrType, acc> { static constexpr size_t value = acc; };
+	//template<typename AddrType, size_t acc, typename Field, typename... Fields> struct static_size_of_union_fields_<AddrType, acc, Field, Fields...> { static constexpr size_t value = static_size_of_union_fields_<AddrType, std::max(acc, static_size_of<AddrType, typename Field::type>::value), Fields...>::value; };
+	//template<typename AddrType, typename... Fields> struct static_size_of_union_fields { static constexpr size_t value = static_size_of_union_fields_<AddrType, 0, Fields...>::value; };
+	//template<typename AddrType, typename... Fields> static constexpr size_t static_size_of_union_fields_v = static_size_of_union_fields<AddrType, Fields...>::value;
+
+	//template<typename AddrType, typename... Fields> struct static_size_of_fields;
+	//template<typename AddrType> struct static_size_of_fields<AddrType> { static constexpr size_t value = 0; };
+	//template<typename AddrType, typename Field, typename... Fields> struct static_size_of_fields<AddrType, Field, Fields...> { static constexpr size_t value = util::align(static_size_of_fields<Fields...>::value, static_alignment_of<AddrType, typename Field::type>::value) + static_size_of<AddrType, typename Field::type>::value; };
+
+	//template<typename AddrType> struct static_size_of_desugared<AddrType, primitive<const char*>> { static constexpr size_t value = sizeof(AddrType); };
+	//template<typename AddrType> struct static_size_of_desugared<AddrType, primitive<ucsl::strings::VariableString>> { static constexpr size_t value = sizeof(AddrType) * 2; };
+	//template<typename AddrType, typename T> struct static_size_of_desugared<AddrType, primitive<T>> { static constexpr size_t value = sizeof(T); };
+	//template<typename AddrType, typename Repr, strlit name, typename Underlying, typename... Options> struct static_size_of_desugared<AddrType, enumeration<Repr, name, Underlying, Options...>> { static constexpr size_t value = sizeof(Repr); };
+	//template<typename AddrType, typename Underlying, typename... Components> struct static_size_of_desugared<AddrType, bitfield<Underlying, Components...>> { static constexpr size_t value = sizeof(Underlying); };
+	//template<typename AddrType, typename T> struct static_size_of_desugared<AddrType, pointer<T>> { static constexpr size_t value = sizeof(AddrType); };
+	//template<typename AddrType, typename Type, size_t size> struct static_size_of_desugared<AddrType, static_carray<Type, size>> { static constexpr size_t value = size * static_size_of<AddrType, typename static_carray<Type, size>::type>::value; };
+	//template<typename AddrType, typename Repr, strlit name, typename Base, typename... Fields> struct static_size_of_desugared<AddrType, structure<Repr, name, Base, Fields...>> { static constexpr size_t value = static_size_of_structure_fields_v<AddrType, Fields...>; };
+	//template<typename AddrType, typename Repr, strlit name, typename Parent, typename Resolver, typename... Fields> struct static_size_of_desugared<AddrType, unionof<Repr, name, Parent, Resolver, Fields...>> { static constexpr size_t value = static_size_of_union_fields_v<AddrType, Fields...>; };
+	//template<typename AddrType, typename Repr, Repr v> struct static_size_of_desugared<AddrType, ucsl::reflection::constant<Repr, v>> { static constexpr size_t value = sizeof(Repr); };
+	//template<typename AddrType, typename Type, typename AllocatorSystem> struct static_size_of_desugared<AddrType, ucsl::reflection::array<Type, AllocatorSystem>> { static constexpr size_t value = sizeof(AddrType) * 4; };
+	//template<typename AddrType, typename Type, typename AllocatorSystem> struct static_size_of_desugared<AddrType, ucsl::reflection::tarray<Type, AllocatorSystem>> { static constexpr size_t value = sizeof(AddrType) * 3; };
+	//template<typename AddrType, typename Type> static constexpr size_t static_size_of_desugared_v = static_size_of_desugared<AddrType, Type>::value;
+
+	//template<typename AddrType, typename T> struct static_size_of { static constexpr size_t value = static_size_of_desugared_v<AddrType, desugar_t<T>>; };
+	//template<typename AddrType, typename T> static constexpr size_t static_size_of_v = static_size_of<AddrType, T>::value;
+
+	//// static alignment calculation
+	//template<typename AddrType, size_t acc, typename... Fields> struct static_alignment_of_structure_fields_;
+	//template<typename AddrType, size_t acc> struct static_alignment_of_structure_fields_<AddrType, acc> { static constexpr size_t value = acc; };
+	//template<typename AddrType, size_t acc, typename Field, typename... Fields> struct static_alignment_of_structure_fields_<AddrType, acc, Field, Fields...> { static constexpr size_t value = static_alignment_of_structure_fields_<AddrType, std::max(acc, static_alignment_of<AddrType, typename Field::type>::value), Fields...>::value; };
+	//template<typename AddrType, typename... Fields> struct static_alignment_of_structure_fields { static constexpr size_t value = static_alignment_of_structure_fields_<AddrType, 0, Fields...>::value; };
+	//template<typename AddrType, typename... Fields> static constexpr size_t static_alignment_of_structure_fields_v = static_alignment_of_structure_fields<AddrType, Fields...>::value;
+
+	//template<typename AddrType, size_t acc, typename... Fields> struct static_alignment_of_union_fields_;
+	//template<typename AddrType, size_t acc> struct static_alignment_of_union_fields_<AddrType, acc> { static constexpr size_t value = acc; };
+	//template<typename AddrType, size_t acc, typename Field, typename... Fields> struct static_alignment_of_union_fields_<AddrType, acc, Field, Fields...> { static constexpr size_t value = static_alignment_of_union_fields_<AddrType, std::max(acc, static_alignment_of<AddrType, typename Field::type>::value), Fields...>::value; };
+	//template<typename AddrType, typename... Fields> struct static_alignment_of_union_fields { static constexpr size_t value = static_alignment_of_union_fields_<AddrType, 0, Fields...>::value; };
+	//template<typename AddrType, typename... Fields> static constexpr size_t static_alignment_of_union_fields_v = static_alignment_of_union_fields<AddrType, Fields...>::value;
+
+	//template<typename AddrType, typename... Fields> struct static_alignment_of_fields;
+	//template<typename AddrType> struct static_alignment_of_fields<AddrType> { static constexpr size_t value = 0; };
+	//template<typename AddrType, typename Field, typename... Fields> struct static_alignment_of_fields<AddrType, Field, Fields...> { static constexpr size_t value = util::align(static_alignment_of_fields<Fields...>::value, static_alignment_of<AddrType, typename Field::type>::value) + static_alignment_of<AddrType, typename Field::type>::value; };
+
+	//template<typename AddrType> struct static_alignment_of_desugared<AddrType, primitive<const char*>> { static constexpr size_t value = alignof(AddrType); };
+	//template<typename AddrType> struct static_alignment_of_desugared<AddrType, primitive<ucsl::strings::VariableString>> { static constexpr size_t value = alignof(AddrType); };
+	//template<typename AddrType, typename T> struct static_alignment_of_desugared<AddrType, primitive<T>> { static constexpr size_t value = alignof(T); };
+	//template<typename AddrType, typename Repr, strlit name, typename Underlying, typename... Options> struct static_alignment_of_desugared<AddrType, enumeration<Repr, name, Underlying, Options...>> { static constexpr size_t value = alignof(Repr); };
+	//template<typename AddrType, typename Underlying, typename... Components> struct static_alignment_of_desugared<AddrType, bitfield<Underlying, Components...>> { static constexpr size_t value = alignof(Underlying); };
+	//template<typename AddrType, typename T> struct static_alignment_of_desugared<AddrType, pointer<T>> { static constexpr size_t value = alignof(AddrType); };
+	//template<typename AddrType, typename Type, typename Resolver> struct static_alignment_of_desugared<AddrType, dynamic_carray<Type, Resolver>> { static constexpr size_t value = static_alignment_of<AddrType, typename dynamic_carray<Type, Resolver>::type>::value; };
+	//template<typename AddrType, typename Type, size_t size> struct static_alignment_of_desugared<AddrType, static_carray<Type, size>> { static constexpr size_t value = static_alignment_of<AddrType, typename static_carray<Type, size>::type>::value; };
+	//template<typename AddrType, typename Repr, strlit name, typename Base, typename... Fields> struct static_alignment_of_desugared<AddrType, structure<Repr, name, Base, Fields...>> { static constexpr size_t value = static_alignment_of_structure_fields_v<AddrType, Fields...>; };
+	//template<typename AddrType, typename Repr, strlit name, typename Parent, typename Resolver, typename... Fields> struct static_alignment_of_desugared<AddrType, unionof<Repr, name, Parent, Resolver, Fields...>> { static constexpr size_t value = static_alignment_of_union_fields_v<AddrType, Fields...>; };
+	//template<typename AddrType, typename Repr, Repr v> struct static_alignment_of_desugared<AddrType, ucsl::reflection::constant<Repr, v>> { static constexpr size_t value = alignof(Repr); };
+	//template<typename AddrType, typename Type, typename AllocatorSystem> struct static_alignment_of_desugared<AddrType, ucsl::reflection::array<Type, AllocatorSystem>> { static constexpr size_t value = alignof(AddrType); };
+	//template<typename AddrType, typename Type, typename AllocatorSystem> struct static_alignment_of_desugared<AddrType, ucsl::reflection::tarray<Type, AllocatorSystem>> { static constexpr size_t value = alignof(AddrType); };
+	//template<typename AddrType, typename Type> static constexpr size_t static_alignment_of_desugared_v = static_alignment_of_desugared<AddrType, Type>::value;
+
+	//template<typename AddrType, typename T> struct static_alignment_of { static constexpr size_t value = is_realigned_v<T> ? align_of_v<T> : static_alignment_of_desugared_v<AddrType, desugar_t<T>>; };
+	//template<typename AddrType, typename T> static constexpr size_t static_alignment_of_v = static_alignment_of<AddrType, T>::value;
+
 
 	template<typename GameInterface>
 	struct simplerfl {
@@ -107,6 +197,14 @@ namespace ucsl::reflection::providers {
 			const Root root;
 
 			constexpr ReflectionBase(const Parent& parent, const Root& root) : parent{ parent }, root{ root } {}
+
+		protected:
+			template<template<typename, typename, typename, auto...> typename ReflT, typename T, auto... Rest> constexpr auto create_refl(const auto& ...args) const {
+				if constexpr (!requires_accessors_v<T>)
+					return ReflT<T, NullStructureAccessor, NullStructureAccessor, Rest...>{ {}, {}, args... };
+				else
+					return ReflT<T, Parent, Root, Rest...>{ this->parent, this->root, args... };
+			}
 		};
 
 		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
@@ -179,25 +277,16 @@ namespace ucsl::reflection::providers {
 			using ReflectionBase<Parent, Root>::ReflectionBase;
 
 			constexpr static TypeKind kind = TypeKind::POINTER;
-			constexpr auto get_target_type() const { return Type<typename T::target, Parent, Root>{ this->parent, this->root }; }
+			constexpr auto get_target_type() const { return this->template create_refl<Type, typename T::target>(); }
 			constexpr static bool is_weak() { return weak; }
 		};
-
-		//template<typename T>
-		//struct Offset {
-		//	constexpr static TypeKind kind = TypeKind::OFFSET;
-		//	constexpr static auto get_target_type() { return Type<typename T::target>{}; }
-		//	template<typename F>
-		//	constexpr static auto visit(F f) { return f(PrimitiveData<typename T::repr>{}); }
-		//};
 
 		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
 		struct Array : ReflectionBase<Parent, Root> {
 			using ReflectionBase<Parent, Root>::ReflectionBase;
 
 			constexpr static TypeKind kind = TypeKind::ARRAY;
-			constexpr auto get_item_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
-			//constexpr static auto get_accessor(auto& obj) { return OpaqueArray<representation_t<T>, GameInterface>{ (representation_t<T>&)obj }; }
+			constexpr auto get_item_type() const { return this->template create_refl<Type, typename T::type>(); }
 		};
 
 		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
@@ -205,8 +294,7 @@ namespace ucsl::reflection::providers {
 			using ReflectionBase<Parent, Root>::ReflectionBase;
 
 			constexpr static TypeKind kind = TypeKind::TARRAY;
-			constexpr auto get_item_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
-			//constexpr static auto get_accessor(auto& obj) { return OpaqueArray<representation_t<T>, GameInterface>{ (representation_t<T>&)obj }; }
+			constexpr auto get_item_type() const { return this->template create_refl<Type, typename T::type>(); }
 		};
 
 		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
@@ -214,7 +302,7 @@ namespace ucsl::reflection::providers {
 			using ReflectionBase<Parent, Root>::ReflectionBase;
 
 			constexpr static TypeKind kind = TypeKind::CARRAY;
-			constexpr auto get_item_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
+			constexpr auto get_item_type() const { return this->template create_refl<Type, typename T::type>(); }
 			constexpr static size_t get_length() { return T::size; }
 		};
 
@@ -223,21 +311,28 @@ namespace ucsl::reflection::providers {
 			using ReflectionBase<Parent, Root>::ReflectionBase;
 
 			constexpr static TypeKind kind = TypeKind::CARRAY;
-			constexpr auto get_item_type() const { return Type<typename T::type, Parent, Root>{ this->parent, this->root }; }
+			constexpr auto get_item_type() const { return this->template create_refl<Type, typename T::type>(); }
 			constexpr size_t get_length() const { return resolve<typename T::resolver>(this->parent, this->root); }
 		};
 
 		template<typename T, accessors::StructureAccessor Parent, accessors::StructureAccessor Root>
 		struct Field : ReflectionBase<Parent, Root> {
-			constexpr Field(const Parent& parent, const Root& root) : ReflectionBase<Parent, Root>{ parent, root } {}
+			using ReflectionBase<Parent, Root>::ReflectionBase;
 
 			constexpr static const char* get_name() { return T::name; }
-			constexpr auto get_type() const { return get_type(this->parent); }
-			constexpr auto get_type(accessors::StructureAccessor auto new_parent) const {
-				if constexpr (std::is_same_v<Root, NullStructureAccessor>)
-					return Type<typename T::type, decltype(new_parent), decltype(new_parent)>{ new_parent, new_parent };
+			constexpr auto get_type() const {
+				if constexpr (!requires_accessors_v<typename T::type>)
+					return Type<typename T::type, NullStructureAccessor, NullStructureAccessor>{ {}, {} };
 				else
-					return Type<typename T::type, decltype(new_parent), Root>{ new_parent, this->root };
+					return get_type(this->parent);
+			}
+			constexpr auto get_type(const accessors::StructureAccessor auto& new_parent) const {
+				if constexpr (!requires_accessors_v<typename T::type>)
+					return Type<typename T::type, NullStructureAccessor, NullStructureAccessor>{ {}, {} };
+				else if constexpr (std::is_same_v<Root, NullStructureAccessor>)
+					return Type<typename T::type, std::decay_t<decltype(new_parent)>, std::decay_t<decltype(new_parent)>>{ new_parent, new_parent };
+				else
+					return Type<typename T::type, std::decay_t<decltype(new_parent)>, Root>{ new_parent, this->root };
 			}
 		};
 
@@ -255,8 +350,18 @@ namespace ucsl::reflection::providers {
 			using ReflectionBase<Parent, Root>::ReflectionBase;
 
 			constexpr static TypeKind kind = TypeKind::UNION;
-			template<typename AddrType> constexpr size_t get_size(const accessors::UnionAccessor auto& obj) const { return _get_size<AddrType>(obj, typename T::fields{}); }
-			template<typename AddrType> constexpr size_t get_alignment() const { return _get_alignment<AddrType>(typename T::fields{}); }
+			template<typename AddrType> constexpr size_t get_size(const accessors::UnionAccessor auto& obj) const {
+				//if constexpr (has_static_size_of_v<T>)
+				//	return static_size_of_v<AddrType, T>;
+				//else
+					return _get_size<AddrType>(obj, typename T::fields{});
+			}
+			template<typename AddrType> constexpr size_t get_alignment() const {
+				//if constexpr (has_static_alignment_of_v<T>)
+				//	return static_alignment_of_v<AddrType, T>;
+				//else
+					return _get_alignment<AddrType>(typename T::fields{});
+			}
 
 			template<typename F>
 			constexpr void visit_fields(F f) const { _visit_fields(f, typename T::fields{}); }
@@ -265,10 +370,16 @@ namespace ucsl::reflection::providers {
 			constexpr void visit_current_field(F f) const { _visit_current_field(f, typename T::fields{}, std::make_index_sequence<std::tuple_size_v<typename T::fields>>{}); }
 
 		private:
+			template<template<typename, typename, typename, auto...> typename ReflT, typename T, auto... Rest> constexpr auto create_field_refl(const auto& ...args) const {
+				if constexpr (!requires_accessors_v<typename T::type>)
+					return ReflT<T, NullStructureAccessor, NullStructureAccessor, Rest...>{ {}, {}, args... };
+				else
+					return ReflT<T, Parent, Root, Rest...>{ this->parent, this->root, args... };
+			}
 			template<typename AddrType, typename... Fields> constexpr size_t _get_size(const accessors::UnionAccessor auto& obj, std::tuple<Fields...>) const {
 				size_t maxSize{};
 
-				((maxSize = std::max(maxSize, FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, 0 }.get_type(obj).template get_size<AddrType>(obj[FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, 0 }]))), ...);
+				((maxSize = std::max(maxSize, this->template create_field_refl<FieldWithOffset, Fields>(0).get_type(obj).template get_size<AddrType>(obj[this->template create_field_refl<FieldWithOffset, Fields>(0)]))), ...);
 
 				return util::align(maxSize, get_alignment<AddrType>());
 			}
@@ -276,21 +387,21 @@ namespace ucsl::reflection::providers {
 			template<typename AddrType, typename... Fields> constexpr size_t _get_alignment(std::tuple<Fields...>) const {
 				size_t maxAlign{};
 
-				((maxAlign = std::max(maxAlign, Field<Fields, Parent, Root>{ this->parent, this->root }.get_type().template get_alignment<AddrType>())), ...);
+				((maxAlign = std::max(maxAlign, this->template create_field_refl<Field, Fields>().get_type().template get_alignment<AddrType>())), ...);
 
 				return maxAlign;
 			}
 
 			template<typename F, typename... Fields>
 			constexpr void _visit_fields(F f, std::tuple<Fields...>) const {
-				(f(FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, 0 }), ...);
+				(f(this->template create_field_refl<FieldWithOffset, Fields>(0)), ...);
 			}
 
 			template<typename F, typename Fields, size_t... Is>
 			constexpr void _visit_current_field(F f, Fields, std::index_sequence<Is...>) const {
 				size_t idx = resolve<typename desugar_t<T>::resolver>(this->parent, this->root);
 
-				((idx == Is ? (f(FieldWithOffset<std::tuple_element_t<Is, Fields>, Parent, Root>{ this->parent, this->root, 0 }), true) : false) || ...);
+				((idx == Is ? (f(this->template create_field_refl<FieldWithOffset, std::tuple_element_t<Is, Fields>>(0)), true) : false) || ...);
 			}
 		};
 
@@ -316,13 +427,23 @@ namespace ucsl::reflection::providers {
 
 			constexpr static TypeKind kind = TypeKind::STRUCTURE;
 			constexpr static const char* get_name() { return T::name; }
-			template<typename AddrType> constexpr size_t get_size(const accessors::StructureAccessor auto& obj) const { return _get_size<AddrType>(obj, Fields{}); }
-			template<typename AddrType> constexpr size_t get_alignment() const { return _get_alignment<AddrType>(Fields{}); }
+			template<typename AddrType> constexpr size_t get_size(const accessors::StructureAccessor auto& obj) const {
+				//if constexpr (has_static_size_of_v<T>)
+				//	return static_size_of_v<AddrType, T>;
+				//else
+					return _get_size<AddrType>(obj, Fields{});
+			}
+			template<typename AddrType> constexpr size_t get_alignment() const {
+				//if constexpr (has_static_alignment_of_v<T>)
+				//	return static_alignment_of_v<AddrType, T>;
+				//else
+					return _get_alignment<AddrType>(Fields{});
+			}
 			constexpr auto get_base() const {
-				if constexpr (!std::is_same_v<Base, primitive<void>>)
-					return std::make_optional(Structure<Base, Parent, Root>{ this->parent, this->root });
-				else
+				if constexpr (std::is_same_v<Base, primitive<void>>)
 					return std::optional<EmptyStruct>{};
+				else
+					return std::make_optional(this->template create_refl<Structure, Base>());
 			}
 
 			template<size_t index, typename AddrType>
@@ -339,6 +460,12 @@ namespace ucsl::reflection::providers {
 			constexpr void visit_fields(const accessors::StructureAccessor auto& obj, F f) const { _visit_fields<AddrType>(obj, f, Fields{}); }
 
 		private:
+			template<template<typename, typename, typename, auto...> typename ReflT, typename T, auto... Rest> constexpr auto create_field_refl(const auto& ...args) const {
+				if constexpr (!requires_accessors_v<typename T::type>)
+					return ReflT<T, NullStructureAccessor, NullStructureAccessor, Rest...>{ {}, {}, args... };
+				else
+					return ReflT<T, Parent, Root, Rest...>{ this->parent, this->root, args... };
+			}
 			template<typename AddrType, typename... Fields> constexpr size_t _get_size(const accessors::StructureAccessor auto& obj, std::tuple<Fields...>) const {
 				size_t offset{};
 
@@ -346,8 +473,8 @@ namespace ucsl::reflection::providers {
 					offset = base.value().template get_size<AddrType>(obj);
 
 				((
-					offset = util::align(offset, Field<Fields, Parent, Root>{ this->parent, this->root }.get_type().template get_alignment<AddrType>()),
-					offset += FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }])
+					offset = util::align(offset, this->template create_field_refl<Field, Fields>().get_type().template get_alignment<AddrType>()),
+					offset += this->template create_field_refl<FieldWithOffset, Fields>(offset).get_type(obj).template get_size<AddrType>(obj[this->template create_field_refl<FieldWithOffset, Fields>(offset)])
 				), ...);
 
 				return util::align(offset, get_alignment<AddrType>());
@@ -361,7 +488,7 @@ namespace ucsl::reflection::providers {
 				if (auto base = get_base())
 					maxAlign = base.value().template get_alignment<AddrType>();
 
-				((maxAlign = std::max(maxAlign, Field<Fields, Parent, Root>{ this->parent, this->root }.get_type().template get_alignment<AddrType>())), ...);
+				((maxAlign = std::max(maxAlign, this->template create_field_refl<Field, Fields>().get_type().template get_alignment<AddrType>())), ...);
 
 				return maxAlign;
 			}
@@ -377,12 +504,12 @@ namespace ucsl::reflection::providers {
 					offset = base.value().template get_size<AddrType>(obj);
 
 				((
-					offset = thisOffset = util::align(offset, Field<Fields, Parent, Root>{ this->parent, this->root }.get_type().template get_alignment<AddrType>()),
-					offset += FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }]),
+					offset = thisOffset = util::align(offset, this->template create_field_refl<Field, Fields>().get_type().template get_alignment<AddrType>()),
+					offset += this->template create_field_refl<FieldWithOffset, Fields>(offset).get_type(obj).template get_size<AddrType>(obj[this->template create_field_refl<FieldWithOffset, Fields>(offset)]),
 					!std::is_same_v<F, Fields>
 				) && ...);
 
-				return FieldWithOffset<F, Parent, Root>{ this->parent, this->root, thisOffset };
+				return this->template create_field_refl<FieldWithOffset, F>(thisOffset);
 			}
 
 			template<strlit field_name, typename AddrType, typename... Fields>
@@ -396,12 +523,12 @@ namespace ucsl::reflection::providers {
 					offset = base.value().template get_size<AddrType>(obj);
 
 				((
-					offset = thisOffset = util::align(offset, Field<Fields, Parent, Root>{ this->parent, this->root }.get_type().template get_alignment<AddrType>()),
-					offset += FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }]),
+					offset = thisOffset = util::align(offset, this->template create_field_refl<Field, Fields>().get_type().template get_alignment<AddrType>()),
+					offset += this->template create_field_refl<FieldWithOffset, Fields>(offset).get_type(obj).template get_size<AddrType>(obj[this->template create_field_refl<FieldWithOffset, Fields>(offset)]),
 					!std::is_same_v<F, Fields>
 				) && ...);
 
-				return FieldWithOffset<F, Parent, Root>{ this->parent, this->root, thisOffset };
+				return this->template create_field_refl<FieldWithOffset, F>(thisOffset);
 			}
 
 			template<typename AddrType, typename F, typename... Fields>
@@ -413,9 +540,9 @@ namespace ucsl::reflection::providers {
 					offset = base.value().template get_size<AddrType>(obj);
 
 				(f((
-					offset = thisOffset = util::align(offset, Field<Fields, Parent, Root>{ this->parent, this->root }.get_type().template get_alignment<AddrType>()),
-					offset += FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }.get_type(obj).template get_size<AddrType>(obj[FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, offset }]),
-					FieldWithOffset<Fields, Parent, Root>{ this->parent, this->root, thisOffset }
+					offset = thisOffset = util::align(offset, this->template create_field_refl<Field, Fields>().get_type().template get_alignment<AddrType>()),
+					offset += this->template create_field_refl<FieldWithOffset, Fields>(offset).get_type(obj).template get_size<AddrType>(obj[this->template create_field_refl<FieldWithOffset, Fields>(offset)]),
+					this->template create_field_refl<FieldWithOffset, Fields>(thisOffset)
 				)), ...);
 			}
 		};
@@ -425,6 +552,7 @@ namespace ucsl::reflection::providers {
 			using ReflectionBase<Parent, Root>::ReflectionBase;
 
 			template<typename AddrType> constexpr size_t get_size(const accessors::ValueAccessor auto& obj) const {
+				//if constexpr (has_static_size_of_v<T>) return static_size_of_v<AddrType, T>;
 				if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE) {
 					if constexpr (std::is_same_v<typename desugar_t<T>::repr, const char*>) return sizeof(AddrType);
 					else if constexpr (std::is_same_v<typename desugar_t<T>::repr, ucsl::strings::VariableString>) return sizeof(AddrType) * 2;
@@ -436,16 +564,17 @@ namespace ucsl::reflection::providers {
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER) return sizeof(AddrType);
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ARRAY) return sizeof(AddrType) * 4;
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_TARRAY) return sizeof(AddrType) * 3;
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY) return resolve<typename desugar_t<T>::resolver>(this->parent, this->root) == 0 ? 0 : resolve<typename desugar_t<T>::resolver>(this->parent, this->root) * DynamicCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root }.get_item_type().template get_size<AddrType>(obj.as_carray()[0]);
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY) return desugar_t<T>::size * StaticCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root }.get_item_type().template get_size<AddrType>(obj.as_carray()[0]);
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return Union<desugar_t<T>, Parent, Root>{ this->parent, this->root }.template get_size<AddrType>(obj.as_union());
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return Structure<desugar_t<T>, Parent, Root>{ this->parent, this->root }.template get_size<AddrType>(obj.as_structure());
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY) return resolve<typename desugar_t<T>::resolver>(this->parent, this->root) == 0 ? 0 : resolve<typename desugar_t<T>::resolver>(this->parent, this->root) * this->template create_refl<DynamicCArray, desugar_t<T>>().get_item_type().template get_size<AddrType>(obj.as_carray()[0]);
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY) return desugar_t<T>::size * this->template create_refl<StaticCArray, desugar_t<T>>().get_item_type().template get_size<AddrType>(obj.as_carray()[0]);
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return this->template create_refl<Union, desugar_t<T>>().template get_size<AddrType>(obj.as_union());
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return this->template create_refl<Structure, desugar_t<T>>().template get_size<AddrType>(obj.as_structure());
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str()) }.template get_size<AddrType>(obj.as_structure());
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_size<AddrType>(obj.as_structure());
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_size<AddrType>(obj.as_structure());
 				else static_assert(false, "getting size of unknown type");
 			}
 			template<typename AddrType> constexpr size_t get_alignment() const {
+				//if constexpr (has_static_alignment_of_v<T>) return static_alignment_of_v<AddrType, T>;
 				if constexpr (is_realigned_v<T>) return align_of_v<T>;
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE) {
 					if constexpr (std::is_same_v<typename desugar_t<T>::repr, const char*>) return alignof(AddrType);
@@ -458,10 +587,10 @@ namespace ucsl::reflection::providers {
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER) return alignof(AddrType);
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ARRAY) return alignof(AddrType);
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_TARRAY) return alignof(AddrType);
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY) return DynamicCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root }.get_item_type().template get_alignment<AddrType>();
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY) return StaticCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root }.get_item_type().template get_alignment<AddrType>();
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return Union<desugar_t<T>, Parent, Root>{ this->parent, this->root }.template get_alignment<AddrType>();
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return Structure<desugar_t<T>, Parent, Root>{ this->parent, this->root }.template get_alignment<AddrType>();
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY) return this->template create_refl<DynamicCArray, desugar_t<T>>().get_item_type().template get_alignment<AddrType>();
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY) return this->template create_refl<StaticCArray, desugar_t<T>>().get_item_type().template get_alignment<AddrType>();
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return this->template create_refl<Union, desugar_t<T>>().template get_alignment<AddrType>();
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return this->template create_refl<Structure, desugar_t<T>>().template get_alignment<AddrType>();
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str()) }.template get_alignment<AddrType>();
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_alignment<AddrType>();
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS) return typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() }.template get_alignment<AddrType>();
@@ -473,14 +602,14 @@ namespace ucsl::reflection::providers {
 				if constexpr (desugar_t<T>::desc_type == DESCTYPE_PRIMITIVE) return f(Primitive<desugar_t<T>, ucsl::reflection::is_erased_v<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_CONSTANT) return f(Constant<desugar_t<T>, ucsl::reflection::is_erased_v<T>>{});
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ENUMERATION) return f(Enum<desugar_t<T>, ucsl::reflection::is_erased_v<T>>{});
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_BITFIELD) return f(Bitfield<desugar_t<T>, Parent, Root, ucsl::reflection::is_erased_v<T>>{ this->parent, this->root });
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER) return f(Pointer<desugar_t<T>, Parent, Root, ucsl::reflection::is_weak_v<T>>{ this->parent, this->root });
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ARRAY) return f(Array<desugar_t<T>, Parent, Root>{ this->parent, this->root });
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_TARRAY) return f(TArray<desugar_t<T>, Parent, Root>{ this->parent, this->root });
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY) return f(DynamicCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root });
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY) return f(StaticCArray<desugar_t<T>, Parent, Root>{ this->parent, this->root });
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return f(Union<desugar_t<T>, Parent, Root>{ this->parent, this->root });
-				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return f(Structure<desugar_t<T>, Parent, Root>{ this->parent, this->root });
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_BITFIELD) return f(this->template create_refl<Bitfield, desugar_t<T>, ucsl::reflection::is_erased_v<T>>());
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_POINTER) return f(this->template create_refl<Pointer, desugar_t<T>, ucsl::reflection::is_weak_v<T>>());
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_ARRAY) return f(this->template create_refl<Array, desugar_t<T>>());
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_TARRAY) return f(this->template create_refl<TArray, desugar_t<T>>());
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_DYNAMIC_CARRAY) return f(this->template create_refl<DynamicCArray, desugar_t<T>>());
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STATIC_CARRAY) return f(this->template create_refl<StaticCArray, desugar_t<T>>());
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_UNION) return f(this->template create_refl<Union, desugar_t<T>>());
+				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_STRUCTURE) return f(this->template create_refl<Structure, desugar_t<T>>());
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_RFLCLASS) return f(typename rflclass<GameInterface>::Structure{ GameInterface::RflClassNameRegistry::GetInstance()->GetClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str()) });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_COMPONENT_DATA) return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->goComponentRegistry->GetComponentInformationByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() });
 				else if constexpr (desugar_t<T>::desc_type == DESCTYPE_SPAWNER_DATA_RFLCLASS) return f(typename rflclass<GameInterface>::Structure{ GameInterface::GameObjectSystem::GetInstance()->gameObjectRegistry->GetGameObjectClassByName(resolve<typename desugar_t<T>::resolver>(this->parent, this->root).c_str())->GetSpawnerDataClass() });
