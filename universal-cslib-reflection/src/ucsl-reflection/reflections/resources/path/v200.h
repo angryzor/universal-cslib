@@ -16,12 +16,14 @@ namespace ucsl::resources::path::v200::reflections {
 		option<"STRING">
 	>;
 
-	using TagValue = unionof<impl::TagValue, "TagValue", impl::TagData, [](const impl::TagData& parent) -> size_t {
-		switch (parent.type) {
+	inline size_t get_tag_value_idx(const impl::TagType& type) {
+		switch (type) {
 		case impl::TagType::UINT: return 0;
 		case impl::TagType::STRING: return 1;
 		}
-	},
+	}
+
+	using TagValue = unionof<impl::TagValue, "TagValue", selector_resolver<size_t, field_resolver<impl::TagType, "type">>::impl<get_tag_value_idx>,
 		field<unsigned int, "uintValue">,
 		field<const char*, "stringValue">
 	>;

@@ -39,20 +39,20 @@ namespace ucsl::resources::path::v1::reflections {
 		field<unsigned int, "magic">,
 		field<unsigned int, "version">,
 		field<unsigned int, "pathIdCount">,
-		field<dynamic_carray<PathIdData, field_resolver<"pathIdCount">>*, "pathIds">,
+		field<dynamic_carray<PathIdData, field_resolver<unsigned int, "pathIdCount">>*, "pathIds">,
 		field<unsigned int, "pathCount">,
-		field<dynamic_carray<PathData, field_resolver<"pathCount">>*, "paths">,
+		field<dynamic_carray<PathData, field_resolver<unsigned int, "pathCount">>*, "paths">,
 		field<weak<PathData*>, "stageGuidePath">,
 		field<unsigned int, "objPathSize">,
-		field<dynamic_carray<weak<PathData*>, field_resolver<"objPathSize">>*, "objPaths">,
+		field<dynamic_carray<weak<PathData*>, field_resolver<unsigned int, "objPathSize">>*, "objPaths">,
 		field<unsigned int, "qsPathSize">,
-		field<dynamic_carray<weak<PathData*>, field_resolver<"qsPathSize">>*, "qsPaths">,
+		field<dynamic_carray<weak<PathData*>, field_resolver<unsigned int, "qsPathSize">>*, "qsPaths">,
 		field<unsigned int, "svPathSize">,
-		field<dynamic_carray<weak<PathData*>, field_resolver<"svPathSize">>*, "svPaths">,
+		field<dynamic_carray<weak<PathData*>, field_resolver<unsigned int, "svPathSize">>*, "svPaths">,
 		field<unsigned int, "grPathSize">,
-		field<dynamic_carray<weak<PathData*>, field_resolver<"grPathSize">>*, "grPaths">,
+		field<dynamic_carray<weak<PathData*>, field_resolver<unsigned int, "grPathSize">>*, "grPaths">,
 		field<unsigned int, "unkPathSize">,
-		field<dynamic_carray<weak<PathData*>, field_resolver<"unkPathSize">>*, "unkPaths">
+		field<dynamic_carray<weak<PathData*>, field_resolver<unsigned int, "unkPathSize">>*, "unkPaths">
 	>;
 }
 

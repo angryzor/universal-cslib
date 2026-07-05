@@ -11,22 +11,17 @@ namespace ucsl::resources::swif::v5::reflections {
 
 	namespace impl = ::ucsl::resources::swif::v5;
 
-	using Vector2 = canonical_t<impl::Vector2>;
-	using Vector3 = canonical_t<impl::Vector3>;
-	using Matrix34 = canonical_t<impl::Matrix34>;
-	using Matrix44 = canonical_t<impl::Matrix44>;
+	using Vector2 = math::Vector2;
+	using Vector3 = math::Vector3;
+	using Matrix34 = math::Matrix34;
+	using Matrix44 = math::Matrix44;
 	using Rotation3 = structure<impl::Rotation3, "Rotation3", void,
 		field<int, "x">,
 		field<int, "y">,
 		field<int, "z">
 	>;
 
-	using Color = structure<impl::Color, "Color", void,
-		field<unsigned char, "r">,
-		field<unsigned char, "g">,
-		field<unsigned char, "b">,
-		field<unsigned char, "a">
-	>;
+	using Color = colors::Color8RGBA;
 
 	// User data
 	using EDataType = enumeration<impl::SRS_DATA::Type, "EDataType", unsigned int,
@@ -303,7 +298,7 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<short, "paddingBottom">,
 		field<short, "tracking">,
 		field<short, "lineHeight">,
-		field<SRS_FONT*, "font">
+		field<weak<SRS_FONT*>, "font">
 	>;
 
 	// Effects
@@ -367,7 +362,7 @@ namespace ucsl::resources::swif::v5::reflections {
 
 	// Casts
 	using SRS_EFFECT_PTR = unionof<impl::SRS_EFFECT_PTR, "SRS_EFFECT_PTR", selector_resolver<size_t, field_resolver<unsigned int, "effectType">>::impl<get_effect_ptr_idx>,
-		field<void*, "none">,
+		field<SRS_BLUR3D*, "none">,
 		field<SRS_BLUR3D*, "blur">,
 		field<SRS_REFLECT3D*, "reflect">
 	>;
@@ -446,7 +441,7 @@ namespace ucsl::resources::swif::v5::reflections {
 	}
 
 	using SRS_CAST_PTR = unionof<impl::SRS_CAST_PTR, "SRS_CASTNODE_PTR", selector_resolver<size_t, field_resolver<unsigned int, "flags">>::impl<get_cast_ptr_idx>,
-		field<void*, "none">,
+		field<SRS_IMAGECAST*, "none">,
 		field<SRS_IMAGECAST*, "image">,
 		field<SRS_SLICECAST*, "slice">,
 		field<SRS_REFERENCECAST*, "reference">

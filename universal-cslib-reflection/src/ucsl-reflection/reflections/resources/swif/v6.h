@@ -466,7 +466,7 @@ namespace ucsl::resources::swif::v6::reflections {
 	using SRS_TRS_PTR = unionof<impl::SRS_TRS_PTR, "SRS_TRS_PTR", selector_resolver<size_t, field_resolver<unsigned int, "flags">>::impl<get_trs_ptr_idx>,
 		field<dynamic_carray<SRS_TRS2D, field_resolver<int, "castCount">>*, "transforms2d">,
 		field<dynamic_carray<SRS_TRS3D, field_resolver<int, "castCount">>*, "transforms3d">
-	> ;
+	>;
 
 	using SRS_LAYER = structure<impl::SRS_LAYER, "SRS_LAYER", void,
 		field<const char*, "name">,
