@@ -195,7 +195,11 @@ namespace ucsl::resources::cemt::v120000::reflections {
 		field<unsigned char, "axes">
 	>;
 
-	using FieldParamSettings = unionof<impl::FieldParam::Settings, "FieldParam::Settings", selector_resolver<size_t>::impl<[]() -> size_t { return 11; }>,
+	inline size_t get_field_param_settings_idx() {
+		return 11;
+	}
+
+	using FieldParamSettings = unionof<impl::FieldParam::Settings, "FieldParam::Settings", selector_resolver<size_t>::impl<get_field_param_settings_idx>,
 		field<FieldParamGravitySettings, "gravity">,
 		field<FieldParamSpeedSettings, "speed">,
 		field<FieldParamMagnetSettings, "magnet">,
@@ -398,14 +402,16 @@ namespace ucsl::resources::cemt::v120000::reflections {
 		field<RaycastLODEffectParam[16], "lods">
 	>;
 
-	using LODParam = unionof<impl::LODParam, "LODParam", selector_resolver<size_t, field_resolver<unsigned int, "lodFlags">>::impl<[](const unsigned int& lodFlags) -> size_t {
+	inline size_t get_lod_param_idx(const unsigned int& lodFlags) {
 		if (lodFlags & 2)//lodFlags.test(impl::ElementParam::LODFlag::ANIMATED))
 			return 1;
 		else if (lodFlags & 1)//lodFlags.test(impl::ElementParam::LODFlag::BASIC))
 			return 0;
 		else
 			return 0;
-	}>,
+	}
+
+	using LODParam = unionof<impl::LODParam, "LODParam", selector_resolver<size_t, field_resolver<unsigned int, "lodFlags">>::impl<get_lod_param_idx>,
 		field<BasicLODParam, "basic">,
 		field<RaycastLODParam, "raycast">
 	>;
@@ -421,7 +427,7 @@ namespace ucsl::resources::cemt::v120000::reflections {
 		option<"VECTOR4">
 	>;
 
-	using UserParameterDataPtr = unionof<impl::UserParameter::DataPtr, "UserParameter::DataPtr", selector_resolver<size_t, field_resolver<impl::UserParameter::Type, "type">>::impl<[](const impl::UserParameter::Type& type) -> size_t {
+	inline size_t get_user_parameter_data_ptr_idx(const impl::UserParameter::Type& type) {
 		switch (type) {
 		case impl::UserParameter::Type::UNK0: return 0;
 		case impl::UserParameter::Type::BOOL: return 1;
@@ -433,7 +439,9 @@ namespace ucsl::resources::cemt::v120000::reflections {
 		case impl::UserParameter::Type::VECTOR4: return 6;
 		default: return 0;
 		}
-	}>,
+	}
+
+	using UserParameterDataPtr = unionof<impl::UserParameter::DataPtr, "UserParameter::DataPtr", selector_resolver<size_t, field_resolver<impl::UserParameter::Type, "type">>::impl<get_user_parameter_data_ptr_idx>,
 		field<uint64_t, "unk0">,
 		field<bool*, "boolean">,
 		field<int*, "integer">,
@@ -535,11 +543,13 @@ namespace ucsl::resources::cemt::v120000::reflections {
 		field<char[0x18], "pad">
 	>;
 
-	using ElementParamParticleParam = unionof<impl::ElementParam::ParticleParam, "ElementParam::ParticleParam", selector_resolver<size_t, field_resolver<unsigned int, "particleType">>::impl<[](const unsigned int& particleType) -> size_t {
+	inline size_t get_element_param_particle_param_idx(const impl::ElementParam::ParticleType& particleType) {
 		switch (particleType) {
 		default: return 7;
 		}
-	}>,
+	}
+
+	using ElementParamParticleParam = unionof<impl::ElementParam::ParticleParam, "ElementParam::ParticleParam", selector_resolver<size_t, field_resolver<impl::ElementParam::ParticleType, "particleType">>::impl<get_element_param_particle_param_idx>,
 		field<ElementParamUnk0ParticleParam, "unk0">,
 		field<ElementParamUnk1ParticleParam, "unk1">,
 		field<ElementParamUnk2ParticleParam, "unk2">,
