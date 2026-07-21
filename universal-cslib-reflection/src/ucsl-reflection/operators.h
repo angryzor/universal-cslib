@@ -82,6 +82,8 @@ namespace ucsl::reflection {
     //template<typename Type> struct get_priority { static constexpr char value = 0; };
     //template<char value, typename Type> struct get_priority<priority<value, Type>> { static constexpr char value = value; };
     //template<typename Type> static constexpr char get_priority_v = get_priority<Type>::value;
+
+    template<size_t size> using strbuf = simplerfl::primitive<char[size]>;
 }
 
 namespace simplerfl {

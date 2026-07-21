@@ -78,7 +78,7 @@ namespace ucsl::resources::cemt::v120000::reflections {
 		field<float, "unk3">,
 		field<float, "unk4">,
 		field<AnimationParam*, "enableAnimation">,
-		field<char[128], "name">,
+		field<strbuf<128>, "name">,
 		field<uint64_t, "param">
 	>;
 
@@ -195,11 +195,24 @@ namespace ucsl::resources::cemt::v120000::reflections {
 		field<unsigned char, "axes">
 	>;
 
-	inline size_t get_field_param_settings_idx() {
-		return 11;
+	inline size_t get_field_param_settings_idx(const impl::FieldParam::Type& type) {
+		switch (type) {
+		case impl::FieldParam::Type::GRAVITY: return 0;
+		case impl::FieldParam::Type::SPEED: return 1;
+		case impl::FieldParam::Type::MAGNET: return 2;
+		case impl::FieldParam::Type::NEWTON: return 3;
+		case impl::FieldParam::Type::VORTEX: return 4;
+		case impl::FieldParam::Type::SPIN: return 5;
+		case impl::FieldParam::Type::SPIN2: return 6;
+		case impl::FieldParam::Type::RANDOM: return 7;
+		case impl::FieldParam::Type::TAIL: return 8;
+		case impl::FieldParam::Type::FLUCTUATION: return 9;
+		case impl::FieldParam::Type::UNK0: return 10;
+		default: return 11;
+		};
 	}
 
-	using FieldParamSettings = unionof<impl::FieldParam::Settings, "FieldParam::Settings", selector_resolver<size_t>::impl<get_field_param_settings_idx>,
+	using FieldParamSettings = unionof<impl::FieldParam::Settings, "FieldParam::Settings", selector_resolver<size_t, field_resolver<impl::FieldParam::Type, "type">>::impl<get_field_param_settings_idx>,
 		field<FieldParamGravitySettings, "gravity">,
 		field<FieldParamSpeedSettings, "speed">,
 		field<FieldParamMagnetSettings, "magnet">,
@@ -310,7 +323,7 @@ namespace ucsl::resources::cemt::v120000::reflections {
 	>;
 
 	using TextureParam = structure<impl::TextureParam, "TextureParam", void,
-		field<char[128], "name">,
+		field<strbuf<128>, "name">,
 		field<unsigned int, "textureFlags">,
 		field<unsigned int, "animationFlags">,
 		field<TextureParamPatternAnimationParam, "patternAnimationParam">,
@@ -354,7 +367,7 @@ namespace ucsl::resources::cemt::v120000::reflections {
 	>;
 
 	using BasicLODEffectParam = structure<impl::BasicLODEffectParam, "BasicLODEffectParam", void,
-		field<char[128], "name">,
+		field<strbuf<128>, "name">,
 		field<float, "threshold">
 	>;
 
@@ -369,7 +382,7 @@ namespace ucsl::resources::cemt::v120000::reflections {
 	>;
 
 	using RaycastLODEffectParam = structure<impl::RaycastLODEffectParam, "RaycastLODEffectParam", void,
-		field<char[128], "name">,
+		field<strbuf<128>, "name">,
 		field<unsigned int, "raycastFlags">
 	>;
 
@@ -613,10 +626,10 @@ namespace ucsl::resources::cemt::v120000::reflections {
 	using ElementParamModelParam = structure<impl::ElementParam::ModelParam, "ElementParam::ModelParam", void,
 		field<bool, "hasModel">,
 		field<unsigned char, "modelSetting1">,
-		field<char[128], "gap6b">,
-		field<char[128], "modelName">,
-		field<char[128], "skeletonName">,
-		field<char[128], "nodeAnimName">
+		field<strbuf<128>, "gap6b">,
+		field<strbuf<128>, "modelName">,
+		field<strbuf<128>, "skeletonName">,
+		field<strbuf<128>, "nodeAnimName">
 	>;
 
 	using ElementParamDistanceScaleParam = structure<impl::ElementParam::DistanceScaleParam, "ElementParam::DistanceScaleParam", void,
@@ -649,7 +662,7 @@ namespace ucsl::resources::cemt::v120000::reflections {
 		field<unsigned int, "elementAnimationCount">,
 		field<char[0x34], "gap7bb">,
 		field<unsigned int, "gpuParticleFlags">,
-		field<char[128], "vectorFieldName">,
+		field<strbuf<128>, "vectorFieldName">,
 		field<math::Position, "vectorFieldSize">,
 		field<char[0x30], "gap7c2">,
 		field<math::Position, "unkVector2">,
@@ -926,7 +939,7 @@ namespace ucsl::resources::cemt::v120000::reflections {
 		field<unsigned char, "minorVersion">,
 		field<unsigned char, "patchVersion">,
 		field<unsigned char, "buildVersion">,
-		field<char[0x80], "name">,
+		field<strbuf<128>, "name">,
 		field<unsigned int, "animationBufferSize">,
 		field<unsigned int, "emitterCount">,
 		field<EmitterParam, "emitterParam">

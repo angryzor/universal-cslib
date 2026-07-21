@@ -118,6 +118,23 @@ namespace ucsl::resources::swif::v6::reflections {
 		option<"INDIVIDUAL">
 	>;
 
+	using ETrackDataType = enumeration<impl::ETrackDataType, "ETrackDataType", unsigned int,
+		option<"UNKNOWN">,
+		option<"FLOAT">,
+		option<"INDEX">,
+		option<"BOOL">,
+		option<"INT">,
+		option<"COLOR">,
+		option<"UNK_FLOAT">,
+		option<"UNK_DOUBLE">,
+		option<"UNK_CHAR">
+	>;
+
+	using ETrackRepeatType = enumeration < impl::ETrackRepeatType, "ETrackRepeatType", unsigned int,
+		option<"ONCE">,
+		option<"REPEAT">
+	>;
+
 	using SRS_KEYFRAME = structure<impl::SRS_KEYFRAME, "SRS_KEYFRAME", void,
 		field<unsigned int, "frame">
 	>;
@@ -212,7 +229,11 @@ namespace ucsl::resources::swif::v6::reflections {
 	using SRS_TRACK = structure<impl::SRS_TRACK, "SRS_TRACK", void,
 		field<ECurveType, "trackType">,
 		field<unsigned short, "keyCount">,
-		field<unsigned int, "flags">,
+		field<bitfield<unsigned int,
+			component<EInterpolationType, "interpolationType", 0, 2>,
+			component<ETrackDataType, "dataType", 4, 4>,
+			component<ETrackRepeatType, "repeatType", 8, 2>
+		>, "flags">,
 		field<unsigned int, "firstFrame">,
 		field<unsigned int, "lastFrame">,
 		field<SRS_KEYFRAME_PTR, "keyFrames">
@@ -288,8 +309,20 @@ namespace ucsl::resources::swif::v6::reflections {
 	>;
 
 	// Text
+	using ETextDataVerticalAlignment = enumeration<impl::SRS_TEXTDATA::VerticalAlignment, "ETextDataVerticalAlignment", unsigned int,
+		option<"TOP">,
+		option<"CENTER">,
+		option<"BOTTOM">
+	>;
+
 	using SRS_TEXTDATA = structure<impl::SRS_TEXTDATA, "SRS_TEXTDATA", void,
-		field<unsigned int, "flags">,
+		field<bitfield<unsigned int,
+			component<bool, "wrap", 0, 1>,
+			component<bool, "disableLineHeight", 1, 1>,
+			component<bool, "unk0", 2, 1>,
+			component<bool, "unk1", 3, 1>,
+			component<ETextDataVerticalAlignment, "verticalAlignment", 4, 4>
+		>, "flags">,
 		field<unsigned int, "fontIndex">,
 		field<const char*, "text">,
 		field<Vector2, "scale">,
@@ -303,6 +336,55 @@ namespace ucsl::resources::swif::v6::reflections {
 	>;
 
 	// Effects
+	using EEffectType = enumeration<impl::EEffectType, "EEffectType", unsigned int,
+		option<"NONE">,
+		option<"BLUR">,
+		option<"REFLECT">
+	>;
+
+	using ERenderMode = enumeration<impl::ERenderMode, "ERenderMode", unsigned int,
+		option<"UNK0">,
+		option<"OVERRIDE">,
+		option<"UNK1">,
+		option<"UNK2">
+	>;
+
+	using ECropBlendMode = enumeration<impl::ECropBlendMode, "ECropBlendMode", unsigned int,
+		option<"CROP0">,
+		option<"CROP1">,
+		option<"MODULATE">,
+		option<"ALPHA_BLEND">
+	>;
+
+	using EBlendMode = enumeration<impl::EBlendMode, "EBlendMode", unsigned int,
+		option<"DEFAULT">,
+		option<"ADD">,
+		option<"SUBTRACT">,
+		option<"MULTIPLY">,
+		option<"DEFAULT_NO_ALPHA">,
+		option<"OVERRIDE">
+	>;
+
+	using EPivotType = enumeration<impl::EPivotType, "EPivotType", unsigned int,
+		option<"TOP_LEFT">,
+		option<"TOP_CENTER">,
+		option<"TOP_RIGHT">,
+		option<"CENTER_LEFT">,
+		option<"CENTER_CENTER">,
+		option<"CENTER_RIGHT">,
+		option<"BOTTOM_LEFT">,
+		option<"BOTTOM_CENTER">,
+		option<"BOTTOM_RIGHT">,
+		option<"CUSTOM">
+	>;
+
+	using EOrientation = enumeration<impl::EOrientation, "EOrientation", unsigned int,
+		option<"UP">,
+		option<"LEFT">,
+		option<"DOWN">,
+		option<"RIGHT">
+	>;
+
 	using SRS_EFFECT = structure<impl::SRS_EFFECT, "SRS_EFFECT", void>;
 
 	using SRS_BLUR = structure<impl::SRS_BLUR, "SRS_BLUR", SRS_EFFECT,
@@ -311,7 +393,10 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<unsigned int, "cropCount">,
 		field<unsigned int, "steps">,
 		field<int, "duration">,
-		field<unsigned int, "flags">,
+		field<bitfield<unsigned int,
+			component<EBlendMode, "blendMode", 0, 4>,
+			component<bool, "hide", 12, 1>
+		>, "flags">,
 		field<Color, "color">
 	>;
 
@@ -325,7 +410,10 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<float, "unk5">,
 		field<float, "unk6">,
 		field<float, "unk7">,
-		field<unsigned int, "flags">,
+		field<bitfield<unsigned int,
+			component<EBlendMode, "blendMode", 0, 4>,
+			component<bool, "hide", 12, 1>
+		>, "flags">,
 		field<Color, "color">
 	>;
 
@@ -369,7 +457,18 @@ namespace ucsl::resources::swif::v6::reflections {
 	>;
 
 	using SRS_IMAGECAST = structure<impl::SRS_IMAGECAST, "SRS_IMAGECAST", void,
-		field<unsigned int, "flags">,
+		field<bitfield<unsigned int,
+			component<EBlendMode, "blendMode", 0, 4>,
+			component<bool, "mirrorHorizontally", 4, 1>,
+			component<bool, "mirrorVertically", 5, 1>,
+			component<EOrientation, "orientation", 6, 2>,
+			component<bool, "isText", 8, 1>,
+			component<ERenderMode, "renderMode", 9, 2>,
+			component<ECropBlendMode, "cropBlendMode", 11, 2>,
+			component<bool, "unkFlag1", 13, 1>,
+			component<EPivotType, "pivotType", 19, 4>,
+			component<bool, "useCrop0Transparency", 29, 1>
+		>, "flags">,
 		field<Vector2, "size">,
 		field<Vector2, "pivot">,
 		field<Color, "vertexColorTopLeft">,
@@ -383,8 +482,23 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<dynamic_carray<SRS_CROPREF, field_resolver<short, "cropRef0Count">>*, "cropRefs0">,
 		field<dynamic_carray<SRS_CROPREF, field_resolver<short, "cropRef1Count">>*, "cropRefs1">,
 		field<SRS_TEXTDATA*, "textData">,
-		field<unsigned int, "effectType">,
+		field<bitfield<unsigned int,
+			component<EEffectType, "effectType", 0, 4>
+		>, "effectType">,
 		field<SRS_EFFECT_PTR, "effectData">
+	>;
+
+	using ESliceConstraint = enumeration<impl::ESliceConstraint, "ESliceConstraint", unsigned int,
+		option<"CENTER">,
+		option<"UNK1">,
+		option<"UNK2">,
+		option<"UNK3">,
+		option<"UNK4">,
+		option<"UNK5">,
+		option<"UNK6">,
+		option<"UNK7">,
+		option<"UNK8">,
+		option<"UNK9">
 	>;
 
 	using SRS_SLICE = structure<impl::SRS_SLICE, "SRS_SLICE", void,
@@ -404,7 +518,18 @@ namespace ucsl::resources::swif::v6::reflections {
 	}
 
 	using SRS_SLICECAST = structure<impl::SRS_SLICECAST, "SRS_SLICECAST", void,
-		field<unsigned int, "flags">,
+		field<bitfield<unsigned int,
+			component<EBlendMode, "blendMode", 0, 4>,
+			component<bool, "mirrorHorizontally", 4, 1>,
+			component<bool, "mirrorVertically", 5, 1>,
+			component<EOrientation, "orientation", 6, 2>,
+			component<bool, "isText", 8, 1>,
+			component<ERenderMode, "renderMode", 9, 2>,
+			component<ECropBlendMode, "cropBlendMode", 11, 2>,
+			component<bool, "unkFlag1", 13, 1>,
+			component<EPivotType, "pivotType", 19, 4>,
+			component<bool, "useCrop0Transparency", 29, 1>
+		>, "flags">,
 		field<Vector2, "size">,
 		field<Vector2, "pivot">,
 		field<Color, "vertexColorTopLeft">,
@@ -418,7 +543,9 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<short, "verticalFixedCount">,
 		field<short, "cropRef0Count">,
 		field<dynamic_carray<SRS_CROPREF, field_resolver<short, "cropRef0Count">>*, "cropRefs0">,
-		field<unsigned int, "effectType">,
+		field<bitfield<unsigned int,
+			component<EEffectType, "effectType", 0, 4>
+		>, "effectType">,
 		field<SRS_EFFECT_PTR, "effectData">,
 		field<dynamic_carray<SRS_SLICE, selector_resolver<size_t, field_resolver<short, "sliceHorizontalCount">, field_resolver<short, "sliceVerticalCount">>::impl<get_slice_count>>, "slices">
 	>;
@@ -448,10 +575,36 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<SRS_REFERENCECAST*, "reference">
 	>;
 
+	using ECastNodeType = enumeration<impl::SRS_CASTNODE::Type, "ECastNodeType", unsigned int,
+		option<"NORMAL">,
+		option<"IMAGE">,
+		option<"SLICE">,
+		option<"REFERENCE">
+	>;
+
 	using SRS_CASTNODE = structure<impl::SRS_CASTNODE, "SRS_CASTNODE", void,
 		field<const char*, "name">,
 		field<unsigned int, "id">,
-		field<unsigned int, "flags">,
+		field<bitfield<unsigned int,
+			component<ECastNodeType, "type", 0, 4>,
+			component<bool, "unk0", 4, 1>,
+			component<bool, "transformMaterialColor", 5, 1>,
+			component<bool, "transformDisplay", 6, 1>,
+			component<bool, "transformIlluminationColor", 7, 1>,
+			component<bool, "disableTranslation", 8, 1>,
+			component<bool, "disableRotation", 9, 1>,
+			component<bool, "disableScale", 10, 1>,
+			component<bool, "hide", 12, 1>,
+			component<bool, "unk1", 13, 1>,
+			component<bool, "transformCropIndex0", 14, 1>,
+			component<bool, "transformCropIndex1", 15, 1>,
+			component<bool, "transformTranslation", 16, 1>,
+			component<bool, "transformTranslation", 17, 1>,
+			component<bool, "transformTranslation", 18, 1>,
+			component<ESliceConstraint, "sliceConstraint", 19, 4>,
+			component<bool, "unk2", 23, 1>,
+			component<unsigned char, "unk3", 24, 8>
+		>, "flags">,
 		field<SRS_CAST_PTR, "data">,
 		field<short, "childIndex">,
 		field<short, "siblingIndex">,
@@ -471,7 +624,10 @@ namespace ucsl::resources::swif::v6::reflections {
 	using SRS_LAYER = structure<impl::SRS_LAYER, "SRS_LAYER", void,
 		field<const char*, "name">,
 		field<unsigned int, "id">,
-		field<unsigned int, "flags">,
+		field<bitfield<unsigned int,
+			component<bool, "is3D", 0, 1>,
+			component<bool, "hide", 8, 1>
+		>, "flags">,
 		field<int, "castCount">,
 		field<dynamic_carray<SRS_CASTNODE, field_resolver<int, "castCount">>*, "casts">,
 		field<SRS_TRS_PTR, "transforms">,
@@ -499,7 +655,9 @@ namespace ucsl::resources::swif::v6::reflections {
 	using SRS_SCENE = structure<impl::SRS_SCENE, "SRS_SCENE", void,
 		field<const char*, "name">,
 		field<unsigned int, "id">,
-		field<unsigned int, "flags">,
+		field<bitfield<unsigned int,
+			component<bool, "hide", 0, 1>
+		>, "flags">,
 		field<bool, "loaded">,
 		field<int, "layerCount">,
 		field<dynamic_carray<SRS_LAYER, field_resolver<int, "layerCount">>*, "layers">,

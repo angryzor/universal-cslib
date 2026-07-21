@@ -633,6 +633,7 @@ namespace ucsl::reflection::providers {
 
 			return scope.template get_field<Resolver::field>().visit([](const auto& v) {
 				if constexpr (decltype(v.refl)::kind == ucsl::reflection::providers::TypeKind::PRIMITIVE) return v.visit([](const auto& v) -> typename Resolver::result { return static_cast<typename Resolver::result>(v); });
+				else if constexpr (decltype(v.refl)::kind == ucsl::reflection::providers::TypeKind::BITFIELD) return v.visit([](const auto& v) -> typename Resolver::result { return static_cast<typename Resolver::result>(v); });
 				else static_assert(false, "unsupported resolution type");
 			});
 		}

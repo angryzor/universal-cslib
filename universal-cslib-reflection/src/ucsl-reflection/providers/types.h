@@ -22,6 +22,11 @@ namespace ucsl::reflection::providers {
 		std::optional<R> constant_value{};
 		const ucsl::rfl::ranges::range_t<R>* range{};
 	};
+	template<size_t size> struct PrimitiveData<char[size]> {
+		using repr = char[size];
+
+		bool is_erased{};
+	};
 
 	template<TypeKind K> struct Kind {
 

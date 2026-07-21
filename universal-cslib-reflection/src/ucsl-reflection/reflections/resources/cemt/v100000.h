@@ -35,13 +35,11 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<JitteredValue, "value">
 	>;
 
-	using AnimationTrackParamRandomnessFlag = enumeration<impl::AnimationTrackParam::RandomnessFlag, "AnimationTrackParam::RandomnessFlag", unsigned char,
-		option<"DISABLE_RANDOMNESS">
-	>;
-
 	using AnimationTrackParam = structure<impl::AnimationTrackParam, "AnimationTrackParam", void,
 		field<unsigned char, "index">,
-		field<unsigned char, "randomnessFlag">,
+		field<bitfield<unsigned char,
+			component<bool, "disableRandomness", 0, 1>
+		>, "randomnessFlag">,
 		field<short, "keyframeCount">,
 		field<dynamic_carray<AnimationKeyframeParam, field_resolver<short, "keyframeCount">>, "keyframes">
 	>;
@@ -69,7 +67,11 @@ namespace ucsl::resources::cemt::v100000::reflections {
 	>;
 
 	using ChildEffect = structure<impl::ChildEffect, "ChildEffect", void,
-		field<unsigned char, "flags">,
+		field<bitfield<unsigned char,
+			component<bool, "enableUsingAnimation", 0, 1>,
+			component<bool, "unk1", 1, 1>,
+			component<bool, "inheritRotation", 2, 1>
+		>, "flags">,
 		field<char, "unkType">,
 		field<unsigned char, "unk00">,
 		field<float, "unk0">,
@@ -78,7 +80,7 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<float, "unk3">,
 		field<float, "unk4">,
 		field<AnimationParam*, "enableAnimation">,
-		field<char[128], "name">,
+		field<strbuf<128>, "name">,
 		field<uint64_t, "param">
 	>;
 
@@ -147,18 +149,16 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<bool, "useEulerRotation">
 	>;
 
-	using FieldParamRandomSettingsFlags = enumeration<impl::FieldParam::RandomSettings::Flags, "FieldParam::RandomSettings::Flags", unsigned short,
-		option<"RANDOMIZED_SCALE">,
-		option<"X">,
-		option<"Y">,
-		option<"Z">
-	>;
-
 	using FieldParamRandomSettings = structure<impl::FieldParam::RandomSettings, "FieldParam::RandomSettings", void,
 		field<float, "scale">,
 		field<float, "spreadScale">,
 		field<short, "updateInterval">,
-		field<unsigned short, "flags">,
+		field<bitfield<unsigned short,
+			component<bool, "randomizedScale", 0, 1>,
+			component<bool, "x", 1, 1>,
+			component<bool, "y", 2, 1>,
+			component<bool, "z", 3, 1>
+		>, "flags">,
 		field<bool, "normalizedSpreadVector">,
 		field<bool, "randomPerAxis">
 	>;
@@ -183,23 +183,34 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<JitteredValue, "unk1">
 	>;
 
-	using FieldParamUnkSettingsAxisFlag = enumeration<impl::FieldParam::UnkSettings::AxisFlag, "FieldParam::UnkSettings::AxisFlag", unsigned char,
-		option<"X">,
-		option<"Y">,
-		option<"Z">
-	>;
-
 	using FieldParamUnkSettings = structure<impl::FieldParam::UnkSettings, "FieldParam::UnkSettings", void,
 		field<float, "unk1">,
 		field<float, "unk2">,
-		field<unsigned char, "axes">
+		field<bitfield<unsigned char,
+			component<bool, "x", 0, 1>,
+			component<bool, "y", 1, 1>,
+			component<bool, "z", 2, 1>
+		>, "axes">
 	>;
 
-	inline size_t get_field_param_settings_idx() {
-		return 11;
+	inline size_t get_field_param_settings_idx(const impl::FieldParam::Type& type) {
+		switch (type) {
+		case impl::FieldParam::Type::GRAVITY: return 0;
+		case impl::FieldParam::Type::SPEED: return 1;
+		case impl::FieldParam::Type::MAGNET: return 2;
+		case impl::FieldParam::Type::NEWTON: return 3;
+		case impl::FieldParam::Type::VORTEX: return 4;
+		case impl::FieldParam::Type::SPIN: return 5;
+		case impl::FieldParam::Type::SPIN2: return 6;
+		case impl::FieldParam::Type::RANDOM: return 7;
+		case impl::FieldParam::Type::TAIL: return 8;
+		case impl::FieldParam::Type::FLUCTUATION: return 9;
+		case impl::FieldParam::Type::UNK0: return 10;
+		default: return 11;
+		};
 	}
 
-	using FieldParamSettings = unionof<impl::FieldParam::Settings, "FieldParam::Settings", selector_resolver<size_t>::impl<get_field_param_settings_idx>,
+	using FieldParamSettings = unionof<impl::FieldParam::Settings, "FieldParam::Settings", selector_resolver<size_t, field_resolver<impl::FieldParam::Type, "type">>::impl<get_field_param_settings_idx>,
 		field<FieldParamGravitySettings, "gravity">,
 		field<FieldParamSpeedSettings, "speed">,
 		field<FieldParamMagnetSettings, "magnet">,
@@ -220,38 +231,6 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<FieldParamOrigin, "origin">,
 		field<char, "option2">,
 		field<FieldParamSettings, "settings">
-	>;
-
-	using TextureParamTextureFlag = enumeration<impl::TextureParam::TextureFlag, "TextureParam::TextureFlag", unsigned int,
-		option<"TEXTURE_TYPE_0">,
-		option<"TEXTURE_TYPE_1">,
-		option<"TEXTURE_TYPE_2">,
-		option<"TEXTURE_TYPE_3">,
-		option<"TEXTURE_TYPE_4">,
-		option<"TEXTURE_TYPE_5">,
-		option<"TEXTURE_TYPE_6">,
-		option<"TEXTURE_TYPE_7">,
-		option<"TEXTURE_TYPE_8">,
-		option<"TEXTURE_TYPE_9">
-	>;
-
-	using TextureParamAnimationFlag = enumeration<impl::TextureParam::AnimationFlag, "TextureParam::AnimationFlag", unsigned int,
-		option<"ANIMATED">,
-		option<"UNK1">,
-		option<"UNK2">,
-		option<"STEPWISE_PATTERN_ANIMATION">,
-		option<"ENABLE_SECONDARY_SCROLL">,
-		option<"UNK5">,
-		option<"RANDOMIZE_STARTING_FRAMES">,
-		option<"ENABLE_PATTERN_ANIMATION">,
-		option<"UNK8">,
-		option<"SCROLL_U">,
-		option<"SCROLL_V">,
-		option<"UNK11">,
-		option<"USE_MATRICES_ON_TEXTURE_TYPE_0">,
-		option<"USE_MATRICES_ON_TEXTURE_TYPE_1">,
-		option<"SCALE_U">,
-		option<"SCALE_V">
 	>;
 
 	using TextureParamDirectionFlag = enumeration<impl::TextureParam::DirectionFlag, "TextureParam::DirectionFlag", unsigned char,
@@ -303,16 +282,50 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<unsigned char, "repeating">,
 		field<char, "unk6">,
 		field<char, "unk6a">,
-		field<unsigned char, "scrollDirectionFlags">,
-		field<unsigned char, "scrollDirectionRandomizationFlags">,
+		field<bitfield<unsigned char,
+			component<bool, "invertX", 0, 1>,
+			component<bool, "invertY", 1, 1>
+		>, "scrollDirectionFlags">,
+		field<bitfield<unsigned char,
+			component<bool, "randomizeX", 0, 1>,
+			component<bool, "randomizeY", 1, 1>
+		>, "scrollDirectionRandomizationFlags">,
 		field<unsigned char, "unk9">,
 		field<AnimationParam*, "patternAnimation">
 	>;
 
 	using TextureParam = structure<impl::TextureParam, "TextureParam", void,
-		field<char[128], "name">,
-		field<unsigned int, "textureFlags">,
-		field<unsigned int, "animationFlags">,
+		field<strbuf<128>, "name">,
+		field<bitfield<unsigned int,
+			component<bool, "textureType0", 0, 1>,
+			component<bool, "textureType1", 1, 1>,
+			component<bool, "textureType2", 2, 1>,
+			component<bool, "textureType3", 3, 1>,
+			component<bool, "textureType4", 4, 1>,
+			component<bool, "textureType5", 5, 1>,
+			component<bool, "textureType6", 6, 1>,
+			component<bool, "textureType7", 7, 1>,
+			component<bool, "textureType8", 8, 1>,
+			component<bool, "textureType9", 9, 1>
+		>, "textureFlags">,
+		field<bitfield<unsigned int,
+			component<bool, "animated", 0, 1>,
+			component<bool, "unk1", 1, 1>,
+			component<bool, "unk2", 2, 1>,
+			component<bool, "stepwisePatternAnimation", 3, 1>,
+			component<bool, "enableSecondaryScroll", 4, 1>,
+			component<bool, "unk5", 5, 1>,
+			component<bool, "randomizeStartingFrames", 6, 1>,
+			component<bool, "enablePatternAnimation", 7, 1>,
+			component<bool, "unk8", 8, 1>,
+			component<bool, "scrollU", 9, 1>,
+			component<bool, "scrollV", 10, 1>,
+			component<bool, "unk11", 11, 1>,
+			component<bool, "useMatricesOnTextureType0", 12, 1>,
+			component<bool, "useMatricesOnTextureType1", 13, 1>,
+			component<bool, "scaleU", 14, 1>,
+			component<bool, "scaleV", 15, 1>
+		>, "animationFlags">,
 		field<TextureParamPatternAnimationParam, "patternAnimationParam">,
 		field<TextureParamScrollColorParam[2], "scrollColorParams">,
 		field<TextureParamUVAnimationParam[2], "uvAnimationParams">,
@@ -354,7 +367,7 @@ namespace ucsl::resources::cemt::v100000::reflections {
 	>;
 
 	using BasicLODEffectParam = structure<impl::BasicLODEffectParam, "BasicLODEffectParam", void,
-		field<char[128], "name">,
+		field<strbuf<128>, "name">,
 		field<float, "threshold">
 	>;
 
@@ -369,7 +382,7 @@ namespace ucsl::resources::cemt::v100000::reflections {
 	>;
 
 	using RaycastLODEffectParam = structure<impl::RaycastLODEffectParam, "RaycastLODEffectParam", void,
-		field<char[128], "name">,
+		field<strbuf<128>, "name">,
 		field<unsigned int, "raycastFlags">
 	>;
 
@@ -613,10 +626,10 @@ namespace ucsl::resources::cemt::v100000::reflections {
 	using ElementParamModelParam = structure<impl::ElementParam::ModelParam, "ElementParam::ModelParam", void,
 		field<bool, "hasModel">,
 		field<unsigned char, "modelSetting1">,
-		field<char[128], "gap6b">,
-		field<char[128], "modelName">,
-		field<char[128], "skeletonName">,
-		field<char[128], "nodeAnimName">
+		field<strbuf<128>, "gap6b">,
+		field<strbuf<128>, "modelName">,
+		field<strbuf<128>, "skeletonName">,
+		field<strbuf<128>, "nodeAnimName">
 	>;
 
 	using ElementParamDistanceScaleParam = structure<impl::ElementParam::DistanceScaleParam, "ElementParam::DistanceScaleParam", void,
@@ -648,7 +661,7 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<unsigned int, "elementAnimationCount">,
 		field<char[0x34], "gap7bb">,
 		field<unsigned int, "gpuParticleFlags">,
-		field<char[128], "vectorFieldName">,
+		field<strbuf<128>, "vectorFieldName">,
 		field<math::Position, "vectorFieldSize">,
 		field<char[0x30], "gap7c2">,
 		field<math::Position, "unkVector2">,
@@ -923,7 +936,7 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		field<unsigned char, "minorVersion">,
 		field<unsigned char, "patchVersion">,
 		field<unsigned char, "buildVersion">,
-		field<char[0x80], "name">,
+		field<strbuf<128>, "name">,
 		field<unsigned int, "animationBufferSize">,
 		field<unsigned int, "emitterCount">,
 		field<EmitterParam, "emitterParam">
