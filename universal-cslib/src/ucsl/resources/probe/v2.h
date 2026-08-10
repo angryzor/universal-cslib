@@ -11,7 +11,7 @@ namespace ucsl::resources::probe::v2 {
         math::Position extents;
         float radius;
         const char* textureName;
-        unsigned int type1;
+        Shape shape;
         void* texture; // needle::Texture loaded at runtime
         unsigned int type2;
         unsigned int type3;
