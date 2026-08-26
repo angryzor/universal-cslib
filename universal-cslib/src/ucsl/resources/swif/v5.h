@@ -1033,7 +1033,7 @@ namespace ucsl::resources::swif::v5 {
         float nearPlane{};
         float farPlane{};
         float unk1{};
-        unsigned long long unk2{};
+        SRS_USERDATA* userData{};
     };
 
     // Scenes

@@ -136,18 +136,58 @@ namespace ucsl::reflection::accessors {
 			}
 		};
 
+		template<typename Refl>
+		class AddressConstAccessor;
+
+		template<typename Refl>
+		class AddressAccessor;
+
+		template<typename Refl, typename T = opaque_value>
+		class ConstAccessorBase {
+		public:
+			const T& value;
+			const Refl refl;
+
+			template<typename U>
+			constexpr ConstAccessorBase(const U& value, const Refl& refl) : value{ (const T&)value }, refl{ refl } {}
+
+			constexpr AddressConstAccessor<Refl> operator&() const {
+				return { reference, refl };
+			}
+		};
+
 		template<typename Refl, typename T = opaque_value>
 		class AccessorBase {
 		public:
 			T& value;
-			Refl refl;
+			const Refl refl;
 
 			template<typename U>
-			inline AccessorBase(U& value, const Refl& refl) : value{ (T&)value }, refl{ refl } {}
+			constexpr AccessorBase(U& value, const Refl& refl) : value{ (T&)value }, refl{ refl } {}
+
+			constexpr AddressAccessor<Refl> operator&() const {
+				return { reference, refl };
+			}
 		};
 
 		template<typename Refl>
+		class ValueConstAccessor;
+
+		template<typename Refl>
 		class ValueAccessor;
+
+		template<typename Refl>
+		class PrimitiveDataConstAccessor : public ConstAccessorBase<Refl, typename Refl::repr> {
+		public:
+			using ConstAccessorBase<Refl, typename Refl::repr>::ConstAccessorBase;
+
+			operator const typename Refl::repr() const {
+				if constexpr (std::is_fundamental_v<const typename Refl::repr>)
+					return this->refl.is_erased ? const typename Refl::repr{} : this->refl.constant_value.has_value() ? this->refl.constant_value.value() : this->value;
+				else
+					return this->refl.constant_value.has_value() ? this->refl.constant_value.value() : this->value;
+			}
+		};
 
 		template<typename Refl>
 		class PrimitiveDataAccessor : public AccessorBase<Refl, typename Refl::repr> {
@@ -162,11 +202,21 @@ namespace ucsl::reflection::accessors {
 				return *this;
 			}
 
-			operator typename Refl::repr() const {
-				if constexpr (std::is_fundamental_v<typename Refl::repr>)
-					return this->refl.is_erased ? typename Refl::repr{} : this->refl.constant_value.has_value() ? this->refl.constant_value.value() : this->value;
+			operator const typename Refl::repr() const {
+				if constexpr (std::is_fundamental_v<const typename Refl::repr>)
+					return this->refl.is_erased ? const typename Refl::repr{} : this->refl.constant_value.has_value() ? this->refl.constant_value.value() : this->value;
 				else
 					return this->refl.constant_value.has_value() ? this->refl.constant_value.value() : this->value;
+			}
+		};
+
+		template<typename Refl>
+		class PrimitiveConstAccessor : public ConstAccessorBase<Refl> {
+		public:
+			using ConstAccessorBase<Refl>::ConstAccessorBase;
+
+			constexpr auto visit(auto f) const {
+				return this->refl.visit([&](const auto& r) { return f(PrimitiveDataConstAccessor<std::decay_t<decltype(r)>>{ this->value, r }); });
 			}
 		};
 
@@ -175,14 +225,26 @@ namespace ucsl::reflection::accessors {
 		public:
 			using AccessorBase<Refl>::AccessorBase;
 
-			template<typename F>
-			inline auto visit(F f) {
-				return this->refl.visit([&](auto r){ return f(PrimitiveDataAccessor<decltype(r)>{ this->value, r }); });
+			constexpr auto visit(auto f) {
+				return this->refl.visit([&](const auto& r){ return f(PrimitiveDataAccessor<std::decay_t<decltype(r)>>{ this->value, r }); });
 			}
 
-			template<typename F>
-			inline const auto visit(F f) const {
-				return this->refl.visit([&](auto r){ return f(PrimitiveDataAccessor<decltype(r)>{ this->value, r }); });
+			constexpr auto visit(auto f) const {
+				return this->refl.visit([&](const auto& r){ return f(PrimitiveDataConstAccessor<std::decay_t<decltype(r)>>{ this->value, r }); });
+			}
+		};
+
+		template<typename Refl>
+		class EnumConstAccessor : public ConstAccessorBase<Refl> {
+		public:
+			using ConstAccessorBase<Refl>::ConstAccessorBase;
+
+			operator long long() const {
+				return this->refl.visit([&](const auto& r) {
+					PrimitiveDataConstAccessor<std::decay_t<decltype(r)>> pd{ this->value, r };
+
+					return static_cast<long long>(pd);
+				});
 			}
 		};
 
@@ -192,20 +254,38 @@ namespace ucsl::reflection::accessors {
 			using AccessorBase<Refl>::AccessorBase;
 			
 			EnumAccessor<Refl>& operator=(long long v) {
-				this->refl.visit([&](auto r){
-					PrimitiveDataAccessor<decltype(r)> pd{ this->value, r };
+				this->refl.visit([&](const auto& r) {
+					PrimitiveDataAccessor<std::decay_t<decltype(r)>> pd{ this->value, r };
 
-					pd = static_cast<typename decltype(r)::repr>(v);
+					pd = static_cast<typename std::decay_t<decltype(r)>::repr>(v);
 				});
 				return *this;
 			}
 
-			operator long long () const {
-				return this->refl.visit([&](auto r){
-					PrimitiveDataAccessor<decltype(r)> pd{ this->value, r };
+			operator long long() const {
+				return this->refl.visit([&](const auto& r){
+					PrimitiveDataConstAccessor<std::decay_t<decltype(r)>> pd{ this->value, r };
 
 					return static_cast<long long>(pd);
 				});
+			}
+		};
+
+		template<typename Refl>
+		class StructureConstAccessor : public ConstAccessorBase<Refl> {
+		public:
+			using ConstAccessorBase<Refl>::ConstAccessorBase;
+
+			constexpr auto operator[](const auto& field_refl) const {
+				const auto type = field_refl.get_type(*this);
+
+				return ValueConstAccessor<decltype(type)>{ *util::addptr(&this->value, field_refl.get_offset()), type };
+			}
+
+			constexpr auto get_base() const {
+				const auto base = this->refl.get_base();
+
+				return base.has_value() ? std::make_optional(StructureConstAccessor<std::decay_t<decltype(base.value())>>{ this->value, base.value() }) : std::nullopt;
 			}
 		};
 
@@ -214,24 +294,83 @@ namespace ucsl::reflection::accessors {
 		public:
 			using AccessorBase<Refl>::AccessorBase;
 
-			template<typename FieldRefl>
-			inline auto operator[](const FieldRefl& field_refl) {
-				auto type = field_refl.get_type(*this);
+			constexpr auto operator[](const auto& field_refl) {
+				const auto type = field_refl.get_type(*this);
 
 				return ValueAccessor<decltype(type)>{ *util::addptr(&this->value, field_refl.get_offset()), type };
 			}
 
-			template<typename FieldRefl>
-			inline const auto operator[](const FieldRefl& field_refl) const {
-				auto type = field_refl.get_type(*this);
+			constexpr auto operator[](const auto& field_refl) const {
+				const auto type = field_refl.get_type(*this);
 
-				return ValueAccessor<decltype(type)>{ *util::addptr(&this->value, field_refl.get_offset()), type };
+				return ValueConstAccessor<decltype(type)>{ *util::addptr(&this->value, field_refl.get_offset()), type };
 			}
 
-			inline auto get_base() const {
-				auto base = this->refl.get_base();
+			constexpr auto get_base() {
+				const auto base = this->refl.get_base();
 
-				return base.has_value() ? std::make_optional(StructureAccessor<std::remove_reference_t<decltype(base.value())>>{ this->value, base.value() }) : std::nullopt;
+				return base.has_value() ? std::make_optional(StructureAccessor<std::decay_t<decltype(base.value())>>{ this->value, base.value() }) : std::nullopt;
+			}
+
+			constexpr auto get_base() const {
+				const auto base = this->refl.get_base();
+
+				return base.has_value() ? std::make_optional(StructureConstAccessor<std::decay_t<decltype(base.value())>>{ this->value, base.value() }) : std::nullopt;
+			}
+		};
+
+		template<typename Refl>
+		class CArrayConstAccessor : public ConstAccessorBase<Refl> {
+		public:
+			using ConstAccessorBase<Refl>::ConstAccessorBase;
+
+			class const_iterator {
+				const CArrayConstAccessor& accessor;
+				size_t idx{};
+
+			public:
+				inline const_iterator(const CArrayConstAccessor& accessor, size_t idx) : accessor{ accessor }, idx{ idx } {}
+				inline const_iterator(const const_iterator& other) : accessor{ other.accessor }, idx{ other.idx } {}
+
+				inline const_iterator& operator++() {
+					idx++;
+					return *this;
+				}
+
+				inline const_iterator operator++(int) {
+					const_iterator result{ *this };
+					idx++;
+					return result;
+				}
+
+				inline const_iterator& operator--() {
+					idx--;
+					return *this;
+				}
+
+				inline const_iterator operator--(int) {
+					const_iterator result{ *this };
+					idx--;
+					return result;
+				}
+
+				inline bool operator==(const const_iterator& other) const { return idx == other.idx; }
+				inline bool operator!=(const const_iterator& other) const { return idx != other.idx; }
+				inline bool operator<(const const_iterator& other) const { return idx < other.idx; }
+				inline bool operator>(const const_iterator& other) const { return idx > other.idx; }
+				inline bool operator<=(const const_iterator& other) const { return idx <= other.idx; }
+				inline bool operator>=(const const_iterator& other) const { return idx >= other.idx; }
+				inline const auto operator*() const { return accessor[idx]; }
+			};
+
+			constexpr size_t size() const {
+				return this->refl.get_length();
+			}
+
+			constexpr const auto operator[](size_t idx) const {
+				auto item_refl = this->refl.get_item_type();
+
+				return ValueConstAccessor<decltype(item_refl)>{ *util::addptr(&this->value, idx* item_refl.get_size(*this)), item_refl };
 			}
 		};
 
@@ -240,24 +379,59 @@ namespace ucsl::reflection::accessors {
 		public:
 			using AccessorBase<Refl>::AccessorBase;
 
-			inline size_t get_length() const {
+			class const_iterator {
+				const CArrayAccessor& accessor;
+				size_t idx{};
+
+			public:
+				inline const_iterator(const CArrayAccessor& accessor, size_t idx) : accessor{ accessor }, idx{ idx } {}
+				inline const_iterator(const const_iterator& other) : accessor{ other.accessor }, idx{ other.idx } {}
+
+				inline const_iterator& operator++() {
+					idx++;
+					return *this;
+				}
+
+				inline const_iterator operator++(int) {
+					const_iterator result{ *this };
+					idx++;
+					return result;
+				}
+
+				inline const_iterator& operator--() {
+					idx--;
+					return *this;
+				}
+
+				inline const_iterator operator--(int) {
+					const_iterator result{ *this };
+					idx--;
+					return result;
+				}
+
+				inline bool operator==(const const_iterator& other) const { return idx == other.idx; }
+				inline bool operator!=(const const_iterator& other) const { return idx != other.idx; }
+				inline bool operator<(const const_iterator& other) const { return idx < other.idx; }
+				inline bool operator>(const const_iterator& other) const { return idx > other.idx; }
+				inline bool operator<=(const const_iterator& other) const { return idx <= other.idx; }
+				inline bool operator>=(const const_iterator& other) const { return idx >= other.idx; }
+				inline const auto operator*() const { return accessor[idx]; }
+			};
+
+			constexpr size_t size() const {
 				return this->refl.get_length();
 			}
 
-			inline auto operator[](size_t idx) {
+			constexpr auto operator[](size_t idx) {
 				auto item_refl = this->refl.get_item_type();
-
-				assert(idx < this->refl.get_length());
 
 				return ValueAccessor<decltype(item_refl)>{ *util::addptr(&this->value, idx * item_refl.get_size(*this)), item_refl };
 			}
 
-			inline const auto operator[](size_t idx) const {
+			constexpr const auto operator[](size_t idx) const {
 				auto item_refl = this->refl.get_item_type();
 
-				assert(idx < this->refl.get_length());
-
-				return ValueAccessor<decltype(item_refl)>{ *util::addptr(&this->value, idx * item_refl.get_size(*this)), item_refl };
+				return ValueConstAccessor<decltype(item_refl)>{ *util::addptr(&this->value, idx * item_refl.get_size(*this)), item_refl };
 			}
 		};
 
@@ -266,21 +440,21 @@ namespace ucsl::reflection::accessors {
 		public:
 			using AccessorBase<Refl, opaque_value*>::AccessorBase;
 
-			inline void clear() {
+			constexpr void clear() {
 				this->value = nullptr;
 			}
 
-			inline void set(const AccessorBase<Refl>& other) {
+			constexpr void set(const AccessorBase<Refl>& other) {
 				this->value = &other.value;
 			}
 
-			inline auto get() {
+			constexpr auto get() {
 				auto target_type = this->refl.get_target_type();
 
 				return this->value == nullptr ? std::nullopt : std::make_optional<ValueAccessor<decltype(target_type)>>({ *this->value, target_type });
 			}
 
-			inline auto get() const {
+			constexpr auto get() const {
 				auto target_type = this->refl.get_target_type();
 
 				return this->value == nullptr ? std::nullopt : std::make_optional<const ValueAccessor<decltype(target_type)>>({ *this->value, target_type });

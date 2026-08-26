@@ -562,7 +562,7 @@ namespace ucsl::resources::cemt::v100000::reflections {
 		}
 	}
 
-	using ElementParamParticleParam = unionof < impl::ElementParam::ParticleParam, "ElementParam::ParticleParam", selector_resolver<size_t, field_resolver<impl::ElementParam::ParticleType, "particleType">>::impl<get_element_param_particle_param_idx>,
+	using ElementParamParticleParam = unionof<impl::ElementParam::ParticleParam, "ElementParam::ParticleParam", selector_resolver<size_t, field_resolver<impl::ElementParam::ParticleType, "particleType">>::impl<get_element_param_particle_param_idx>,
 		field<ElementParamUnk0ParticleParam, "unk0">,
 		field<ElementParamUnk1ParticleParam, "unk1">,
 		field<ElementParamUnk2ParticleParam, "unk2">,

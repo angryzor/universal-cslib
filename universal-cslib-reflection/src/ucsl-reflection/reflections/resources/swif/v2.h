@@ -1,18 +1,18 @@
 #pragma once
 #include <cassert>
-#include <ucsl/resources/swif/v6.h>
+#include <ucsl/resources/swif/v2.h>
 #include <simple-reflection/simple-reflection.h>
 #include <ucsl-reflection/operators.h>
 #include <ucsl-reflection/reflections/basic-types.h>
 
-namespace ucsl::resources::swif::v6::reflections {
+namespace ucsl::resources::swif::v2::reflections {
 	using namespace simplerfl;
 	using namespace ucsl::reflection;
 
-	namespace impl = ::ucsl::resources::swif::v6;
+	namespace impl = ::ucsl::resources::swif::v2;
 
 	using Vector2 = math::Vector2;
-	using Vector3 = math::Vector3;
+	using Vector3 = math::Position;
 	using Matrix34 = math::Matrix34;
 	using Matrix44 = math::Matrix44;
 	using Rotation3 = structure<impl::Rotation3, "Rotation3", void,
@@ -251,8 +251,7 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<unsigned int, "motionCount">,
 		field<unsigned int, "frameCount">,
 		field<dynamic_carray<SRS_MOTION, field_resolver<unsigned int, "motionCount">>*, "motions">,
-		field<SRS_USERDATA*, "userData">,
-		field<bool, "isLooping">
+		field<SRS_USERDATA*, "userData">
 	>;
 
 	// Crops
@@ -271,7 +270,6 @@ namespace ucsl::resources::swif::v6::reflections {
 
 	// Textures
 	using SRS_TEXTURE = structure<impl::SRS_TEXTURE, "SRS_TEXTURE", void,
-		field<const char*, "name">,
 		field<const char*, "filename">,
 		field<unsigned int, "id">,
 		field<unsigned short, "width">,
@@ -284,7 +282,6 @@ namespace ucsl::resources::swif::v6::reflections {
 
 	using SRS_TEXTURELIST = structure<impl::SRS_TEXTURELIST, "SRS_TEXTURELIST", void,
 		field<const char*, "name">,
-		field<unsigned int, "unk1">,
 		field<unsigned int, "textureCount">,
 		field<dynamic_carray<SRS_TEXTURE, field_resolver<unsigned int, "textureCount">>*, "textures">,
 		field<SRS_USERDATA*, "userData">
@@ -300,7 +297,6 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<const char*, "name">,
 		field<unsigned int, "id">,
 		field<unsigned int, "unk1">,
-		field<short, "unk2">,
 		field<unsigned short, "characterCount">,
 		field<unsigned short, "unk3">,
 		field<dynamic_carray<SRS_CHARACTER_MAPPING, field_resolver<unsigned short, "characterCount">>*, "characters">,
@@ -651,7 +647,6 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<unsigned int, "id">,
 		field<Vector3, "position">,
 		field<Vector3, "target">,
-		field<bool, "isOrthogonal">,
 		field<int, "fov">,
 		field<float, "nearPlane">,
 		field<float, "farPlane">,
@@ -666,7 +661,6 @@ namespace ucsl::resources::swif::v6::reflections {
 		field<bitfield<unsigned int,
 			component<bool, "hide", 0, 1>
 		>, "flags">,
-		field<bool, "loaded">,
 		field<int, "layerCount">,
 		field<dynamic_carray<SRS_LAYER, field_resolver<int, "layerCount">>*, "layers">,
 		field<unsigned short, "cameraCount">,
@@ -696,60 +690,60 @@ namespace ucsl::resources::swif::v6::reflections {
 }
 
 namespace simplerfl {
-	template<> struct canonical<ucsl::resources::swif::v6::Rotation3> { using type = ucsl::resources::swif::v6::reflections::Rotation3; };
-	template<> struct canonical<ucsl::resources::swif::v6::Color> { using type = ucsl::resources::swif::v6::reflections::Color; };
-	template<> struct canonical<ucsl::resources::swif::v6::ECurveType> { using type = ucsl::resources::swif::v6::reflections::ECurveType; };
-	template<> struct canonical<ucsl::resources::swif::v6::EInterpolationType> { using type = ucsl::resources::swif::v6::reflections::EInterpolationType; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_KEYFRAME> { using type = ucsl::resources::swif::v6::reflections::SRS_KEYFRAME; };
-	template<> struct canonical<ucsl::resources::swif::v6::Key<float>> { using type = ucsl::resources::swif::v6::reflections::Key<float>; };
-	template<> struct canonical<ucsl::resources::swif::v6::Key<int>> { using type = ucsl::resources::swif::v6::reflections::Key<int>; };
-	template<> struct canonical<ucsl::resources::swif::v6::Key<bool>> { using type = ucsl::resources::swif::v6::reflections::Key<bool>; };
-	template<> struct canonical<ucsl::resources::swif::v6::Key<ucsl::resources::swif::v6::Color>> { using type = ucsl::resources::swif::v6::reflections::Key<ucsl::resources::swif::v6::Color>; };
-	template<> struct canonical<ucsl::resources::swif::v6::KeyLinear<float>> { using type = ucsl::resources::swif::v6::reflections::KeyLinear<float>; };
-	template<> struct canonical<ucsl::resources::swif::v6::KeyLinear<int>> { using type = ucsl::resources::swif::v6::reflections::KeyLinear<int>; };
-	template<> struct canonical<ucsl::resources::swif::v6::KeyLinear<bool>> { using type = ucsl::resources::swif::v6::reflections::KeyLinear<bool>; };
-	template<> struct canonical<ucsl::resources::swif::v6::KeyLinear<ucsl::resources::swif::v6::Color>> { using type = ucsl::resources::swif::v6::reflections::KeyLinear<ucsl::resources::swif::v6::Color>; };
-	template<> struct canonical<ucsl::resources::swif::v6::KeyHermite<float>> { using type = ucsl::resources::swif::v6::reflections::KeyHermite<float>; };
-	template<> struct canonical<ucsl::resources::swif::v6::KeyHermite<int>> { using type = ucsl::resources::swif::v6::reflections::KeyHermite<int>; };
-	template<> struct canonical<ucsl::resources::swif::v6::KeyHermite<bool>> { using type = ucsl::resources::swif::v6::reflections::KeyHermite<bool>; };
-	template<> struct canonical<ucsl::resources::swif::v6::KeyHermite<ucsl::resources::swif::v6::Color>> { using type = ucsl::resources::swif::v6::reflections::KeyHermite<ucsl::resources::swif::v6::Color>; };
-	template<> struct canonical<ucsl::resources::swif::v6::KeyIndividual<float>> { using type = ucsl::resources::swif::v6::reflections::KeyIndividual<float>; };
-	template<> struct canonical<ucsl::resources::swif::v6::KeyIndividual<int>> { using type = ucsl::resources::swif::v6::reflections::KeyIndividual<int>; };
-	template<> struct canonical<ucsl::resources::swif::v6::KeyIndividual<bool>> { using type = ucsl::resources::swif::v6::reflections::KeyIndividual<bool>; };
-	template<> struct canonical<ucsl::resources::swif::v6::KeyIndividual<ucsl::resources::swif::v6::Color>> { using type = ucsl::resources::swif::v6::reflections::KeyIndividual<ucsl::resources::swif::v6::Color>; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_KEYFRAME_PTR> { using type = ucsl::resources::swif::v6::reflections::SRS_KEYFRAME_PTR; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_TRACK> { using type = ucsl::resources::swif::v6::reflections::SRS_TRACK; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_MOTION> { using type = ucsl::resources::swif::v6::reflections::SRS_MOTION; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_ANIMATION> { using type = ucsl::resources::swif::v6::reflections::SRS_ANIMATION; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_CROP> { using type = ucsl::resources::swif::v6::reflections::SRS_CROP; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_CROPREF> { using type = ucsl::resources::swif::v6::reflections::SRS_CROPREF; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_DATA::Type> { using type = ucsl::resources::swif::v6::reflections::EDataType; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_DATA_VALUE_PTR> { using type = ucsl::resources::swif::v6::reflections::SRS_DATA_VALUE_PTR; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_DATA> { using type = ucsl::resources::swif::v6::reflections::SRS_DATA; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_USERDATA> { using type = ucsl::resources::swif::v6::reflections::SRS_USERDATA; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_TEXTURE> { using type = ucsl::resources::swif::v6::reflections::SRS_TEXTURE; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_TEXTURELIST> { using type = ucsl::resources::swif::v6::reflections::SRS_TEXTURELIST; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_CHARACTER_MAPPING> { using type = ucsl::resources::swif::v6::reflections::SRS_CHARACTER_MAPPING; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_FONT> { using type = ucsl::resources::swif::v6::reflections::SRS_FONT; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_TEXTDATA> { using type = ucsl::resources::swif::v6::reflections::SRS_TEXTDATA; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_EFFECT> { using type = ucsl::resources::swif::v6::reflections::SRS_EFFECT; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_BLUR> { using type = ucsl::resources::swif::v6::reflections::SRS_BLUR; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_BLUR3D> { using type = ucsl::resources::swif::v6::reflections::SRS_BLUR3D; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_REFLECT> { using type = ucsl::resources::swif::v6::reflections::SRS_REFLECT; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_REFLECT3D> { using type = ucsl::resources::swif::v6::reflections::SRS_REFLECT3D; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_TRS_BASE> { using type = ucsl::resources::swif::v6::reflections::SRS_TRS_BASE; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_TRS2D> { using type = ucsl::resources::swif::v6::reflections::SRS_TRS2D; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_TRS3D> { using type = ucsl::resources::swif::v6::reflections::SRS_TRS3D; };
-	//template<> struct canonical<ucsl::resources::swif::v6::SRS_EFFECT_PTR> { using type = ucsl::resources::swif::v6::reflections::SRS_EFFECT_PTR; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_IMAGECAST> { using type = ucsl::resources::swif::v6::reflections::SRS_IMAGECAST; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_SLICE> { using type = ucsl::resources::swif::v6::reflections::SRS_SLICE; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_SLICECAST> { using type = ucsl::resources::swif::v6::reflections::SRS_SLICECAST; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_REFERENCECAST> { using type = ucsl::resources::swif::v6::reflections::SRS_REFERENCECAST; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_CAST_PTR> { using type = ucsl::resources::swif::v6::reflections::SRS_CAST_PTR; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_CASTNODE> { using type = ucsl::resources::swif::v6::reflections::SRS_CASTNODE; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_TRS_PTR> { using type = ucsl::resources::swif::v6::reflections::SRS_TRS_PTR; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_LAYER> { using type = ucsl::resources::swif::v6::reflections::SRS_LAYER; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_CAMERA> { using type = ucsl::resources::swif::v6::reflections::SRS_CAMERA; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_SCENE> { using type = ucsl::resources::swif::v6::reflections::SRS_SCENE; };
-	template<> struct canonical<ucsl::resources::swif::v6::SRS_PROJECT> { using type = ucsl::resources::swif::v6::reflections::SRS_PROJECT; };
+	template<> struct canonical<ucsl::resources::swif::v2::Rotation3> { using type = ucsl::resources::swif::v2::reflections::Rotation3; };
+	template<> struct canonical<ucsl::resources::swif::v2::Color> { using type = ucsl::resources::swif::v2::reflections::Color; };
+	template<> struct canonical<ucsl::resources::swif::v2::ECurveType> { using type = ucsl::resources::swif::v2::reflections::ECurveType; };
+	template<> struct canonical<ucsl::resources::swif::v2::EInterpolationType> { using type = ucsl::resources::swif::v2::reflections::EInterpolationType; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_KEYFRAME> { using type = ucsl::resources::swif::v2::reflections::SRS_KEYFRAME; };
+	template<> struct canonical<ucsl::resources::swif::v2::Key<float>> { using type = ucsl::resources::swif::v2::reflections::Key<float>; };
+	template<> struct canonical<ucsl::resources::swif::v2::Key<int>> { using type = ucsl::resources::swif::v2::reflections::Key<int>; };
+	template<> struct canonical<ucsl::resources::swif::v2::Key<bool>> { using type = ucsl::resources::swif::v2::reflections::Key<bool>; };
+	template<> struct canonical<ucsl::resources::swif::v2::Key<ucsl::resources::swif::v2::Color>> { using type = ucsl::resources::swif::v2::reflections::Key<ucsl::resources::swif::v2::Color>; };
+	template<> struct canonical<ucsl::resources::swif::v2::KeyLinear<float>> { using type = ucsl::resources::swif::v2::reflections::KeyLinear<float>; };
+	template<> struct canonical<ucsl::resources::swif::v2::KeyLinear<int>> { using type = ucsl::resources::swif::v2::reflections::KeyLinear<int>; };
+	template<> struct canonical<ucsl::resources::swif::v2::KeyLinear<bool>> { using type = ucsl::resources::swif::v2::reflections::KeyLinear<bool>; };
+	template<> struct canonical<ucsl::resources::swif::v2::KeyLinear<ucsl::resources::swif::v2::Color>> { using type = ucsl::resources::swif::v2::reflections::KeyLinear<ucsl::resources::swif::v2::Color>; };
+	template<> struct canonical<ucsl::resources::swif::v2::KeyHermite<float>> { using type = ucsl::resources::swif::v2::reflections::KeyHermite<float>; };
+	template<> struct canonical<ucsl::resources::swif::v2::KeyHermite<int>> { using type = ucsl::resources::swif::v2::reflections::KeyHermite<int>; };
+	template<> struct canonical<ucsl::resources::swif::v2::KeyHermite<bool>> { using type = ucsl::resources::swif::v2::reflections::KeyHermite<bool>; };
+	template<> struct canonical<ucsl::resources::swif::v2::KeyHermite<ucsl::resources::swif::v2::Color>> { using type = ucsl::resources::swif::v2::reflections::KeyHermite<ucsl::resources::swif::v2::Color>; };
+	template<> struct canonical<ucsl::resources::swif::v2::KeyIndividual<float>> { using type = ucsl::resources::swif::v2::reflections::KeyIndividual<float>; };
+	template<> struct canonical<ucsl::resources::swif::v2::KeyIndividual<int>> { using type = ucsl::resources::swif::v2::reflections::KeyIndividual<int>; };
+	template<> struct canonical<ucsl::resources::swif::v2::KeyIndividual<bool>> { using type = ucsl::resources::swif::v2::reflections::KeyIndividual<bool>; };
+	template<> struct canonical<ucsl::resources::swif::v2::KeyIndividual<ucsl::resources::swif::v2::Color>> { using type = ucsl::resources::swif::v2::reflections::KeyIndividual<ucsl::resources::swif::v2::Color>; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_KEYFRAME_PTR> { using type = ucsl::resources::swif::v2::reflections::SRS_KEYFRAME_PTR; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_TRACK> { using type = ucsl::resources::swif::v2::reflections::SRS_TRACK; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_MOTION> { using type = ucsl::resources::swif::v2::reflections::SRS_MOTION; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_ANIMATION> { using type = ucsl::resources::swif::v2::reflections::SRS_ANIMATION; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_CROP> { using type = ucsl::resources::swif::v2::reflections::SRS_CROP; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_CROPREF> { using type = ucsl::resources::swif::v2::reflections::SRS_CROPREF; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_DATA::Type> { using type = ucsl::resources::swif::v2::reflections::EDataType; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_DATA_VALUE_PTR> { using type = ucsl::resources::swif::v2::reflections::SRS_DATA_VALUE_PTR; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_DATA> { using type = ucsl::resources::swif::v2::reflections::SRS_DATA; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_USERDATA> { using type = ucsl::resources::swif::v2::reflections::SRS_USERDATA; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_TEXTURE> { using type = ucsl::resources::swif::v2::reflections::SRS_TEXTURE; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_TEXTURELIST> { using type = ucsl::resources::swif::v2::reflections::SRS_TEXTURELIST; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_CHARACTER_MAPPING> { using type = ucsl::resources::swif::v2::reflections::SRS_CHARACTER_MAPPING; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_FONT> { using type = ucsl::resources::swif::v2::reflections::SRS_FONT; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_TEXTDATA> { using type = ucsl::resources::swif::v2::reflections::SRS_TEXTDATA; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_EFFECT> { using type = ucsl::resources::swif::v2::reflections::SRS_EFFECT; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_BLUR> { using type = ucsl::resources::swif::v2::reflections::SRS_BLUR; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_BLUR3D> { using type = ucsl::resources::swif::v2::reflections::SRS_BLUR3D; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_REFLECT> { using type = ucsl::resources::swif::v2::reflections::SRS_REFLECT; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_REFLECT3D> { using type = ucsl::resources::swif::v2::reflections::SRS_REFLECT3D; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_TRS_BASE> { using type = ucsl::resources::swif::v2::reflections::SRS_TRS_BASE; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_TRS2D> { using type = ucsl::resources::swif::v2::reflections::SRS_TRS2D; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_TRS3D> { using type = ucsl::resources::swif::v2::reflections::SRS_TRS3D; };
+	//template<> struct canonical<ucsl::resources::swif::v2::SRS_EFFECT_PTR> { using type = ucsl::resources::swif::v2::reflections::SRS_EFFECT_PTR; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_IMAGECAST> { using type = ucsl::resources::swif::v2::reflections::SRS_IMAGECAST; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_SLICE> { using type = ucsl::resources::swif::v2::reflections::SRS_SLICE; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_SLICECAST> { using type = ucsl::resources::swif::v2::reflections::SRS_SLICECAST; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_REFERENCECAST> { using type = ucsl::resources::swif::v2::reflections::SRS_REFERENCECAST; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_CAST_PTR> { using type = ucsl::resources::swif::v2::reflections::SRS_CAST_PTR; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_CASTNODE> { using type = ucsl::resources::swif::v2::reflections::SRS_CASTNODE; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_TRS_PTR> { using type = ucsl::resources::swif::v2::reflections::SRS_TRS_PTR; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_LAYER> { using type = ucsl::resources::swif::v2::reflections::SRS_LAYER; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_CAMERA> { using type = ucsl::resources::swif::v2::reflections::SRS_CAMERA; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_SCENE> { using type = ucsl::resources::swif::v2::reflections::SRS_SCENE; };
+	template<> struct canonical<ucsl::resources::swif::v2::SRS_PROJECT> { using type = ucsl::resources::swif::v2::reflections::SRS_PROJECT; };
 }

@@ -1,10 +1,10 @@
 #pragma once
 #include <ucsl/math.h>
 
-namespace ucsl::resources::swif::v6 {
+namespace ucsl::resources::swif::v1 {
     // Basic types
     using Vector2 = math::Vector2;
-    using Vector3 = math::Vector3;
+    using Vector3 = math::Position;
     using Matrix34 = math::Matrix34;
     using Matrix44 = math::Matrix44;
     struct Rotation3 { int x; int y; int z; };
@@ -244,8 +244,6 @@ namespace ucsl::resources::swif::v6 {
         unsigned int motionCount{};
         unsigned int frameCount{};
         SRS_MOTION* motions{};
-        SRS_USERDATA* userData{};
-        bool repeat{};
     };
 
     // Crops
@@ -264,7 +262,6 @@ namespace ucsl::resources::swif::v6 {
 
     // Textures
     struct SRS_TEXTURE {
-        const char* name{};
         const char* filename{};
         unsigned int id{};
         unsigned short width{};
@@ -277,10 +274,10 @@ namespace ucsl::resources::swif::v6 {
 
     struct SRS_TEXTURELIST {
         const char* name{};
-        unsigned int unk1{};
         unsigned int textureCount{};
         SRS_TEXTURE* textures{};
         SRS_USERDATA* userData{};
+        unsigned int unk0{};
     };
 
     // Fonts
@@ -293,7 +290,6 @@ namespace ucsl::resources::swif::v6 {
         const char* name{};
         unsigned int id{};
         unsigned int unk1{};
-        short unk2{};
         unsigned short characterCount{};
         unsigned short unk3{};
         SRS_CHARACTER_MAPPING* characters{};
@@ -565,7 +561,7 @@ namespace ucsl::resources::swif::v6 {
         inline void SetRenderMode(ERenderMode mode) {
             flags = (flags & ~(0x3 << 9)) | ((static_cast<unsigned int>(mode) & 0x3) << 9);
         }
-        
+
         // 0x1800
         inline ECropBlendMode GetCropBlendMode() const {
             return static_cast<ECropBlendMode>((flags >> 11) & 0x3);
@@ -709,7 +705,7 @@ namespace ucsl::resources::swif::v6 {
         inline void SetRenderMode(ERenderMode mode) {
             flags = (flags & ~(0x3 << 9)) | ((static_cast<unsigned int>(mode) & 0x3) << 9);
         }
-        
+
         // 0x1800
         inline ECropBlendMode GetCropBlendMode() const {
             return static_cast<ECropBlendMode>((flags >> 11) & 0x3);
@@ -1025,16 +1021,11 @@ namespace ucsl::resources::swif::v6 {
 
     // Cameras
     struct SRS_CAMERA {
-        const char* name{};
-        unsigned int id{};
         Vector3 position{};
         Vector3 target{};
-        bool isOrthogonal{};
         int fov{};
         float nearPlane{};
         float farPlane{};
-        float unk1{};
-        SRS_USERDATA* userData{};
     };
 
     // Scenes
@@ -1042,7 +1033,6 @@ namespace ucsl::resources::swif::v6 {
         const char* name{};
         unsigned int id{};
         unsigned int flags{};
-        bool loaded{};
         int layerCount{};
         SRS_LAYER* layers{};
         unsigned short cameraCount;
@@ -1077,7 +1067,6 @@ namespace ucsl::resources::swif::v6 {
         SRS_CAMERA camera{};
         int startFrame{};
         int endFrame{};
-        float frameRate{};
         SRS_USERDATA* userData{};
     };
 }

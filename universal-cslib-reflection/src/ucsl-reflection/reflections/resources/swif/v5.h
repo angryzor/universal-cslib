@@ -598,8 +598,8 @@ namespace ucsl::resources::swif::v5::reflections {
 			component<bool, "transformCropIndex0", 14, 1>,
 			component<bool, "transformCropIndex1", 15, 1>,
 			component<bool, "transformTranslation", 16, 1>,
-			component<bool, "transformTranslation", 17, 1>,
-			component<bool, "transformTranslation", 18, 1>,
+			component<bool, "transformRotation", 17, 1>,
+			component<bool, "transformScale", 18, 1>,
 			component<ESliceConstraint, "sliceConstraint", 19, 4>,
 			component<bool, "unk2", 23, 1>,
 			component<unsigned char, "unk3", 24, 8>
@@ -625,7 +625,15 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<unsigned int, "id">,
 		field<bitfield<unsigned int,
 			component<bool, "is3D", 0, 1>,
-			component<bool, "hide", 8, 1>
+			component<unsigned char, "unk0", 1, 3>,
+			component<bool, "unk1", 4, 1>,
+			component<unsigned char, "unk2", 5, 3>,
+			component<bool, "hide", 8, 1>,
+			component<unsigned char, "unk3", 9, 7>,
+			component<bool, "unk4", 16, 1>,
+			component<unsigned char, "unk5", 17, 7>,
+			component<bool, "unk6", 24, 1>,
+			component<unsigned char, "unk7", 25, 7>
 		>, "flags">,
 		field<int, "castCount">,
 		field<dynamic_carray<SRS_CASTNODE, field_resolver<int, "castCount">>*, "casts">,
@@ -647,7 +655,7 @@ namespace ucsl::resources::swif::v5::reflections {
 		field<float, "nearPlane">,
 		field<float, "farPlane">,
 		field<float, "unk1">,
-		field<unsigned long long, "unk2">
+		field<SRS_USERDATA*, "userData">
 	>;
 
 	// Scenes

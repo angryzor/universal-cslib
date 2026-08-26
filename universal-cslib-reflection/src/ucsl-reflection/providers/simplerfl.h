@@ -379,7 +379,7 @@ namespace ucsl::reflection::providers {
 			template<typename AddrType, typename... Fields> constexpr size_t _get_size(const accessors::UnionAccessor auto& obj, std::tuple<Fields...>) const {
 				size_t maxSize{};
 
-				((maxSize = std::max(maxSize, this->template create_field_refl<FieldWithOffset, Fields>(0).get_type(obj).template get_size<AddrType>(obj[this->template create_field_refl<FieldWithOffset, Fields>(0)]))), ...);
+				((maxSize = std::max(maxSize, this->template create_field_refl<FieldWithOffset, Fields>(0u).get_type(obj).template get_size<AddrType>(obj[this->template create_field_refl<FieldWithOffset, Fields>(0u)]))), ...);
 
 				return util::align(maxSize, get_alignment<AddrType>());
 			}
@@ -394,14 +394,14 @@ namespace ucsl::reflection::providers {
 
 			template<typename F, typename... Fields>
 			constexpr void _visit_fields(F f, std::tuple<Fields...>) const {
-				(f(this->template create_field_refl<FieldWithOffset, Fields>(0)), ...);
+				(f(this->template create_field_refl<FieldWithOffset, Fields>(0u)), ...);
 			}
 
 			template<typename F, typename Fields, size_t... Is>
 			constexpr void _visit_current_field(F f, Fields, std::index_sequence<Is...>) const {
 				size_t idx = resolve<typename desugar_t<T>::resolver>(this->parent, this->root);
 
-				((idx == Is ? (f(this->template create_field_refl<FieldWithOffset, std::tuple_element_t<Is, Fields>>(0)), true) : false) || ...);
+				((idx == Is ? (f(this->template create_field_refl<FieldWithOffset, std::tuple_element_t<Is, Fields>>(0u)), true) : false) || ...);
 			}
 		};
 
